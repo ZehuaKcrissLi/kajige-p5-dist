@@ -1,0 +1,10 @@
+## Interface: 30300
+## Title: |cffffd200咔鸡哥训练服|r 启动保护
+## Notes: 防止旧版插件在首次进入世界时触发自动重载或登出循环。
+## Author: 咔鸡哥 P5 团本训练服
+## Version: 2026.07.29.1
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: KajigeStartupGuardAudit
+
+KajigeStartupGuard.lua

@@ -1,0 +1,1268 @@
+-- 卡雷苟斯团长训练模块
+-- 目标：用真实战斗日志重建双位面状态，并训练“预警 -> 授权 -> 复盘”的指挥闭环。
+
+KajigeRaidCoachDB = KajigeRaidCoachDB or {}
+KajigeRaidCoachDB.kalecgos = KajigeRaidCoachDB.kalecgos or {}
+local DB = KajigeRaidCoachDB.kalecgos
+
+if DB.profile == nil then DB.profile = "progression" end
+if DB.autoShow == nil then DB.autoShow = true end
+if DB.broadcast == nil then DB.broadcast = true end
+if DB.manualRoles == nil then DB.manualRoles = {} end
+if DB.history == nil then DB.history = {} end
+
+local DRAGON_ID = 24850
+local DEMON_ID = 24892
+
+local SPELL = {
+    SPECTRAL_BLAST = 44866,
+    SPECTRAL_REALM = 46021,
+    SPECTRAL_EXHAUSTION = 44867,
+    ARCANE_BUFFET = 45018,
+    FROST_BREATH = 44799,
+    CORRUPTING_STRIKE = 45029,
+    SHADOW_BOLT_VOLLEY = 45031,
+    CURSE_DIRECT = 45032,
+    CURSE_CHAIN = 45034,
+    CRAZED_RAGE = 44806,
+}
+
+local WILD_MAGIC = {
+    [44978] = "治疗效果 +100%",
+    [45001] = "施法时间 +100%",
+    [45002] = "近战/远程命中 -50%",
+    [45004] = "暴击伤害 +100%",
+    [45006] = "威胁值 +100%",
+    [45010] = "技能消耗 -50%",
+}
+
+local profiles = {
+    progression = {
+        label = "普通开荒 2T5H",
+        tanks = 2,
+        healers = 5,
+        firstPortalMinimum = 13,
+        firstPortalMaximum = 15,
+        portalMinimum = 22,
+        portalMaximum = 26,
+        portalWindow = 5,
+        minimumEntrants = 4,
+        buffetHigh = 6,
+        syncTarget = 12,
+        responseWindow = 3,
+    },
+    standard = {
+        label = "稳定团 2T4H",
+        tanks = 2,
+        healers = 4,
+        firstPortalMinimum = 13,
+        firstPortalMaximum = 15,
+        portalMinimum = 22,
+        portalMaximum = 26,
+        portalWindow = 4,
+        minimumEntrants = 4,
+        buffetHigh = 7,
+        syncTarget = 12,
+        responseWindow = 2.5,
+    },
+    laboratory = {
+        label = "机制实验室",
+        tanks = 2,
+        healers = 5,
+        firstPortalMinimum = 13,
+        firstPortalMaximum = 15,
+        portalMinimum = 22,
+        portalMaximum = 26,
+        portalWindow = 6,
+        minimumEntrants = 1,
+        buffetHigh = 8,
+        syncTarget = 12,
+        responseWindow = 4,
+    },
+}
+
+local profileOrder = {"progression", "standard", "laboratory"}
+
+local function Profile()
+    return profiles[DB.profile] or profiles.progression
+end
+
+local function CreatureID(guid)
+    if type(guid) ~= "string" or string.sub(guid, 1, 4) ~= "0xF1" then return nil end
+    return tonumber(string.sub(guid, 7, 12), 16)
+end
+
+local function CountKeys(values)
+    local count = 0
+    for _ in pairs(values or {}) do count = count + 1 end
+    return count
+end
+
+local function Clamp(value, minimum, maximum)
+    if value < minimum then return minimum end
+    if value > maximum then return maximum end
+    return value
+end
+
+local function ShortName(name)
+    if type(name) ~= "string" then return "未知" end
+    return string.match(name, "^[^-]+") or name
+end
+
+local function FormatSeconds(value)
+    if not value then return "--" end
+    if value < 0 then value = 0 end
+    return string.format("%.1f", value)
+end
+
+local function Print(message, bad)
+    local color = bad and "|cffff5555" or "|cff33ff99"
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage(color .. "卡雷指挥训练：|r " .. tostring(message))
+    end
+end
+
+local function RaidNotice(message, severity)
+    if RaidNotice_AddMessage and RaidWarningFrame and ChatTypeInfo then
+        local info = severity == 3 and ChatTypeInfo.RAID_WARNING or ChatTypeInfo.RAID_BOSS_EMOTE
+        RaidNotice_AddMessage(RaidWarningFrame, message, info or ChatTypeInfo.RAID_WARNING)
+    end
+end
+
+local state
+local frame
+local stateText
+local scoreText
+local reportText
+local profileButton
+local broadcastButton
+local encounterClosedUntil = 0
+local uiElapsed = 0
+local rosterElapsed = 0
+local healthElapsed = 0
+local nameRoles = {}
+
+local function NewState()
+    return {
+        active = false,
+        success = false,
+        startedAt = 0,
+        endedAt = nil,
+        portalNumber = 0,
+        portalLastAt = nil,
+        currentPortal = nil,
+        nextPortalMinimum = nil,
+        nextPortalMaximum = nil,
+        realm = {},
+        exhaustion = {},
+        buffet = {},
+        curses = {},
+        curseEdges = {},
+        lastTransfer = {},
+        lastDamage = {},
+        lastStrikeAt = nil,
+        lastCall = {},
+        callLog = {},
+        pendingChecks = {},
+        score = {
+            portal = 100,
+            coverage = 100,
+            curse = 100,
+            sync = 100,
+            command = 100,
+        },
+        penalties = {},
+        metrics = {
+            portalRounds = 0,
+            portalPrecalled = 0,
+            portalAuthorized = 0,
+            thinPortals = 0,
+            exhaustedEntries = 0,
+            coverageBreaks = 0,
+            highStackClears = 0,
+            curseApplications = 0,
+            curseCalled = 0,
+            curseTransfers = 0,
+            controlledDispels = 0,
+            uncontrolledDispels = 0,
+            strikes = 0,
+            strikeCalls = 0,
+            deaths = 0,
+            maximumHealthGap = 0,
+            finalExposure = nil,
+        },
+        health = {dragon = nil, demon = nil},
+        healthUpdatedAt = {dragon = nil, demon = nil},
+        healthSeen = {dragon = false, demon = false},
+        balanceCallChecked = false,
+        nextPortalWarnedFor = nil,
+        finalStartedAt = nil,
+        finalCompleted = false,
+        firstThreshold = nil,
+        rageAt = nil,
+        rageStack = 0,
+        firstDeath = nil,
+        firstDeathCause = nil,
+        lastReport = nil,
+    }
+end
+
+state = NewState()
+
+local function OverallScore()
+    local total = 0
+    local count = 0
+    for _, value in pairs(state.score) do
+        total = total + value
+        count = count + 1
+    end
+    if count == 0 then return 0 end
+    return math.floor((total / count) + 0.5)
+end
+
+local function AddPenalty(category, points, reason, uniqueKey)
+    if not state.active then return end
+    if uniqueKey then
+        state.penaltyKeys = state.penaltyKeys or {}
+        if state.penaltyKeys[uniqueKey] then return end
+        state.penaltyKeys[uniqueKey] = true
+    end
+    state.score[category] = Clamp((state.score[category] or 100) - points, 0, 100)
+    table.insert(state.penalties, {
+        at = GetTime() - state.startedAt,
+        category = category,
+        points = points,
+        reason = reason,
+    })
+    if #state.penalties > 20 then table.remove(state.penalties, 1) end
+end
+
+local function NormalizeRole(role)
+    role = string.lower(role or "")
+    if role == "tank" or role == "t" or role == "坦克" or role == "坦" then return "TANK" end
+    if role == "healer" or role == "heal" or role == "h" or role == "治疗" or role == "奶" then return "HEALER" end
+    if role == "damage" or role == "dps" or role == "d" or role == "输出" then return "DAMAGER" end
+    return nil
+end
+
+local function ReadUnitRole(unit, rosterRole)
+    local role
+    if UnitGroupRolesAssigned then role = UnitGroupRolesAssigned(unit) end
+    if role == "NONE" or role == "" then role = nil end
+    if not role and rosterRole == "MAINTANK" then role = "TANK" end
+    local name = UnitName(unit)
+    if name and DB.manualRoles[ShortName(name)] then role = DB.manualRoles[ShortName(name)] end
+    return role or "UNKNOWN"
+end
+
+local function RefreshRosterRoles()
+    nameRoles = {}
+    local raidCount = GetNumRaidMembers and GetNumRaidMembers() or 0
+    if raidCount > 0 then
+        for index = 1, raidCount do
+            local name, _, _, _, _, _, _, online, _, rosterRole = GetRaidRosterInfo(index)
+            if name and online ~= false then
+                nameRoles[ShortName(name)] = ReadUnitRole("raid" .. index, rosterRole)
+            end
+        end
+    else
+        local playerName = UnitName("player")
+        if playerName then nameRoles[ShortName(playerName)] = ReadUnitRole("player") end
+        local partyCount = GetNumPartyMembers and GetNumPartyMembers() or 0
+        for index = 1, partyCount do
+            local unit = "party" .. index
+            local name = UnitName(unit)
+            if name then nameRoles[ShortName(name)] = ReadUnitRole(unit) end
+        end
+    end
+    for name, role in pairs(DB.manualRoles) do nameRoles[ShortName(name)] = role end
+end
+
+local function RoleForName(name)
+    return nameRoles[ShortName(name)] or DB.manualRoles[ShortName(name)] or "UNKNOWN"
+end
+
+local function RosterCounts()
+    local counts = {TANK = 0, HEALER = 0, DAMAGER = 0, UNKNOWN = 0}
+    for _, role in pairs(nameRoles) do counts[role] = (counts[role] or 0) + 1 end
+    return counts
+end
+
+local function RealmCounts()
+    local counts = {
+        inside = 0,
+        insideTanks = 0,
+        insideHealers = 0,
+        outsideTanks = 0,
+        outsideHealers = 0,
+        exhausted = 0,
+        highBuffet = 0,
+    }
+    local now = GetTime()
+    for name, role in pairs(nameRoles) do
+        local inside = false
+        for guid, info in pairs(state.realm) do
+            if info.name == name and info.inside then inside = true break end
+        end
+        if inside then
+            counts.inside = counts.inside + 1
+            if role == "TANK" then counts.insideTanks = counts.insideTanks + 1 end
+            if role == "HEALER" then counts.insideHealers = counts.insideHealers + 1 end
+        else
+            if role == "TANK" then counts.outsideTanks = counts.outsideTanks + 1 end
+            if role == "HEALER" then counts.outsideHealers = counts.outsideHealers + 1 end
+        end
+    end
+    for _, expiresAt in pairs(state.exhaustion) do
+        if expiresAt > now then counts.exhausted = counts.exhausted + 1 end
+    end
+    for _, stacks in pairs(state.buffet) do
+        if stacks >= Profile().buffetHigh then counts.highBuffet = counts.highBuffet + 1 end
+    end
+    return counts
+end
+
+local callDefinitions = {
+    ready = {label = "门组准备", message = "下一门组准备：检查幽灵疲劳，核对内外场坦克和治疗。"},
+    enter = {label = "授权进门", message = "指定门组进门，其他人不要点击传送门。"},
+    tank = {label = "内坦减伤", message = "腐化打击：内坦交减伤，内场治疗点刷。"},
+    curse = {label = "诅咒隔离", message = "诅咒目标立刻出人群，其他人禁止抢驱。"},
+    dispel = {label = "允许驱散", message = "指定驱散现在处理；诅咒转移后立刻报出新目标。"},
+    outstop = {label = "外停内打", message = "外场停手，内场继续推进。"},
+    instop = {label = "内停外打", message = "内场停手，外场继续推进。"},
+    push = {label = "双边推进", message = "两边同步推进；团队减伤，第二边立刻压入 10% 阈值。"},
+}
+
+local function Broadcast(message)
+    if not DB.broadcast then return end
+    local raidCount = GetNumRaidMembers and GetNumRaidMembers() or 0
+    if raidCount > 0 then
+        if (IsRaidLeader and IsRaidLeader()) or (IsRaidOfficer and IsRaidOfficer()) then
+            SendChatMessage(message, "RAID_WARNING")
+        else
+            SendChatMessage(message, "RAID")
+        end
+    elseif (GetNumPartyMembers and GetNumPartyMembers() or 0) > 0 then
+        SendChatMessage(message, "PARTY")
+    end
+end
+
+local function RecordCall(kind, silent)
+    local definition = callDefinitions[kind]
+    if not definition then return false end
+    local now = GetTime()
+    state.lastCall[kind] = now
+    table.insert(state.callLog, {
+        at = state.startedAt > 0 and now - state.startedAt or 0,
+        kind = kind,
+        label = definition.label,
+    })
+    if #state.callLog > 40 then table.remove(state.callLog, 1) end
+    if not silent then
+        Broadcast(definition.message)
+        Print(definition.label .. "：" .. definition.message)
+    end
+    return true
+end
+
+local function CallWithin(kind, fromTime, toTime)
+    local value = state.lastCall[kind]
+    return value and value >= fromTime and value <= toTime
+end
+
+local function AddPending(kind, eventAt, wait, lead, category, points, reason, metric)
+    table.insert(state.pendingChecks, {
+        at = eventAt + wait,
+        kind = kind,
+        fromTime = eventAt - (lead or 0),
+        toTime = eventAt + wait,
+        category = category,
+        points = points,
+        reason = reason,
+        metric = metric,
+    })
+end
+
+local function ProcessPendingChecks(now)
+    local remaining = {}
+    for _, check in ipairs(state.pendingChecks) do
+        if now >= check.at then
+            if CallWithin(check.kind, check.fromTime, check.toTime) then
+                if check.metric then
+                    state.metrics[check.metric] = (state.metrics[check.metric] or 0) + 1
+                end
+            else
+                AddPenalty(check.category, check.points, check.reason)
+            end
+        else
+            table.insert(remaining, check)
+        end
+    end
+    state.pendingChecks = remaining
+end
+
+local function Activate(reason)
+    if state.active then return end
+    if GetTime() < encounterClosedUntil then return end
+    state = NewState()
+    state.active = true
+    state.startedAt = GetTime()
+    state.nextPortalMinimum = state.startedAt + Profile().firstPortalMinimum
+    state.nextPortalMaximum = state.startedAt + Profile().firstPortalMaximum
+    state.activationReason = reason
+    RefreshRosterRoles()
+    if DB.autoShow and frame then frame:Show() end
+    Print("战斗状态机启动：" .. Profile().label .. "。第一门约 13～15 秒。")
+    RaidNotice("卡雷苟斯：外坦接龙，内坦与一门治疗准备", 2)
+end
+
+local function PortalEntrantCount(portal)
+    return portal and CountKeys(portal.entrants) or 0
+end
+
+local function OpenPortal(now)
+    if not state.active then Activate("传送门") end
+    if state.portalLastAt and now - state.portalLastAt < 8 then return state.currentPortal end
+    state.portalNumber = state.portalNumber + 1
+    state.portalLastAt = now
+    state.metrics.portalRounds = state.metrics.portalRounds + 1
+    state.currentPortal = {
+        number = state.portalNumber,
+        startedAt = now,
+        entrants = {},
+        finalized = false,
+    }
+    state.nextPortalMinimum = now + Profile().portalMinimum
+    state.nextPortalMaximum = now + Profile().portalMaximum
+
+    if CallWithin("ready", now - 10, now + 0.2) then
+        state.metrics.portalPrecalled = state.metrics.portalPrecalled + 1
+    else
+        AddPenalty("command", 5, "第 " .. state.portalNumber .. " 门前没有门组准备口令")
+    end
+    AddPending(
+        "enter", now, Profile().responseWindow, 3,
+        "command", 5,
+        "第 " .. state.portalNumber .. " 门没有明确授权进门",
+        "portalAuthorized"
+    )
+    RaidNotice("第 " .. state.portalNumber .. " 门已出现：只进指定组", 3)
+    return state.currentPortal
+end
+
+local function AddPortalEntrant(guid, name, now)
+    local portal = state.currentPortal
+    if not portal or now - portal.startedAt > 8 then portal = OpenPortal(now) end
+    if not portal or portal.entrants[guid] then return end
+    local exhaustedUntil = state.exhaustion[guid]
+    portal.entrants[guid] = {
+        name = ShortName(name),
+        role = RoleForName(name),
+        buffet = state.buffet[guid] or 0,
+    }
+    if exhaustedUntil and exhaustedUntil > now then
+        state.metrics.exhaustedEntries = state.metrics.exhaustedEntries + 1
+        AddPenalty(
+            "portal", 12,
+            ShortName(name) .. " 带幽灵疲劳进入第 " .. portal.number .. " 门"
+        )
+    end
+    if (state.buffet[guid] or 0) >= Profile().buffetHigh then
+        state.metrics.highStackClears = state.metrics.highStackClears + 1
+    end
+end
+
+local function FinalizePortal(portal)
+    if not portal or portal.finalized then return end
+    portal.finalized = true
+    local entrantCount = PortalEntrantCount(portal)
+    local tanks = 0
+    local healers = 0
+    for _, entrant in pairs(portal.entrants) do
+        if entrant.role == "TANK" then tanks = tanks + 1 end
+        if entrant.role == "HEALER" then healers = healers + 1 end
+    end
+    portal.count = entrantCount
+    portal.tanks = tanks
+    portal.healers = healers
+
+    if entrantCount < Profile().minimumEntrants then
+        state.metrics.thinPortals = state.metrics.thinPortals + 1
+        AddPenalty(
+            "portal", 6,
+            "第 " .. portal.number .. " 门仅进入 " .. entrantCount .. " 人，普通团容错不足"
+        )
+    end
+
+    local roster = RosterCounts()
+    local realm = RealmCounts()
+    if portal.number == 1 and roster.TANK > 0 and tanks == 0 then
+        state.metrics.coverageBreaks = state.metrics.coverageBreaks + 1
+        AddPenalty("coverage", 15, "第一门没有可识别的内坦")
+    end
+    if roster.HEALER > 0 and realm.insideHealers == 0 then
+        state.metrics.coverageBreaks = state.metrics.coverageBreaks + 1
+        AddPenalty("coverage", 12, "第 " .. portal.number .. " 门后内场没有可识别治疗")
+    end
+    if roster.TANK >= Profile().tanks and realm.outsideTanks == 0 then
+        state.metrics.coverageBreaks = state.metrics.coverageBreaks + 1
+        AddPenalty("coverage", 15, "第 " .. portal.number .. " 门后外场断坦")
+    end
+    if roster.HEALER >= Profile().healers and realm.outsideHealers == 0 then
+        state.metrics.coverageBreaks = state.metrics.coverageBreaks + 1
+        AddPenalty("coverage", 12, "第 " .. portal.number .. " 门后外场断治疗")
+    end
+end
+
+local function RecordCurse(guid, name, spellID, now)
+    local existing = state.curses[guid]
+    if existing and now - existing.appliedAt < 1 then return end
+    state.curses[guid] = {
+        name = ShortName(name),
+        appliedAt = now,
+        spellID = spellID,
+    }
+    if spellID == SPELL.CURSE_DIRECT then
+        state.metrics.curseApplications = state.metrics.curseApplications + 1
+        AddPending(
+            "curse", now, Profile().responseWindow, 1,
+            "curse", 7,
+            ShortName(name) .. " 中诅咒后未及时下达隔离/禁驱口令",
+            "curseCalled"
+        )
+        RaidNotice("无尽痛苦诅咒 → " .. ShortName(name) .. "：隔离，禁止抢驱", 3)
+    end
+end
+
+local function RecordCurseTransfer(sourceName, destGUID, destName, now)
+    local key = ShortName(sourceName) .. ">" .. ShortName(destName)
+    if state.lastTransfer[key] and now - state.lastTransfer[key] < 35 then return end
+    state.lastTransfer[key] = now
+    state.metrics.curseTransfers = state.metrics.curseTransfers + 1
+    table.insert(state.curseEdges, {
+        at = now - state.startedAt,
+        source = ShortName(sourceName),
+        target = ShortName(destName),
+    })
+    if #state.curseEdges > 30 then table.remove(state.curseEdges, 1) end
+    RecordCurse(destGUID, destName, SPELL.CURSE_CHAIN, now)
+    RaidNotice("诅咒转移 → " .. ShortName(destName) .. "：重新隔离", 3)
+end
+
+local function RecordDispel(extraSpellID, destName, now)
+    if extraSpellID ~= SPELL.CURSE_DIRECT and extraSpellID ~= SPELL.CURSE_CHAIN then return end
+    if CallWithin("dispel", now - 4, now + 0.2) then
+        state.metrics.controlledDispels = state.metrics.controlledDispels + 1
+    else
+        state.metrics.uncontrolledDispels = state.metrics.uncontrolledDispels + 1
+        AddPenalty("curse", 9, ShortName(destName) .. " 的诅咒未经团长授权被驱散")
+        RaidNotice("检测到未授权驱散：诅咒会发生转移", 3)
+    end
+end
+
+local function RecordStrike(now)
+    if state.lastStrikeAt and now - state.lastStrikeAt < 4 then return end
+    state.lastStrikeAt = now
+    state.metrics.strikes = state.metrics.strikes + 1
+    AddPending(
+        "tank", now, 1.5, 6,
+        "coverage", 6,
+        "腐化打击前后没有内坦减伤/点刷口令",
+        "strikeCalls"
+    )
+end
+
+local function RecordDeath(guid, name, now)
+    state.metrics.deaths = state.metrics.deaths + 1
+    if state.firstDeath then return end
+    state.firstDeath = ShortName(name)
+    local damage = state.lastDamage[guid]
+    if damage and now - damage.at <= 10 then
+        state.firstDeathCause = damage.label .. "（" .. tostring(damage.spellID or "近战") .. "）"
+    else
+        state.firstDeathCause = "日志中无 10 秒内可识别伤害"
+    end
+end
+
+local function DamageLabel(spellID, subEvent)
+    local labels = {
+        [SPELL.ARCANE_BUFFET] = "奥术打击",
+        [SPELL.SPECTRAL_BLAST] = "幽灵冲击",
+        [SPELL.CORRUPTING_STRIKE] = "腐化打击",
+        [SPELL.SHADOW_BOLT_VOLLEY] = "暗影箭雨",
+        [SPELL.CURSE_DIRECT] = "无尽痛苦诅咒",
+        [SPELL.CURSE_CHAIN] = "诅咒转移链",
+        [SPELL.FROST_BREATH] = "冰霜吐息",
+    }
+    if subEvent == "SWING_DAMAGE" then return "首领近战" end
+    return labels[spellID] or "其他伤害"
+end
+
+local function UpdateBossHealth()
+    local units = {"target", "focus", "mouseover", "boss1", "boss2", "boss3", "boss4"}
+    local raidCount = GetNumRaidMembers and GetNumRaidMembers() or 0
+    for index = 1, raidCount do table.insert(units, "raid" .. index .. "target") end
+    for _, unit in ipairs(units) do
+        if UnitExists(unit) then
+            local creatureID = CreatureID(UnitGUID(unit))
+            if creatureID == DRAGON_ID or creatureID == DEMON_ID then
+                local maximum = UnitHealthMax(unit)
+                if maximum and maximum > 0 then
+                    local percent = UnitHealth(unit) * 100 / maximum
+                    if creatureID == DRAGON_ID then
+                        state.health.dragon = percent
+                        state.healthUpdatedAt.dragon = GetTime()
+                        state.healthSeen.dragon = true
+                    else
+                        state.health.demon = percent
+                        state.healthUpdatedAt.demon = GetTime()
+                        state.healthSeen.demon = true
+                    end
+                end
+            end
+        end
+    end
+
+    local dragon = state.health.dragon
+    local demon = state.health.demon
+    if not dragon or not demon then return end
+    local now = GetTime()
+    if not state.healthUpdatedAt.dragon or not state.healthUpdatedAt.demon
+        or now - state.healthUpdatedAt.dragon > 5
+        or now - state.healthUpdatedAt.demon > 5 then
+        return
+    end
+    if math.min(dragon, demon) <= 25 then
+        local gap = math.abs(dragon - demon)
+        if gap > state.metrics.maximumHealthGap then state.metrics.maximumHealthGap = gap end
+        if not state.balanceCallChecked and math.min(dragon, demon) <= 20 and gap >= 8 then
+            state.balanceCallChecked = true
+            local expected = dragon < demon and "outstop" or "instop"
+            AddPending(
+                expected, now, Profile().responseWindow, 3,
+                "sync", 7,
+                "末段血量差达到 8% 后没有叫停血量较低的一侧"
+            )
+            RaidNotice(dragon < demon and "外场停手，内场追血" or "内场停手，外场追血", 3)
+        end
+    end
+    if not state.finalStartedAt and (dragon <= 10 or demon <= 10) then
+        state.finalStartedAt = now
+        state.firstThreshold = dragon <= 10 and "外场龙" or "内场恶魔"
+        AddPending(
+            "push", now, Profile().responseWindow, 3,
+            "sync", 7,
+            "第一边进入 10% 阈值后没有立即下达双边推进口令"
+        )
+        RaidNotice(state.firstThreshold .. "已进入阈值：另一边立刻全开", 3)
+    end
+    if state.finalStartedAt and not state.finalCompleted and dragon <= 10 and demon <= 10 then
+        state.finalCompleted = true
+        state.metrics.finalExposure = now - state.finalStartedAt
+        if state.metrics.finalExposure > 20 then
+            AddPenalty("sync", 20, "双边 10% 阈值不同步超过 20 秒", "final-exposure")
+        elseif state.metrics.finalExposure > 10 then
+            AddPenalty("sync", 12, "双边 10% 阈值不同步超过 10 秒", "final-exposure")
+        elseif state.metrics.finalExposure > 6 then
+            AddPenalty("sync", 6, "双边 10% 阈值不同步超过 6 秒", "final-exposure")
+        end
+    end
+end
+
+local function AuditRoster(silent)
+    RefreshRosterRoles()
+    local counts = RosterCounts()
+    local wanted = Profile()
+    local known = counts.TANK + counts.HEALER + counts.DAMAGER
+    local total = known + counts.UNKNOWN
+    local message = string.format(
+        "%s：已识别 %dT/%dH/%dD，未知 %d；建议 %dT/%dH。",
+        wanted.label,
+        counts.TANK,
+        counts.HEALER,
+        counts.DAMAGER,
+        counts.UNKNOWN,
+        wanted.tanks,
+        wanted.healers
+    )
+    if not silent then Print(message, known > 0 and (counts.TANK < wanted.tanks or counts.HEALER < wanted.healers)) end
+    if state.active and total >= 20 and counts.UNKNOWN <= 3 then
+        if counts.TANK < wanted.tanks then
+            AddPenalty("coverage", 8, "开打阵容少于 " .. wanted.tanks .. " 名可识别坦克", "roster-tanks")
+        end
+        if counts.HEALER < wanted.healers then
+            AddPenalty("coverage", 6, "普通开荒配置少于 " .. wanted.healers .. " 名可识别治疗", "roster-healers")
+        end
+    end
+    return message
+end
+
+local function BuildReport(success)
+    local duration = (state.endedAt or GetTime()) - state.startedAt
+    local lines = {
+        (success and "|cff33ff99击杀复盘|r" or "|cffff5555灭团复盘|r")
+            .. "　" .. Profile().label .. "　用时 " .. FormatSeconds(duration) .. " 秒",
+        string.format(
+            "总分 %d　门组 %d　覆盖 %d　诅咒 %d　同步 %d　口令 %d",
+            OverallScore(), state.score.portal, state.score.coverage,
+            state.score.curse, state.score.sync, state.score.command
+        ),
+        string.format(
+            "传送门 %d：预警 %d / 授权 %d / 薄门 %d / 疲劳误进 %d",
+            state.metrics.portalRounds, state.metrics.portalPrecalled,
+            state.metrics.portalAuthorized, state.metrics.thinPortals,
+            state.metrics.exhaustedEntries
+        ),
+        string.format(
+            "诅咒：点名 %d / 及时隔离 %d / 转移 %d / 授权驱散 %d / 未授权 %d",
+            state.metrics.curseApplications, state.metrics.curseCalled,
+            state.metrics.curseTransfers, state.metrics.controlledDispels,
+            state.metrics.uncontrolledDispels
+        ),
+        string.format(
+            "内坦：腐化打击 %d / 有口令 %d　覆盖中断 %d　高层清层 %d",
+            state.metrics.strikes, state.metrics.strikeCalls,
+            state.metrics.coverageBreaks, state.metrics.highStackClears
+        ),
+    }
+    if state.healthSeen.dragon and state.healthSeen.demon then
+        table.insert(lines, string.format(
+            "双血量：25%% 后最大差 %.1f%%　阈值暴露 %s 秒",
+            state.metrics.maximumHealthGap,
+            state.metrics.finalExposure and FormatSeconds(state.metrics.finalExposure) or "未完成/未观测"
+        ))
+    else
+        table.insert(lines, "双血量：未同时观测到龙和恶魔；请让团长目标一侧、焦点另一侧。")
+    end
+    if state.firstDeath then
+        table.insert(lines, "第一减员：" .. state.firstDeath .. " ← " .. (state.firstDeathCause or "未知"))
+    else
+        table.insert(lines, "第一减员：无")
+    end
+    if #state.penalties > 0 then
+        table.insert(lines, "主要扣分：")
+        local first = math.max(1, #state.penalties - 3)
+        for index = first, #state.penalties do
+            local item = state.penalties[index]
+            table.insert(lines, string.format("- %.1fs　%s（-%d）", item.at, item.reason, item.points))
+        end
+    else
+        table.insert(lines, "没有记录到可识别的指挥失误。")
+    end
+    return table.concat(lines, "\n")
+end
+
+local function SaveReport(success)
+    local report = {
+        timestamp = date and date("%Y-%m-%d %H:%M:%S") or "",
+        success = success,
+        profile = DB.profile,
+        score = OverallScore(),
+        text = BuildReport(success),
+    }
+    DB.lastReport = report
+    table.insert(DB.history, 1, report)
+    while #DB.history > 10 do table.remove(DB.history) end
+    state.lastReport = report.text
+    if reportText then reportText:SetText(report.text) end
+    return report
+end
+
+local function EndEncounter(success)
+    if not state.active then return end
+    local now = GetTime()
+    state.success = success and true or false
+    state.endedAt = now
+    if state.finalStartedAt and not state.finalCompleted then
+        local exposure = now - state.finalStartedAt
+        state.metrics.finalExposure = exposure
+        if exposure > 20 then
+            AddPenalty("sync", 20, "战斗结束时第二边仍未完成 10% 阈值", "final-exposure")
+        elseif exposure > 10 then
+            AddPenalty("sync", 12, "末段阈值不同步超过 10 秒", "final-exposure")
+        end
+    end
+    if state.healthSeen.dragon and state.healthSeen.demon
+        and state.metrics.maximumHealthGap > 15 then
+        AddPenalty("sync", 8, "25% 后双边最大血量差超过 15%", "maximum-health-gap")
+    end
+    ProcessPendingChecks(now)
+    local report = SaveReport(success)
+    state.active = false
+    encounterClosedUntil = now + 10
+    Print((success and "击杀完成，" or "战斗结束，") .. "本轮指挥得分 " .. report.score .. "。")
+    if frame then frame:Show() end
+end
+
+local function IsPlayer(flags, guid)
+    if flags and COMBATLOG_OBJECT_TYPE_PLAYER and bit and bit.band then
+        return bit.band(flags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
+    end
+    return type(guid) == "string" and string.sub(guid, 1, 3) == "0x0"
+end
+
+local function HandleCombatLog(...)
+    local timestamp, subEvent, sourceGUID, sourceName, sourceFlags,
+        destGUID, destName, destFlags, spellID = ...
+    local now = GetTime()
+    local sourceID = CreatureID(sourceGUID)
+    local destID = CreatureID(destGUID)
+    if not state.active and (sourceID == DRAGON_ID or sourceID == DEMON_ID
+        or destID == DRAGON_ID or destID == DEMON_ID) then
+        Activate("战斗日志")
+    end
+    if not state.active then return end
+
+    if subEvent == "UNIT_DIED" then
+        if destID == DEMON_ID then
+            EndEncounter(true)
+            return
+        end
+        if IsPlayer(destFlags, destGUID) then RecordDeath(destGUID, destName, now) end
+        return
+    end
+
+    if subEvent == "SWING_DAMAGE" or string.find(subEvent or "", "_DAMAGE", 1, true) then
+        if IsPlayer(destFlags, destGUID) then
+            state.lastDamage[destGUID] = {
+                at = now,
+                spellID = subEvent == "SWING_DAMAGE" and nil or spellID,
+                label = DamageLabel(spellID, subEvent),
+            }
+        end
+    end
+
+    if not spellID then return end
+    if spellID == SPELL.SPECTRAL_BLAST
+        and (subEvent == "SPELL_DAMAGE" or subEvent == "SPELL_MISSED"
+            or subEvent == "SPELL_CAST_SUCCESS") then
+        OpenPortal(now)
+    elseif spellID == SPELL.SPECTRAL_REALM then
+        if subEvent == "SPELL_AURA_APPLIED" then
+            if not state.portalLastAt or now - state.portalLastAt > 8 then OpenPortal(now) end
+            state.realm[destGUID] = {name = ShortName(destName), inside = true, since = now}
+            state.buffet[destGUID] = nil
+            AddPortalEntrant(destGUID, destName, now)
+        elseif subEvent == "SPELL_AURA_REMOVED" then
+            state.realm[destGUID] = {name = ShortName(destName), inside = false, since = now}
+        end
+    elseif spellID == SPELL.SPECTRAL_EXHAUSTION then
+        if subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_REFRESH" then
+            state.exhaustion[destGUID] = now + 60
+        elseif subEvent == "SPELL_AURA_REMOVED" then
+            state.exhaustion[destGUID] = nil
+        end
+    elseif spellID == SPELL.ARCANE_BUFFET then
+        if subEvent == "SPELL_AURA_APPLIED" then
+            state.buffet[destGUID] = 1
+        elseif subEvent == "SPELL_AURA_APPLIED_DOSE" then
+            local amount = select(13, ...)
+            state.buffet[destGUID] = tonumber(amount) or ((state.buffet[destGUID] or 1) + 1)
+        elseif subEvent == "SPELL_AURA_REMOVED" then
+            state.buffet[destGUID] = nil
+        end
+    elseif spellID == SPELL.CURSE_DIRECT and subEvent == "SPELL_AURA_APPLIED" then
+        RecordCurse(destGUID, destName, spellID, now)
+    elseif spellID == SPELL.CURSE_CHAIN
+        and (subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_DAMAGE") then
+        RecordCurseTransfer(sourceName, destGUID, destName, now)
+    elseif (spellID == SPELL.CURSE_DIRECT or spellID == SPELL.CURSE_CHAIN)
+        and subEvent == "SPELL_AURA_REMOVED" then
+        state.curses[destGUID] = nil
+    elseif spellID == SPELL.CORRUPTING_STRIKE
+        and (subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_DAMAGE") then
+        RecordStrike(now)
+    elseif spellID == SPELL.CRAZED_RAGE
+        and (subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_APPLIED_DOSE") then
+        local amount = select(13, ...)
+        state.rageAt = state.rageAt or now
+        state.rageStack = tonumber(amount) or math.max(1, state.rageStack + 1)
+        if not state.finalStartedAt then
+            state.finalStartedAt = now
+            state.firstThreshold = "狂暴侧"
+            AddPending("push", now, Profile().responseWindow, 3, "sync", 7,
+                "疯狂怒火出现后没有立即下达双边推进口令")
+        end
+    elseif WILD_MAGIC[spellID] and subEvent == "SPELL_AURA_APPLIED" then
+        state.lastWildMagic = WILD_MAGIC[spellID] .. " → " .. ShortName(destName)
+        state.lastWildMagicAt = now
+    end
+
+    if subEvent == "SPELL_DISPEL" then
+        local extraSpellID = select(12, ...)
+        RecordDispel(extraSpellID, destName, now)
+    end
+end
+
+local function CheckBossUnit(unit)
+    if not UnitExists(unit) then return false end
+    local creatureID = CreatureID(UnitGUID(unit))
+    if creatureID == DRAGON_ID or creatureID == DEMON_ID then
+        if UnitAffectingCombat and UnitAffectingCombat(unit) then Activate("单位进入战斗") end
+        return true
+    end
+    return false
+end
+
+local function CurrentCurseStatus()
+    local now = GetTime()
+    local count = 0
+    local oldest = 0
+    for _, curse in pairs(state.curses) do
+        count = count + 1
+        oldest = math.max(oldest, now - curse.appliedAt)
+    end
+    return count, oldest
+end
+
+local function UpdateTexts()
+    if not stateText then return end
+    local roster = RosterCounts()
+    local realm = RealmCounts()
+    local curseCount, curseAge = CurrentCurseStatus()
+    local now = GetTime()
+    local healthDragon = state.health.dragon and string.format("%.1f%%", state.health.dragon) or "--"
+    local healthDemon = state.health.demon and string.format("%.1f%%", state.health.demon) or "--"
+    local nextPortal = "--"
+    if state.active and state.nextPortalMinimum then
+        nextPortal = FormatSeconds(state.nextPortalMinimum - now)
+            .. "～" .. FormatSeconds(state.nextPortalMaximum - now) .. " 秒"
+    end
+    local combatLine
+    if state.active then
+        combatLine = "战斗 " .. FormatSeconds(now - state.startedAt) .. " 秒"
+            .. "　下一门 " .. nextPortal
+            .. "　当前第 " .. state.portalNumber .. " 门"
+    else
+        combatLine = "未在战斗　下一次开战将自动清空状态并开始评分"
+    end
+    stateText:SetText(
+        "|cffffd100" .. Profile().label .. "|r　" .. combatLine .. "\n"
+        .. string.format(
+            "内场 %d 人（%dT/%dH）　外场 %dT/%dH　疲劳 %d　奥术高层 %d",
+            realm.inside, realm.insideTanks, realm.insideHealers,
+            realm.outsideTanks, realm.outsideHealers,
+            realm.exhausted, realm.highBuffet
+        ) .. "\n"
+        .. "龙 " .. healthDragon .. "　恶魔 " .. healthDemon
+        .. "　活动诅咒 " .. curseCount .. "（最长 " .. FormatSeconds(curseAge) .. " 秒）\n"
+        .. string.format(
+            "阵容识别 %dT/%dH/%dD/?%d　目标 %dT/%dH",
+            roster.TANK, roster.HEALER, roster.DAMAGER, roster.UNKNOWN,
+            Profile().tanks, Profile().healers
+        )
+    )
+    scoreText:SetText(string.format(
+        "|cff33ff99当前 %d 分|r　门组 %d　覆盖 %d　诅咒 %d　同步 %d　口令 %d",
+        OverallScore(), state.score.portal, state.score.coverage,
+        state.score.curse, state.score.sync, state.score.command
+    ))
+    if state.active then
+        reportText:SetText(
+            "点击下方口令会记录反应时间，并在开启广播时发到团队。\n"
+            .. "团长最好把龙设为目标、恶魔设为焦点，才能评分双血量同步。"
+        )
+    elseif DB.lastReport then
+        reportText:SetText(DB.lastReport.text)
+    else
+        reportText:SetText("暂无复盘。进入卡雷苟斯战斗后自动开始。")
+    end
+    if profileButton then profileButton:SetText("模式：" .. Profile().label) end
+    if broadcastButton then broadcastButton:SetText("口令广播：" .. (DB.broadcast and "开" or "关")) end
+end
+
+local function CreateButton(parent, label, x, y, width, onClick)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetWidth(width or 142)
+    button:SetHeight(25)
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    button:SetText(label)
+    button:SetScript("OnClick", onClick)
+    return button
+end
+
+frame = CreateFrame("Frame", "KajigeKalecgosCommandCoach", UIParent)
+frame:SetWidth(660)
+frame:SetHeight(520)
+frame:SetPoint("CENTER", UIParent, "CENTER", 315, 5)
+frame:SetMovable(true)
+frame:EnableMouse(true)
+frame:RegisterForDrag("LeftButton")
+frame:SetScript("OnDragStart", frame.StartMoving)
+frame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, _, relativePoint, x, y = self:GetPoint()
+    DB.point = {point, relativePoint, x, y}
+end)
+frame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true,
+    tileSize = 32,
+    edgeSize = 32,
+    insets = {left = 11, right = 12, top = 12, bottom = 11},
+})
+if DB.point then
+    frame:ClearAllPoints()
+    frame:SetPoint(DB.point[1], UIParent, DB.point[2], DB.point[3], DB.point[4])
+end
+frame:Hide()
+
+local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+title:SetPoint("TOPLEFT", frame, "TOPLEFT", 22, -18)
+title:SetText("卡雷苟斯 · 团长指挥训练台")
+local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+
+stateText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+stateText:SetPoint("TOPLEFT", frame, "TOPLEFT", 22, -54)
+stateText:SetWidth(616)
+stateText:SetHeight(96)
+stateText:SetJustifyH("LEFT")
+stateText:SetJustifyV("TOP")
+
+scoreText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+scoreText:SetPoint("TOPLEFT", frame, "TOPLEFT", 22, -150)
+scoreText:SetWidth(616)
+scoreText:SetJustifyH("LEFT")
+
+local actionOrder = {
+    {"ready", "1 门组准备"}, {"enter", "2 授权进门"},
+    {"tank", "3 内坦减伤"}, {"curse", "4 诅咒隔离"},
+    {"dispel", "5 允许驱散"}, {"outstop", "6 外停内打"},
+    {"instop", "7 内停外打"}, {"push", "8 双边推进"},
+}
+for index, definition in ipairs(actionOrder) do
+    local column = (index - 1) % 4
+    local row = math.floor((index - 1) / 4)
+    local actionKind = definition[1]
+    CreateButton(frame, definition[2], 22 + (column * 155), -180 - (row * 32), 145, function()
+        RecordCall(actionKind)
+        UpdateTexts()
+    end)
+end
+
+local divider = frame:CreateTexture(nil, "ARTWORK")
+divider:SetTexture(1, 1, 1, 0.18)
+divider:SetWidth(616)
+divider:SetHeight(1)
+divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 22, -250)
+
+reportText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+reportText:SetPoint("TOPLEFT", frame, "TOPLEFT", 22, -264)
+reportText:SetWidth(616)
+reportText:SetHeight(168)
+reportText:SetJustifyH("LEFT")
+reportText:SetJustifyV("TOP")
+
+profileButton = CreateButton(frame, "", 22, -448, 205, function()
+    if state.active then
+        Print("战斗中已锁定评分模式；脱战后再切换。", true)
+        return
+    end
+    local current = 1
+    for index, key in ipairs(profileOrder) do if key == DB.profile then current = index break end end
+    DB.profile = profileOrder[(current % #profileOrder) + 1]
+    Print("训练模式切换为：" .. Profile().label .. "。")
+    UpdateTexts()
+end)
+broadcastButton = CreateButton(frame, "", 235, -448, 160, function()
+    DB.broadcast = not DB.broadcast
+    Print("口令广播已" .. (DB.broadcast and "开启" or "关闭") .. "。")
+    UpdateTexts()
+end)
+CreateButton(frame, "阵容检查", 403, -448, 110, function() AuditRoster(false) UpdateTexts() end)
+CreateButton(frame, "显示复盘", 521, -448, 117, function()
+    if DB.lastReport then Print(DB.lastReport.text) else Print("暂无复盘。", true) end
+end)
+
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+eventFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
+eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
+eventFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
+eventFrame:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+eventFrame:SetScript("OnEvent", function(_, event, ...)
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        HandleCombatLog(...)
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        CheckBossUnit("target")
+        CheckBossUnit("focus")
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        if state.active then EndEncounter(false) end
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        CheckBossUnit("target")
+    elseif event == "PLAYER_FOCUS_CHANGED" then
+        CheckBossUnit("focus")
+    elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+        RefreshRosterRoles()
+    elseif event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" then
+        for index = 1, 4 do CheckBossUnit("boss" .. index) end
+    end
+end)
+
+eventFrame:SetScript("OnUpdate", function(_, elapsed)
+    uiElapsed = uiElapsed + elapsed
+    rosterElapsed = rosterElapsed + elapsed
+    healthElapsed = healthElapsed + elapsed
+    local now = GetTime()
+    if state.active then
+        ProcessPendingChecks(now)
+        if state.nextPortalMinimum and state.nextPortalWarnedFor ~= state.portalNumber + 1
+            and state.nextPortalMinimum - now <= 5
+            and state.nextPortalMaximum - now > -2 then
+            state.nextPortalWarnedFor = state.portalNumber + 1
+            RaidNotice("下一门 5 秒内：点击“门组准备”并核对疲劳", 2)
+        end
+        if state.currentPortal and not state.currentPortal.finalized
+            and now >= state.currentPortal.startedAt + Profile().portalWindow then
+            FinalizePortal(state.currentPortal)
+        end
+        for guid, expiresAt in pairs(state.exhaustion) do
+            if expiresAt <= now then state.exhaustion[guid] = nil end
+        end
+        if healthElapsed >= 0.4 then
+            healthElapsed = 0
+            UpdateBossHealth()
+        end
+        if rosterElapsed >= 3 then
+            rosterElapsed = 0
+            AuditRoster(true)
+        end
+    end
+    if uiElapsed >= 0.25 then
+        uiElapsed = 0
+        if frame:IsShown() then UpdateTexts() end
+    end
+end)
+
+local slashAliases = {
+    ready = "ready", door = "ready", men = "ready", ["门"] = "ready", ["准备"] = "ready",
+    enter = "enter", go = "enter", ["进门"] = "enter",
+    tank = "tank", ["坦克"] = "tank", ["减伤"] = "tank",
+    curse = "curse", ["诅咒"] = "curse", ["隔离"] = "curse",
+    dispel = "dispel", ["驱散"] = "dispel",
+    out = "outstop", outstop = "outstop", ["外停"] = "outstop",
+    inside = "instop", instop = "instop", ["内停"] = "instop",
+    push = "push", ["推进"] = "push", ["斩杀"] = "push",
+}
+
+SLASH_KAJIGESWCALL1 = "/swcall"
+SlashCmdList.KAJIGESWCALL = function(message)
+    local command = string.lower(string.match(message or "", "^%s*(%S+)") or "")
+    local kind = slashAliases[command]
+    if kind then
+        RecordCall(kind)
+        UpdateTexts()
+    else
+        Print("口令：/swcall ready|enter|tank|curse|dispel|out|inside|push")
+    end
+end
+
+SLASH_KAJIGESWROLE1 = "/swrole"
+SlashCmdList.KAJIGESWROLE = function(message)
+    local name, roleText = string.match(message or "", "^%s*(%S+)%s+(%S+)%s*$")
+    if not name or not roleText then
+        Print("用法：/swrole 玩家名 坦克|治疗|输出；/swrole 玩家名 clear")
+        return
+    end
+    if string.lower(roleText) == "clear" or roleText == "清除" then
+        DB.manualRoles[ShortName(name)] = nil
+        Print("已清除 " .. ShortName(name) .. " 的手动职责。")
+    else
+        local role = NormalizeRole(roleText)
+        if not role then
+            Print("无法识别职责；请使用坦克、治疗或输出。", true)
+            return
+        end
+        DB.manualRoles[ShortName(name)] = role
+        Print("已将 " .. ShortName(name) .. " 标记为 " .. roleText .. "。")
+    end
+    RefreshRosterRoles()
+    UpdateTexts()
+end
+
+SLASH_KAJIGESWKALEC1 = "/swkalec"
+SlashCmdList.KAJIGESWKALEC = function(message)
+    local command = string.lower(string.match(message or "", "^%s*(%S+)") or "")
+    if command == "reset" then
+        state = NewState()
+        Print("本轮状态和临时评分已重置。")
+        UpdateTexts()
+    elseif command == "report" then
+        if DB.lastReport then Print(DB.lastReport.text) else Print("暂无复盘。", true) end
+    elseif command == "audit" then
+        AuditRoster(false)
+    elseif command == "broadcast" then
+        DB.broadcast = not DB.broadcast
+        Print("口令广播已" .. (DB.broadcast and "开启" or "关闭") .. "。")
+    elseif command == "hide" then
+        frame:Hide()
+    else
+        if frame:IsShown() then frame:Hide() else frame:Show() UpdateTexts() end
+    end
+end
+
+function KajigeKalecgosCoach_Show()
+    frame:Show()
+    UpdateTexts()
+end
+
+function KajigeKalecgosCoach_SetProfile(profile)
+    if not profiles[profile] then return false end
+    if state.active and DB.profile ~= profile then
+        frame:Show()
+        Print("战斗中已锁定评分模式；本轮结束后再切换。", true)
+        return false
+    end
+    DB.profile = profile
+    frame:Show()
+    UpdateTexts()
+    return true
+end
+
+function KajigeKalecgosCoach_KeyCall(kind)
+    RecordCall(kind)
+    UpdateTexts()
+end
+
+BINDING_HEADER_KAJIGE_KALEC = "卡雷苟斯团长指挥"
+BINDING_NAME_KAJIGE_KALEC_READY = "门组准备"
+BINDING_NAME_KAJIGE_KALEC_ENTER = "授权进门"
+BINDING_NAME_KAJIGE_KALEC_TANK = "内坦减伤"
+BINDING_NAME_KAJIGE_KALEC_CURSE = "诅咒隔离"
+BINDING_NAME_KAJIGE_KALEC_DISPEL = "允许驱散"
+BINDING_NAME_KAJIGE_KALEC_OUTSTOP = "外场停手"
+BINDING_NAME_KAJIGE_KALEC_INSTOP = "内场停手"
+BINDING_NAME_KAJIGE_KALEC_PUSH = "双边推进"
+
+KajigeKalecgosCoach = {
+    spells = SPELL,
+    wildMagic = WILD_MAGIC,
+    profiles = profiles,
+    show = KajigeKalecgosCoach_Show,
+    call = RecordCall,
+    activate = Activate,
+    finish = EndEncounter,
+    combat = HandleCombatLog,
+    update = function(elapsed) eventFrame:GetScript("OnUpdate")(eventFrame, elapsed) end,
+    audit = AuditRoster,
+    snapshot = function()
+        return {
+            active = state.active,
+            portalNumber = state.portalNumber,
+            score = OverallScore(),
+            categoryScore = state.score,
+            metrics = state.metrics,
+            health = state.health,
+            report = state.lastReport or (DB.lastReport and DB.lastReport.text),
+        }
+    end,
+    reset = function() state = NewState() UpdateTexts() end,
+}
+
+RefreshRosterRoles()
+UpdateTexts()

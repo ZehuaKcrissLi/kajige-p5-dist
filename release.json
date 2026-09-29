@@ -1,0 +1,161 @@
+{
+  "product": "咔鸡哥 P5 团本训练服",
+  "version": "1.4.13",
+  "published_at": "2026-09-29T12:39:30Z",
+  "server": "mac-mini.tail4182c5.ts.net",
+  "macos_notarized": false,
+  "client_included": false,
+  "windows_hotfix": "signed-auto-mirror-icon-v1.4.13",
+  "client_snapshot": {
+    "delivery": "backup-only",
+    "hosted_by_project": true,
+    "source_page": "https://chromiecraft.com/en/downloads/",
+    "file": "Kajige-P5-Client-3.3.5a.zip",
+    "url": "https://mac-mini.tail4182c5.ts.net/Kajige-P5-Client-3.3.5a.zip",
+    "size": 17124904828,
+    "sha256": "2bf5cc5b33b86fad1b24c064ccb0d4b2d0cccc37b92ce7fddf95854d1a580cbd"
+  },
+  "client_sources": [
+    {
+      "priority": 1,
+      "kind": "bittorrent-gameivy-52pk-upstream",
+      "source_page": "https://wow.gameivy.com/",
+      "source_archive": "https://wow.gameivy.com/zhCN/WoW_v3.3.5_zhCN.zip",
+      "torrent_url": "/Kajige-3.3.5a-zhCN-52PK-upstream.torrent",
+      "magnet": "magnet:?xt=urn:btih:1667767f7432b33cb6411c29b1a1dbc17b59a6e8&dn=%5B52PK%5D%E9%AD%94%E5%85%BD%E4%B8%96%E7%95%8C%EF%BC%9A%E5%B7%AB%E5%A6%96%E7%8E%8B%E4%B9%8B%E6%80%92&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce",
+      "info_hash": "1667767f7432b33cb6411c29b1a1dbc17b59a6e8",
+      "size": 17475079297,
+      "includes_replacement_wow": false,
+      "verification": "4167-piece-hashes-verified"
+    },
+    {
+      "priority": 2,
+      "kind": "bittorrent-zhcn-cross-seed-enhanced",
+      "torrent_url": "/Kajige-3.3.5a-zhCN-12340.torrent",
+      "magnet": "magnet:?xt=urn:btih:1cd47a5a9d2450faca2dbbb632e80a00f566cfcc&dn=%5B52PK%5D%E9%AD%94%E5%85%BD%E4%B8%96%E7%95%8C%EF%BC%9A%E5%B7%AB%E5%A6%96%E7%8E%8B%E4%B9%8B%E6%80%92&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce",
+      "info_hash": "1cd47a5a9d2450faca2dbbb632e80a00f566cfcc",
+      "build": 12340,
+      "includes_replacement_wow": true,
+      "cross_seed_source_info_hash": "1667767f7432b33cb6411c29b1a1dbc17b59a6e8",
+      "shared_prefix_pieces": 4166,
+      "verification": "rar-crc-and-exact-size-sha256-client-baseline",
+      "seeder": "haoe-windows"
+    },
+    {
+      "priority": 3,
+      "kind": "baidu-zhcn-manual-import",
+      "source_page": "https://forum.azerothcore.cn/forum.php?mod=viewthread&tid=1",
+      "client_url": "https://pan.baidu.com/s/1NFdBat5W5r-6xfEKdUUofA?pwd=1qcs",
+      "client_code": "1qcs",
+      "replacement_wow_url": "https://pan.baidu.com/s/1UOqihWs5pbFvDJC4YQeJag?pwd=ryry",
+      "replacement_wow_code": "ryry",
+      "build": 12340,
+      "verification": "exact-size-sha256-client-baseline"
+    },
+    {
+      "priority": 4,
+      "kind": "https-public-upstream",
+      "url": "https://btground.dedyn.io/chmi/ChromieCraft_3.3.5a.zip",
+      "size": 17674749792,
+      "verification": "zip-crc-and-client-baseline"
+    },
+    {
+      "priority": 5,
+      "kind": "bittorrent-public-upstream",
+      "url": "magnet:?xt=urn:btih:2ba2833baf733ce0a16040d43ed09491f2bf2ab2&dn=ChromieCraft_3.3.5a.zip&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce",
+      "size": 17674749792,
+      "info_hash": "2ba2833baf733ce0a16040d43ed09491f2bf2ab2"
+    },
+    {
+      "priority": 6,
+      "kind": "project-backup-snapshot",
+      "url": "https://mac-mini.tail4182c5.ts.net/Kajige-P5-Client-3.3.5a.zip",
+      "size": 17124904828,
+      "sha256": "2bf5cc5b33b86fad1b24c064ccb0d4b2d0cccc37b92ce7fddf95854d1a580cbd"
+    }
+  ],
+  "artifacts": [
+    {
+      "platform": "windows",
+      "format": "zip",
+      "file": "Kajige-P5-Raid-Trainer-Windows-v1.4.13-p6-cn2-20260929.zip",
+      "url": "/Kajige-P5-Raid-Trainer-Windows-v1.4.13-p6-cn2-20260929.zip",
+      "size": 13970215,
+      "sha256": "3fb0f6e7aaa06639cec5e1b700187b7e99ba3ed695b677ba3fff1726bf6b1264"
+    },
+    {
+      "platform": "macos",
+      "format": "dmg",
+      "file": "Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.dmg",
+      "url": "/Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.dmg",
+      "size": 29848869,
+      "sha256": "463b3e8ecc0f23caa98cd7754829b58d35538bfa705df1e2beec2a8834958c5d"
+    },
+    {
+      "platform": "macos",
+      "format": "zip",
+      "file": "Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.zip",
+      "url": "/Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.zip",
+      "size": 27263120,
+      "sha256": "0d2ba8cf18dcd339e1d08b29936dc8667ea2a596836477890b5104c15ea57424"
+    },
+    {
+      "platform": "shared",
+      "format": "resources",
+      "file": "Kajige-P5-Resources-v1.4.13.zip",
+      "url": "/Kajige-P5-Resources-v1.4.13.zip",
+      "size": 121911246,
+      "sha256": "a93a4b2af46d497b3478000895e9763e1104d12faeeefce9cb57114cb72f6609"
+    }
+  ],
+  "update_feed": {
+    "schema": 2,
+    "manifest": "/updates/stable/manifest-v2.json",
+    "signature": "/updates/stable/manifest-v2.json.sig",
+    "signature_algorithm": "Ed25519",
+    "public_key_base64": "vfISGrdLpXz0qOBklbyNdSEUkMygTtrl9XGygtt2RrI=",
+    "base_client_policy": "install-once"
+  },
+  "client_source_feed": {
+    "schema": 1,
+    "manifest": "/client-sources-v1.json",
+    "signature": "/client-sources-v1.json.sig",
+    "signature_algorithm": "Ed25519",
+    "policy": "background-auto-select"
+  },
+  "china_mirrors": {
+    "schema": 1,
+    "policy": "official-first-then-accelerated-github",
+    "note": "大陆加速源只改变下载线路；每个文件仍按固定 SHA-256 与 Ed25519 签名校验。",
+    "repository": "ZehuaKcrissLi/kajige-p5-dist",
+    "manifest_repository": "ZehuaKcrissLi/kajige-p5-feed",
+    "repository_ref": "main",
+    "release_tag": "v1.4.13-p6-cn2-20260929",
+    "release_page": "https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.13-p6-cn2-20260929",
+    "release_asset_base": "https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.13-p6-cn2-20260929",
+    "repository_raw_base": "https://raw.githubusercontent.com/ZehuaKcrissLi/kajige-p5-dist/main",
+    "manifest_repository_raw_base": "https://raw.githubusercontent.com/ZehuaKcrissLi/kajige-p5-feed/main",
+    "github_accelerators": [
+      "https://gh-proxy.com/",
+      "https://gh.llkk.cc/",
+      "https://cdn.gh-proxy.com/",
+      "https://ghfast.top/",
+      "https://ghproxy.net/"
+    ],
+    "jsdelivr_endpoints": [
+      "https://jsd.onmicrosoft.cn",
+      "https://cdn.jsdelivr.net",
+      "https://fastly.jsdelivr.net",
+      "https://gcore.jsdelivr.net"
+    ],
+    "jsdelivr_max_bytes": 20971520,
+    "release_asset_extensions": [
+      ".zip",
+      ".dmg",
+      ".exe",
+      ".torrent"
+    ],
+    "jsdelivr_scope": "manifest-repository-only",
+    "jsdelivr_scope_note": "jsDelivr 对整仓体积有 50 MB 上限，两百多兆的增量数据块只走 GitHub 反向代理。"
+  }
+}

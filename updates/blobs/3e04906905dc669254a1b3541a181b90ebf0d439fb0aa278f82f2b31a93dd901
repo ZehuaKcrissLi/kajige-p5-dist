@@ -1,0 +1,10 @@
+## Interface: 30300
+## Title: |cffffd200咔鸡哥训练服|r 中文审校与缺口审计
+## Notes: 翻译已知服务端文本，保留未知原文并安全记录功能性界面的未汉化缺口
+## Author: 咔鸡哥 P5 团本训练服
+## Version: 2026.07.29.3
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: KajigeUntranslatedAuditDB
+
+KajigeChineseGuard.lua

@@ -1,0 +1,15 @@
+740bb4647f2d04a3498f3a2b65049f498a5db1db7eb7467e593e8c8215f5d1d6  ./Kajige-3.3.5a-zhCN-12340.torrent
+5160b6fa8437d2cdbb2056e6eecee628a7f630c37517ec30e90eb36705cf204e  ./Kajige-3.3.5a-zhCN-52PK-upstream.torrent
+463b3e8ecc0f23caa98cd7754829b58d35538bfa705df1e2beec2a8834958c5d  ./Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.dmg
+0d2ba8cf18dcd339e1d08b29936dc8667ea2a596836477890b5104c15ea57424  ./Kajige-P5-Raid-Trainer-Mac-v1.4.13-p6-x87-cn2-20260929.zip
+3fb0f6e7aaa06639cec5e1b700187b7e99ba3ed695b677ba3fff1726bf6b1264  ./Kajige-P5-Raid-Trainer-Windows-v1.4.13-p6-cn2-20260929.zip
+a93a4b2af46d497b3478000895e9763e1104d12faeeefce9cb57114cb72f6609  ./Kajige-P5-Resources-v1.4.13.zip
+605a4343107f538a5a9480a8229ad8f414fa93023cac9bda0108b0ca56d9bc16  ./assets/kajige-emblem.png
+46a586d4ccdbfaab2b1c4b38aba332661b61d0b2aa047235f4ea0b10b422ff94  ./assets/site.css
+ab4348a33334adbc1189321d47d45d1c41e13797e7717b01738633d883d653f5  ./assets/site.js
+0d5e695d6ce72fe2b8bca17fd74e870d88902e22c99139e0a4d74a4c8106c0a1  ./client-sources-v1.json
+09fa26242cba2316a3a5cc27ec904edea3b24b85fc6e93a6bd42f69a0b8182a2  ./client-sources-v1.json.sig
+476538b352b5503e31cdae3aeb77a7b02a431e2e0bb4e70266f638f6f7f53698  ./index.html
+1bc40232bf7c1cffb70c4a57dbf0494eb886f5525e5a5c2647e463bb5b7899c3  ./install-mac.sh
+d80adc98af6e5132f869dd17c085b90b01f541e4f34713c50be0f42947b55817  ./internal/KajigeClientMirrorServer-windows-amd64.exe
+d6262918e5b4f5d551a7f49c0604da78fad05ecf20f492097e3bc32347ec5805  ./release.json

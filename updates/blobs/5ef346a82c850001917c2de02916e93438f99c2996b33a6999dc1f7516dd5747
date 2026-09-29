@@ -1,0 +1,21 @@
+-- 1.0 安装器已要求合法的 zhCN build 12340 客户端。
+-- 这里仍提前固定简体中文，保证所有受管插件选择 zhCN 表。
+if type(SunwellTrainerOriginalGetLocale) ~= "function" then
+    SunwellTrainerOriginalGetLocale = GetLocale
+end
+
+function GetLocale()
+    return "zhCN"
+end
+
+GAME_LOCALE = "zhCN"
+
+-- 部分游戏内界面会在完整汉化表载入前缓存全局字符串，因此先写入常用中文值。
+GENERAL = "综合"
+COMBAT_LOG = "战斗记录"
+FRIENDS_LIST_ONLINE = "在线"
+FRIENDS = "好友"
+DURABILITY = "耐久度"
+INTERFACE_ACTION_BLOCKED = "插件导致界面行为失效"
+CHAT_YOU_JOINED_NOTICE = "你已经加入频道[%d. %s]。"
+CHAT_YOU_LEFT_NOTICE = "你已经离开频道[%d. %s]。"

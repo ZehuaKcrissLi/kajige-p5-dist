@@ -1,0 +1,13 @@
+# Changelog
+
+> **版本号 SSOT 原则**：本文件版本段应与 `Rurutia_Wrath.toc` 的 `## Version` 字段保持一致。
+
+---
+
+## v1.1.5 (2026-06-06)
+
+### 修复
+
+- `Rurutia_Wrath.toc` 的 `## Interface` 补充 Titan / Wrath Classic 当前本机版本 `38001`，保留旧兼容值 `30403, 30800`。
+- toc `## Version` 从 `1.1.4` 升至 `1.1.5`。
+

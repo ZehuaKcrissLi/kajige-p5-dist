@@ -1,0 +1,434 @@
+local addonName = ...
+
+SunwellTrainerDB = SunwellTrainerDB or {}
+
+SetCVar("showTutorials", "0")
+if TutorialFrame then
+    TutorialFrame:Hide()
+end
+
+local queue = {}
+local elapsed = 0
+
+local function systemMessage(message, errorColor)
+    local color = errorColor and "|cffff5555" or "|cff33ff99"
+    DEFAULT_CHAT_FRAME:AddMessage(color .. "咔鸡哥训练服：|r " .. message)
+end
+
+local function sendCommand(command)
+    SendChatMessage(command, "SAY")
+end
+
+local function groupChannel()
+    if GetNumRaidMembers() > 0 then
+        return "RAID"
+    end
+    if GetNumPartyMembers() > 0 then
+        return "PARTY"
+    end
+end
+
+local function sendGroupBotCommand(command)
+    local channel = groupChannel()
+    if not channel then
+        systemMessage("当前没有机器人队伍。", true)
+        return false
+    end
+    SendChatMessage(command, channel)
+    return true
+end
+
+local queueFrame = CreateFrame("Frame")
+queueFrame:SetScript("OnUpdate", function(self, delta)
+    if #queue == 0 then
+        return
+    end
+
+    elapsed = elapsed + delta
+    if elapsed < 0.80 then
+        return
+    end
+
+    elapsed = 0
+    local action = table.remove(queue, 1)
+    if action.kind == "bot" then
+        sendGroupBotCommand(action.command)
+    else
+        sendCommand(action.command)
+    end
+end)
+
+local function queueCommand(command)
+    table.insert(queue, { kind = "server", command = command })
+end
+
+local function queueBotCommand(command)
+    table.insert(queue, { kind = "bot", command = command })
+end
+
+local function queueCommands(commands)
+    for _, command in ipairs(commands) do
+        queueCommand(command)
+    end
+end
+
+local function currentGroupSize()
+    local raidCount = GetNumRaidMembers()
+    if raidCount and raidCount > 0 then
+        local onlineCount = 0
+        for index = 1, raidCount do
+            local _, _, _, _, _, _, _, online = GetRaidRosterInfo(index)
+            if online then
+                onlineCount = onlineCount + 1
+            end
+        end
+        return math.max(onlineCount, 1)
+    end
+
+    local onlineCount = 1
+    for index = 1, (GetNumPartyMembers() or 0) do
+        if UnitIsConnected("party" .. index) then
+            onlineCount = onlineCount + 1
+        end
+    end
+    return onlineCount
+end
+
+local balancedRoster = {
+    "warrior", "paladin", "priest", "shaman", "druid",
+    "warrior", "paladin", "priest", "shaman", "hunter",
+    "paladin", "priest", "shaman", "druid", "mage",
+    "paladin", "hunter", "mage", "warlock", "rogue",
+    "deathknight", "warlock", "rogue", "deathknight"
+}
+
+local classCommand = {
+    deathknight = "dk"
+}
+
+local function fillRoster(targetSize)
+    local current = currentGroupSize()
+    if targetSize <= current then
+        systemMessage("当前已有 " .. current .. " 人；如需缩编，请先点击“清空机器人”。", true)
+        return
+    end
+
+    local needed = targetSize - current
+    local nextRosterIndex = ((current - 1) % #balancedRoster) + 1
+    if current == 1 then
+        local firstClass = balancedRoster[1]
+        queueCommand(".playerbots bot addclass " .. (classCommand[firstClass] or firstClass))
+        queueCommand(".swp raid")
+        needed = needed - 1
+        nextRosterIndex = 2
+    elseif GetNumRaidMembers() == 0 then
+        queueCommand(".swp raid")
+    end
+
+    for index = 1, needed do
+        local rosterIndex = ((nextRosterIndex + index - 2) % #balancedRoster) + 1
+        local className = balancedRoster[rosterIndex]
+        queueCommand(".playerbots bot addclass " .. (classCommand[className] or className))
+    end
+    systemMessage("正在把团队补到 " .. targetSize .. " 人；无需先邀请朋友。")
+end
+
+local function clearBots()
+    queue = {}
+    if sendGroupBotCommand("logout") then
+        systemMessage("已要求全部机器人退出；真人队友不会受到影响。")
+    end
+end
+
+local function applyP4Gear()
+    queueCommand(".swp t9")
+    systemMessage("正在为全部在线团员原子化套用 T9 232 五件套；其余部位保留 238 以内训练装。")
+end
+
+local panel = CreateFrame("Frame", "SunwellTrainerPanel", UIParent)
+panel:SetWidth(430)
+panel:SetHeight(700)
+panel:SetPoint("CENTER", UIParent, "CENTER", 0, 12)
+panel:SetMovable(true)
+panel:EnableMouse(true)
+panel:RegisterForDrag("LeftButton")
+panel:SetScript("OnDragStart", panel.StartMoving)
+panel:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, _, relativePoint, x, y = self:GetPoint()
+    SunwellTrainerDB.point = { point, relativePoint, x, y }
+end)
+panel:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true,
+    tileSize = 32,
+    edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 }
+})
+
+if SunwellTrainerDB.point then
+    panel:ClearAllPoints()
+    panel:SetPoint(
+        SunwellTrainerDB.point[1],
+        UIParent,
+        SunwellTrainerDB.point[2],
+        SunwellTrainerDB.point[3],
+        SunwellTrainerDB.point[4]
+    )
+end
+
+local emblem = panel:CreateTexture(nil, "ARTWORK")
+emblem:SetTexture("Interface\\AddOns\\SunwellTrainer\\Media\\KajigeEmblem")
+emblem:SetWidth(54)
+emblem:SetHeight(54)
+emblem:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, -12)
+
+local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+title:SetPoint("TOPLEFT", panel, "TOPLEFT", 78, -20)
+title:SetText("咔鸡哥 P5 团本训练服")
+
+local subtitle = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+subtitle:SetText("太阳井 · 祖阿曼25人 · 单人+机器人自由训练")
+
+local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -5, -5)
+
+local function createButton(text, x, y, width, command, onClick)
+    local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    button:SetWidth(width or 92)
+    button:SetHeight(24)
+    button:SetPoint("TOPLEFT", panel, "TOPLEFT", x, y)
+    button:SetText(text)
+    button:SetScript("OnClick", onClick or function()
+        sendCommand(command)
+    end)
+    return button
+end
+
+local function createLabel(text, y)
+    local label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", panel, "TOPLEFT", 18, y)
+    label:SetText(text)
+    return label
+end
+
+createLabel("太阳之井高地", -70)
+createButton("卡雷苟斯", 18, -90, 92, ".swp kalecgos")
+createButton("布鲁塔卢斯", 118, -90, 92, ".swp brutallus")
+createButton("菲米丝", 218, -90, 92, ".swp felmyst")
+createButton("艾瑞达双子", 318, -90, 92, ".swp twins")
+createButton("穆鲁", 18, -120, 92, ".swp muru")
+createButton("基尔加丹", 118, -120, 92, ".swp kiljaeden")
+createButton("全团恢复", 218, -120, 92, ".swp ready")
+createButton("重置首领", 318, -120, 92, ".swp reset")
+
+createLabel("祖阿曼 25 人（原机制，训练输出倍率可调）", -156)
+createButton("埃基尔松", 18, -176, 92, ".swp za akilzon")
+createButton("纳洛拉克", 118, -176, 92, ".swp za nalorakk")
+createButton("加亚莱", 218, -176, 92, ".swp za janalai")
+createButton("哈尔拉兹", 318, -176, 92, ".swp za halazzi")
+createButton("玛拉卡斯", 18, -206, 92, ".swp za malacrass")
+createButton("祖尔金", 118, -206, 92, ".swp za zuljin")
+createButton("40% 推荐", 218, -206, 92, ".swp za scale 40")
+createButton("100% 原值", 318, -206, 92, ".swp za scale 100")
+
+createLabel("训练与 P4/T9 配装", -242)
+createButton("角色准备", 18, -262, 92, ".swp prepare")
+createButton("P4/T9 全团", 118, -262, 92, nil, applyP4Gear)
+createButton("25% 承伤", 218, -262, 92, ".swp damage 25")
+createButton("100% 承伤", 318, -262, 92, ".swp damage 100")
+
+createLabel("团队人数：单人可直接补机器人到目标人数", -298)
+createButton("5 人", 18, -318, 72, nil, function() fillRoster(5) end)
+createButton("10 人", 98, -318, 72, nil, function() fillRoster(10) end)
+createButton("15 人", 178, -318, 72, nil, function() fillRoster(15) end)
+createButton("20 人", 258, -318, 72, nil, function() fillRoster(20) end)
+createButton("25 人", 338, -318, 72, nil, function() fillRoster(25) end)
+createButton("清空机器人", 18, -348, 192, nil, clearBots)
+createButton("停止命令队列", 218, -348, 192, nil, function()
+    queue = {}
+    systemMessage("命令队列已停止。")
+end)
+
+createLabel("自由追加职业", -384)
+createButton("+ 战士", 18, -404, 72, ".playerbots bot addclass warrior")
+createButton("+ 骑士", 98, -404, 72, ".playerbots bot addclass paladin")
+createButton("+ 牧师", 178, -404, 72, ".playerbots bot addclass priest")
+createButton("+ 萨满", 258, -404, 72, ".playerbots bot addclass shaman")
+createButton("+ 德鲁伊", 338, -404, 72, ".playerbots bot addclass druid")
+createButton("+ 猎人", 18, -434, 72, ".playerbots bot addclass hunter")
+createButton("+ 法师", 98, -434, 72, ".playerbots bot addclass mage")
+createButton("+ 术士", 178, -434, 72, ".playerbots bot addclass warlock")
+createButton("+ 盗贼", 258, -434, 72, ".playerbots bot addclass rogue")
+createButton("+ 死骑", 338, -434, 72, ".playerbots bot addclass dk")
+
+createLabel("机器人走位与目标控制（广播给全部机器人）", -470)
+createButton("跟随我", 18, -490, 92, nil, function() sendGroupBotCommand("follow") end)
+createButton("原地待命", 118, -490, 92, nil, function() sendGroupBotCommand("stay") end)
+createButton("攻击目标", 218, -490, 92, nil, function() sendGroupBotCommand("attack my target") end)
+createButton("拉取目标", 318, -490, 92, nil, function() sendGroupBotCommand("pull my target") end)
+
+createLabel("目标机器人属性（未选目标时作用于全部同伴）", -526)
+createButton("属性 80%", 18, -546, 92, ".swp bot stats 80")
+createButton("属性 100%", 118, -546, 92, ".swp bot stats 100")
+createButton("属性 120%", 218, -546, 92, ".swp bot stats 120")
+createButton("属性 150%", 318, -546, 92, ".swp bot stats 150")
+createButton("开启无敌", 18, -576, 92, ".swp bot god 1")
+createButton("关闭无敌", 118, -576, 92, ".swp bot god 0")
+createButton("配置目标天赋", 218, -576, 192, nil, function()
+    if not UnitExists("target") or not UnitIsPlayer("target") then
+        systemMessage("请先选中团队中的一个机器人。", true)
+        return
+    end
+    SunwellTrainer_ShowBotSpec(UnitName("target"), select(2, UnitClass("target")))
+end)
+
+local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+footer:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 18, 18)
+footer:SetText("提示：真人可随时加入；密语、公会与公共频道均为完整世界功能。")
+
+local botSpecs = {
+    WARRIOR = {
+        { "武器", "arms pve" }, { "狂暴", "fury pve" }, { "防护", "prot pve" }
+    },
+    PALADIN = {
+        { "神圣", "holy pve" }, { "防护", "prot pve" }, { "惩戒", "ret pve" }
+    },
+    HUNTER = {
+        { "兽王", "bm pve" }, { "射击", "mm pve" }, { "生存", "surv pve" }
+    },
+    ROGUE = {
+        { "刺杀", "as pve" }, { "战斗", "combat pve" }, { "敏锐", "subtlety pve" }
+    },
+    PRIEST = {
+        { "戒律", "disc pve" }, { "神圣", "holy pve" }, { "暗影", "shadow pve" }
+    },
+    DEATHKNIGHT = {
+        { "鲜血", "blood pve" }, { "冰霜", "frost pve" }, { "邪恶", "unholy pve" }
+    },
+    SHAMAN = {
+        { "元素", "ele pve" }, { "增强", "enh pve" }, { "恢复", "resto pve" }
+    },
+    MAGE = {
+        { "奥术", "arcane pve" }, { "火焰", "fire pve" }, { "冰霜", "frost pve" }
+    },
+    WARLOCK = {
+        { "痛苦", "affli pve" }, { "恶魔", "demo pve" }, { "毁灭", "destro pve" }
+    },
+    DRUID = {
+        { "平衡", "balance pve" }, { "熊坦", "bear pve" },
+        { "恢复", "resto pve" }, { "猫德", "cat pve" }
+    }
+}
+
+local botSpecFrame = CreateFrame("Frame", "SunwellTrainerBotSpecPanel", UIParent)
+botSpecFrame:SetWidth(350)
+botSpecFrame:SetHeight(190)
+botSpecFrame:SetPoint("LEFT", panel, "RIGHT", 8, 0)
+botSpecFrame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true,
+    tileSize = 32,
+    edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 }
+})
+botSpecFrame:Hide()
+
+local botSpecTitle = botSpecFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+botSpecTitle:SetPoint("TOP", botSpecFrame, "TOP", 0, -18)
+botSpecTitle:SetText("先选中一个机器人")
+
+local botSpecClose = CreateFrame("Button", nil, botSpecFrame, "UIPanelCloseButton")
+botSpecClose:SetPoint("TOPRIGHT", botSpecFrame, "TOPRIGHT", -5, -5)
+
+local botSpecButtons = {}
+for index = 1, 4 do
+    local button = CreateFrame("Button", nil, botSpecFrame, "UIPanelButtonTemplate")
+    button:SetWidth(74)
+    button:SetHeight(24)
+    button:SetPoint("TOPLEFT", botSpecFrame, "TOPLEFT", 18 + ((index - 1) * 80), -58)
+    button:SetScript("OnClick", function(self)
+        if botSpecFrame.botName and self.specName then
+            SendChatMessage("talents spec " .. self.specName, "WHISPER", nil, botSpecFrame.botName)
+        end
+    end)
+    botSpecButtons[index] = button
+end
+
+local botAutoGear = CreateFrame("Button", nil, botSpecFrame, "UIPanelButtonTemplate")
+botAutoGear:SetWidth(145)
+botAutoGear:SetHeight(24)
+botAutoGear:SetPoint("TOPLEFT", botSpecFrame, "TOPLEFT", 18, -94)
+botAutoGear:SetText("P4 238 自动配装")
+botAutoGear:SetScript("OnClick", function()
+    if botSpecFrame.botName then
+        SendChatMessage("autogear", "WHISPER", nil, botSpecFrame.botName)
+        queueCommand(".swp t9")
+    end
+end)
+
+local botFollow = CreateFrame("Button", nil, botSpecFrame, "UIPanelButtonTemplate")
+botFollow:SetWidth(74)
+botFollow:SetHeight(24)
+botFollow:SetPoint("TOPLEFT", botSpecFrame, "TOPLEFT", 173, -94)
+botFollow:SetText("跟随")
+botFollow:SetScript("OnClick", function()
+    if botSpecFrame.botName then
+        SendChatMessage("follow", "WHISPER", nil, botSpecFrame.botName)
+    end
+end)
+
+local botStay = CreateFrame("Button", nil, botSpecFrame, "UIPanelButtonTemplate")
+botStay:SetWidth(74)
+botStay:SetHeight(24)
+botStay:SetPoint("TOPLEFT", botSpecFrame, "TOPLEFT", 253, -94)
+botStay:SetText("待命")
+botStay:SetScript("OnClick", function()
+    if botSpecFrame.botName then
+        SendChatMessage("stay", "WHISPER", nil, botSpecFrame.botName)
+    end
+end)
+
+local botHint = botSpecFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+botHint:SetPoint("TOPLEFT", botSpecFrame, "TOPLEFT", 18, -132)
+botHint:SetWidth(314)
+botHint:SetJustifyH("LEFT")
+botHint:SetText("选中目标后，主面板的属性和无敌按钮也只作用于该目标。")
+
+function SunwellTrainer_ShowBotSpec(name, classToken)
+    local specs = botSpecs[classToken]
+    if not specs then
+        systemMessage("无法识别目标职业。", true)
+        return
+    end
+
+    botSpecFrame.botName = name
+    botSpecTitle:SetText(name .. " - PVE 天赋/装备/走位")
+    for index = 1, 4 do
+        local button = botSpecButtons[index]
+        local spec = specs[index]
+        if spec then
+            button.specName = spec[2]
+            button:SetText(spec[1])
+            button:Show()
+        else
+            button.specName = nil
+            button:Hide()
+        end
+    end
+    botSpecFrame:Show()
+end
+
+SLASH_SUNWELLTRAINER1 = "/swt"
+SlashCmdList.SUNWELLTRAINER = function()
+    if panel:IsShown() then
+        panel:Hide()
+    else
+        panel:Show()
+    end
+end
+
+systemMessage("控制台已加载；输入 /swt 可随时开关。")

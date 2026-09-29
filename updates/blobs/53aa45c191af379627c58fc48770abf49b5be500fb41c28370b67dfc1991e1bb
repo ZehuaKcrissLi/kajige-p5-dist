@@ -1,0 +1,3 @@
+if GetLocale() ~= "ptBR" then return end
+
+NotPlaterLocalesNPC = NotPlaterLocalesNPC or {}

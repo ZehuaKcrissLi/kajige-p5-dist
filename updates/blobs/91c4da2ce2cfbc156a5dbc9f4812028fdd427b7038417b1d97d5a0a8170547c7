@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: <首领预警> |cffff559a露露中文语音包|r
+## Notes: 露露中文首领预警语音资源。
+## RequiredDeps: DBM-Core
+## Author: Rurutia
+## Version: 1.3.8-legacy
+## DefaultState: enabled
+## X-DBM-Voice: 1
+## X-DBM-Voice-Name: Rurutia (露露·中文版)
+## X-DBM-Voice-ShortName: Rurutia
+## X-DBM-Voice-Version: 19
+## X-DBM-Voice-HasCount: 1

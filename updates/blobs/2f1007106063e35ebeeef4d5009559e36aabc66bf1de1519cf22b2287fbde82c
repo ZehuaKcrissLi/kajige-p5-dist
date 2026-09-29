@@ -1,0 +1,726 @@
+local exactLines = {
+    ["Binds when picked up"] = "拾取后绑定",
+    ["Binds when equipped"] = "装备后绑定",
+    ["Binds when used"] = "使用后绑定",
+    ["Soulbound"] = "灵魂绑定",
+    ["Unique"] = "唯一",
+    ["Unique-Equipped"] = "唯一装备",
+    ["Quest Item"] = "任务物品",
+    ["Conjured Item"] = "魔法制造",
+    ["Right Click to Open"] = "右键点击打开",
+    ["Right-Click to Open"] = "右键点击打开",
+    ["Sell Price:"] = "出售价格：",
+    ["Head"] = "头部",
+    ["Neck"] = "颈部",
+    ["Shoulder"] = "肩部",
+    ["Back"] = "背部",
+    ["Chest"] = "胸部",
+    ["Wrist"] = "手腕",
+    ["Hands"] = "手",
+    ["Waist"] = "腰部",
+    ["Legs"] = "腿部",
+    ["Feet"] = "脚",
+    ["Finger"] = "手指",
+    ["Trinket"] = "饰品",
+    ["One-Hand"] = "单手",
+    ["Main Hand"] = "主手",
+    ["Off Hand"] = "副手",
+    ["Two-Hand"] = "双手",
+    ["Ranged"] = "远程",
+    ["Held In Off-hand"] = "副手物品",
+    ["Cloth"] = "布甲",
+    ["Leather"] = "皮甲",
+    ["Mail"] = "锁甲",
+    ["Plate"] = "板甲",
+    ["Shield"] = "盾牌",
+    ["Dagger"] = "匕首",
+    ["Sword"] = "剑",
+    ["Axe"] = "斧",
+    ["Mace"] = "锤",
+    ["Staff"] = "法杖",
+    ["Polearm"] = "长柄武器",
+    ["Wand"] = "魔杖",
+    ["Bow"] = "弓",
+    ["Gun"] = "枪械",
+    ["Crossbow"] = "弩",
+    ["Fist Weapon"] = "拳套",
+    ["Red Socket"] = "红色插槽",
+    ["Blue Socket"] = "蓝色插槽",
+    ["Yellow Socket"] = "黄色插槽",
+    ["Meta Socket"] = "多彩插槽",
+    ["Prismatic Socket"] = "棱彩插槽",
+    ["Humanoid"] = "人型生物",
+    ["Beast"] = "野兽",
+    ["Demon"] = "恶魔",
+    ["Dragonkin"] = "龙类",
+    ["Elemental"] = "元素生物",
+    ["Giant"] = "巨人",
+    ["Mechanical"] = "机械",
+    ["Undead"] = "亡灵",
+    ["Critter"] = "小动物",
+    ["Not specified"] = "未指定",
+    ["Undercity"] = "幽暗城",
+    ["UnderCity"] = "幽暗城",
+    ["Emblem of Frost"] = "寒冰纹章",
+    ["Emblem 之冰霜"] = "寒冰纹章",
+    ["Emblem 之 冰霜"] = "寒冰纹章",
+    ["Emblem of 冰霜"] = "寒冰纹章",
+    ["Stormwind"] = "暴风城",
+    ["Ironforge"] = "铁炉堡",
+    ["Darnassus"] = "达纳苏斯",
+    ["Orgrimmar"] = "奥格瑞玛",
+    ["Thunder Bluff"] = "雷霆崖",
+    ["Silvermoon City"] = "银月城",
+    ["The Exodar"] = "埃索达",
+    ["The Sunwell"] = "太阳之井",
+    ["Apex Point"] = "巅峰平台",
+    ["Parhelion Plaza"] = "日珥广场",
+    ["Isle of Quel'Danas"] = "奎尔丹纳斯岛",
+    ["Release Spirit"] = "释放灵魂",
+    ["Resurrect now?"] = "现在复活吗？",
+    ["Combat Log"] = "战斗记录",
+    ["Okay"] = "确定",
+    ["Cancel"] = "取消",
+    ["Accept"] = "接受",
+    ["Decline"] = "拒绝",
+    ["Yes"] = "是",
+    ["No"] = "否",
+    ["Close"] = "关闭",
+    ["A macro script has been blocked from an action only available to the Blizzard UI."] =
+        "某个宏脚本尝试执行仅限暴雪界面的受保护操作，已被阻止。",
+}
+
+local worldStatePatterns = {
+    ["^Towers Controlled:%s*(.+)$"] = "已控制塔楼：%s",
+    ["^Bases Controlled:%s*(.+)$"] = "已控制基地：%s",
+    ["^Flags Captured:%s*(.+)$"] = "已夺取旗帜：%s",
+    ["^Bases Assaulted:%s*(.+)$"] = "已突袭基地：%s",
+    ["^Bases Defended:%s*(.+)$"] = "已防守基地：%s",
+    ["^Resources:%s*(.+)$"] = "资源：%s",
+    ["^Reinforcements:%s*(.+)$"] = "增援：%s",
+    ["^Victory Points:%s*(.+)$"] = "胜利点数：%s",
+    ["^Enemies Slain:%s*(.+)$"] = "消灭敌人：%s",
+    ["^Vehicles:%s*(.+)$"] = "载具：%s",
+    ["^Gates Destroyed:%s*(.+)$"] = "已摧毁大门：%s",
+    ["^Score:%s*(.+)$"] = "得分：%s",
+    ["^Time Remaining:%s*(.+)$"] = "剩余时间：%s",
+}
+
+local creatureTypes = {
+    Humanoid = "人型生物",
+    Beast = "野兽",
+    Demon = "恶魔",
+    Dragonkin = "龙类",
+    Elemental = "元素生物",
+    Giant = "巨人",
+    Mechanical = "机械",
+    Undead = "亡灵",
+    Critter = "小动物",
+    ["Not specified"] = "未指定",
+}
+
+local raceNames = {
+    ["Blood Elf"] = "血精灵",
+    ["Night Elf"] = "暗夜精灵",
+    ["Draenei"] = "德莱尼",
+    ["Dwarf"] = "矮人",
+    ["Gnome"] = "侏儒",
+    ["Human"] = "人类",
+    ["Orc"] = "兽人",
+    ["Tauren"] = "牛头人",
+    ["Troll"] = "巨魔",
+    ["Undead"] = "亡灵",
+}
+
+local orderedRaceNames = {
+    "Blood Elf",
+    "Night Elf",
+    "Draenei",
+    "Dwarf",
+    "Gnome",
+    "Human",
+    "Orc",
+    "Tauren",
+    "Troll",
+    "Undead",
+}
+
+local classNames = {
+    ["Death Knight"] = "死亡骑士",
+    ["Druid"] = "德鲁伊",
+    ["Hunter"] = "猎人",
+    ["Mage"] = "法师",
+    ["Paladin"] = "圣骑士",
+    ["Priest"] = "牧师",
+    ["Rogue"] = "潜行者",
+    ["Shaman"] = "萨满祭司",
+    ["Warlock"] = "术士",
+    ["Warrior"] = "战士",
+}
+
+local function TranslateRaceClass(text)
+    if type(text) ~= "string" then return end
+    local level, descriptor = string.match(text, "^(%d+)%s+(.+)$")
+    if not descriptor then descriptor = text end
+    for _, race in ipairs(orderedRaceNames) do
+        local class = string.match(descriptor, "^" .. race .. "%s+(.+)$")
+        if class and classNames[class] then
+            local prefix = level and (level .. "级 ") or ""
+            return prefix .. raceNames[race] .. " " .. classNames[class]
+        end
+    end
+end
+
+-- EpochCN 0.7.4 stores a Chinese display title in E.name, while WoW's
+-- ADDON_LOADED event reports the folder name "EpochCN".  That prevents the
+-- upstream event handler from ever calling Initialize() on this client.
+-- Loading EpochCN as a required dependency lets this small overlay repair the
+-- bootstrap without modifying the 37 MB third-party add-on in place.
+if EpochCN and EpochCN.Initialize and not EpochCN.KajigeInitialized then
+    EpochCN.KajigeInitialized = true
+    EpochCN:Initialize()
+end
+
+-- EpochCN normally keeps FrameXML translations in a display-layer map.
+-- Apply entries with identical printf signatures to the actual globals before
+-- later add-ons load, so their file-local captures (DURABILITY, slot names,
+-- backpack labels, and similar constants) are Chinese from the start.
+local function FormatSignature(text)
+    if type(text) ~= "string" then return "" end
+    local signature = ""
+    local position = 1
+    while true do
+        local startAt, endAt, specifier = string.find(
+            text,
+            "%%[%-%+ #0-9%.]*([cdeEfgGiouqsxX%%])",
+            position
+        )
+        if not startAt then break end
+        if specifier ~= "%" then signature = signature .. specifier end
+        position = endAt + 1
+    end
+    return signature
+end
+
+for key, localized in pairs(EpochCN_FrameXMLStrings or {}) do
+    local original = getglobal(key)
+    if type(original) == "string"
+        and type(localized) == "string"
+        and FormatSignature(original) == FormatSignature(localized) then
+        setglobal(key, localized)
+    end
+end
+RAID_CONTROL = "团队管理"
+COMBAT_LOG = "战斗记录"
+OKAY = "确定"
+CANCEL = "取消"
+ACCEPT = "接受"
+DECLINE = "拒绝"
+YES = "是"
+NO = "否"
+CLOSE = "关闭"
+
+-- ElvUI 6.09 ships a complete 3.3.5 zhCN locale, but selects enUS because
+-- the binary itself is enUS.  AceLocale has already loaded every locale by
+-- the time this dependent overlay runs.  Merge the bundled zhCN table into
+-- the active table in place so every ElvUI module that captured `L` receives
+-- Chinese text without polling or scanning the UI every frame.
+local function LocalizeElvUI()
+    if type(ElvUI) ~= "table" then return end
+    local engine, activeLocale = unpack(ElvUI)
+    local localeLibrary = engine and engine.Libs and engine.Libs.ACL
+    local chineseLocale = localeLibrary
+        and localeLibrary:GetLocale("ElvUI", "zhCN", true)
+
+    if type(activeLocale) == "table" and type(chineseLocale) == "table" then
+        for key, localized in pairs(chineseLocale) do
+            if type(localized) == "string" and localized ~= "" then
+                activeLocale[key] = localized
+            end
+        end
+    end
+
+    -- RaidUtility reads this global when its frame is initialized.
+    RAID_CONTROL = "团队管理"
+
+    -- The legacy durability data text captured the enUS global as a local
+    -- while its file loaded.  Translate its output at the existing inventory
+    -- event boundary; this adds no per-frame work.
+    local dataTexts = engine and engine.GetModule
+        and engine:GetModule("DataTexts")
+    local durability = dataTexts
+        and dataTexts.RegisteredDataTexts
+        and dataTexts.RegisteredDataTexts["Durability"]
+    if durability and type(durability.eventFunc) == "function" then
+        local originalDurabilityEvent = durability.eventFunc
+        durability.eventFunc = function(self, ...)
+            originalDurabilityEvent(self, ...)
+            local text = self and self.text and self.text:GetText()
+            if type(text) == "string" then
+                self.text:SetText(
+                    string.gsub(text, "^Durability:", "耐久度：")
+                )
+            end
+        end
+        durability.localizedName = "耐久度"
+    end
+end
+
+if IsAddOnLoaded and IsAddOnLoaded("ElvUI") then
+    LocalizeElvUI()
+else
+    local elvLocaleFrame = CreateFrame("Frame")
+    elvLocaleFrame:RegisterEvent("ADDON_LOADED")
+    elvLocaleFrame:SetScript("OnEvent", function(self, event, addonName)
+        if addonName == "ElvUI" then
+            LocalizeElvUI()
+            self:UnregisterEvent("ADDON_LOADED")
+        end
+    end)
+end
+
+local statNames = {
+    Strength = "力量",
+    Agility = "敏捷",
+    Stamina = "耐力",
+    Intellect = "智力",
+    Spirit = "精神",
+    Armor = "护甲",
+    ["Attack Power"] = "攻击强度",
+    ["Spell Power"] = "法术强度",
+    ["All Resistances"] = "所有抗性",
+}
+
+local exactEffects = {
+    ["Increases spell power of all party members within 30 yards by 33."] =
+        "使30码范围内所有小队成员的法术强度提高33点。",
+    ["Creates a portal, teleporting group members that use it to Karazhan. (1 Min Cooldown)"] =
+        "制造一道传送门，使用它的小队成员将被传送至卡拉赞。（1分钟冷却）",
+}
+
+local ratingNames = {
+    ["armor penetration rating"] = "护甲穿透等级",
+    ["attack power"] = "攻击强度",
+    ["block rating"] = "格挡等级",
+    ["block value"] = "格挡值",
+    ["critical strike rating"] = "爆击等级",
+    ["defense rating"] = "防御等级",
+    ["dodge rating"] = "躲闪等级",
+    ["expertise rating"] = "精准等级",
+    ["haste rating"] = "急速等级",
+    ["hit rating"] = "命中等级",
+    ["parry rating"] = "招架等级",
+    ["resilience rating"] = "韧性等级",
+    ["shield block rating"] = "盾牌格挡等级",
+    ["shield block value"] = "盾牌格挡值",
+    ["spell critical strike rating"] = "法术爆击等级",
+    ["spell haste rating"] = "法术急速等级",
+    ["spell hit rating"] = "法术命中等级",
+    ["spell penetration"] = "法术穿透",
+    ["spell power"] = "法术强度",
+}
+
+local schoolNames = {
+    Arcane = "奥术",
+    Fire = "火焰",
+    Frost = "冰霜",
+    Holy = "神圣",
+    Nature = "自然",
+    Shadow = "暗影",
+}
+
+local function Trim(text)
+    if type(text) ~= "string" then return text end
+    text = string.gsub(text, "^%s+", "")
+    text = string.gsub(text, "%s+$", "")
+    return text
+end
+
+local function TranslateEffect(text)
+    if exactEffects[text] then return exactEffects[text] end
+
+    local amount = string.match(text, "^Restores (%d+) mana per 5 sec")
+        or string.match(text, "^Restores (%d+) mana every 5 sec")
+        or string.match(text, "^Restores (%d+) mana per 5 seconds")
+        or string.match(text, "^Restores (%d+) mana every 5 seconds")
+    if amount then return "每5秒恢复 " .. amount .. " 点法力值。" end
+
+    amount = string.match(text, "^Restores (%d+) health per 5 sec")
+        or string.match(text, "^Restores (%d+) health every 5 sec")
+        or string.match(text, "^Restores (%d+) health per 5 seconds")
+        or string.match(text, "^Restores (%d+) health every 5 seconds")
+    if amount then return "每5秒恢复 " .. amount .. " 点生命值。" end
+
+    local term, value = string.match(text, "^Increases your (.-) by (%d+)%.?$")
+    if not term then term, value = string.match(text, "^Increases (.-) by (%d+)%.?$") end
+    if not term then term, value = string.match(text, "^Improves your (.-) by (%d+)%.?$") end
+    if not term then term, value = string.match(text, "^Improves (.-) by (%d+)%.?$") end
+    if term and value then
+        local localized = ratingNames[string.lower(term)]
+        if localized then return localized .. "提高 " .. value .. " 点。" end
+    end
+
+    local percentage
+    term, percentage = string.match(text, "^Increases your (.-) by (%d+)%%%.?$")
+    if not term then term, percentage = string.match(text, "^Improves your (.-) by (%d+)%%%.?$") end
+    if term and percentage then
+        local localized = ratingNames[string.lower(term)]
+        if localized then return localized .. "提高 " .. percentage .. "%。" end
+    end
+end
+
+local function TranslateLine(raw)
+    if type(raw) ~= "string" or not string.find(raw, "[A-Za-z]") then return end
+    local text = Trim(raw)
+    local lookupText = string.gsub(text, "|c%x%x%x%x%x%x%x%x", "")
+    lookupText = string.gsub(lookupText, "|r", "")
+    lookupText = Trim(lookupText)
+
+    if EpochCN and EpochCN.localizedTextByRaw then
+        local localized = EpochCN.localizedTextByRaw[lookupText]
+        if type(localized) == "string" and localized ~= lookupText then
+            return localized
+        end
+        if EpochCN.NormalizeDisplayText then
+            localized = EpochCN.localizedTextByRaw[
+                EpochCN:NormalizeDisplayText(lookupText)
+            ]
+            if type(localized) == "string" and localized ~= lookupText then
+                return localized
+            end
+        end
+    end
+    if EpochCN_Glossary and EpochCN_Glossary.text
+        and EpochCN_Glossary.text[lookupText] then
+        return EpochCN_Glossary.text[lookupText]
+    end
+    if EpochCN_TooltipLineData and EpochCN_TooltipLineData[lookupText] then
+        return EpochCN_TooltipLineData[lookupText]
+    end
+    if exactLines[lookupText] then return exactLines[lookupText] end
+    if EpochCN_Overrides and EpochCN_Overrides.maps
+        and EpochCN_Overrides.maps[lookupText] then
+        return EpochCN_Overrides.maps[lookupText]
+    end
+    local localizedRaceClass = TranslateRaceClass(lookupText)
+    if localizedRaceClass then return localizedRaceClass end
+
+    local unitLevel, unitType = string.match(lookupText, "^(%d+)%s+(.+)$")
+    if unitLevel and creatureTypes[unitType] then
+        return unitLevel .. "级 " .. creatureTypes[unitType]
+    end
+    local technicalID = string.match(lookupText, "^ID%s+(%d+)$")
+    if technicalID then return "编号 " .. technicalID end
+
+    -- PvP/outdoor objective labels come from enUS WorldStateUI.dbc and are
+    -- written into unnamed FontStrings after the normal zone-name callbacks.
+    -- Preserve their live counters while translating the functional label.
+    for pattern, localized in pairs(worldStatePatterns) do
+        local value = string.match(lookupText, pattern)
+        if value then return string.format(localized, value) end
+    end
+
+    -- Gem/enchant lines often start with an inline texture escape.  Replace
+    -- the stat phrase in place so the icon and any color codes are preserved.
+    for english, chinese in pairs(statNames) do
+        local translated, replacements = string.gsub(
+            text,
+            "%+(%d+) " .. english,
+            "+%1 " .. chinese
+        )
+        if replacements > 0 then return translated end
+    end
+
+    local value, stat = string.match(text, "^%+(%d+) (.+)$")
+    if value and statNames[stat] then return "+" .. value .. " " .. statNames[stat] end
+
+    value = string.match(text, "^([%d,]+) Armor$")
+    if value then return value .. " 点护甲" end
+    value = string.match(text, "^([%d,]+) Block$")
+    if value then return value .. " 点格挡" end
+    value = string.match(text, "^Speed ([%d%.]+)$")
+    if value then return "速度 " .. value end
+    value = string.match(text, "^%(([%d%.]+) damage per second%)$")
+    if value then return "（每秒伤害 " .. value .. "）" end
+
+    local low, high = string.match(text, "^([%d,]+) %- ([%d,]+) Damage$")
+    if low and high then return low .. " - " .. high .. " 点伤害" end
+    local school
+    low, high, school = string.match(text, "^([%d,]+) %- ([%d,]+) (%a+) Damage$")
+    if low and high and school then
+        return low .. " - " .. high .. " 点" .. (schoolNames[school] or school) .. "伤害"
+    end
+
+    local current, maximum = string.match(text, "^Durability (%d+) / (%d+)$")
+    if current and maximum then return "耐久度 " .. current .. " / " .. maximum end
+    value = string.match(text, "^Item Level (%d+)$")
+    if value then return "物品等级 " .. value end
+    value = string.match(text, "^Requires Level (%d+)$")
+    if value then return "需要等级 " .. value end
+
+    local bonus = string.match(text, "^Socket Bonus:%s*(.+)$")
+    if bonus then
+        local translated = TranslateLine(bonus)
+        return translated and ("插槽奖励：" .. translated) or nil
+    end
+
+    local prefix, effect = string.match(text, "^(Equip):%s*(.+)$")
+    if not prefix then prefix, effect = string.match(text, "^(Use):%s*(.+)$") end
+    if not prefix then prefix, effect = string.match(text, "^(Chance on hit):%s*(.+)$") end
+    if effect then
+        local translated = TranslateEffect(effect)
+        if translated then
+            local localizedPrefix = prefix == "Equip" and "装备："
+                or prefix == "Use" and "使用："
+                or "击中时可能："
+            return localizedPrefix .. translated
+        end
+    end
+
+    return TranslateEffect(text)
+end
+
+-- 区域名称由客户端 DBC 动态写入，服务端数据库无法改变这些字符串。
+-- 对固定的区域 FontString 挂 SetText，并在区域事件上补一次当前值；查找是
+-- O(1)，不需要按帧遍历 UI。
+local dynamicMapFontStringNames = {
+    "ZoneTextString",
+    "SubZoneTextString",
+    "MinimapZoneText",
+    "WorldMapFrameAreaLabel",
+    "WorldMapContinentDropDownText",
+    "WorldMapZoneDropDownText",
+    "WorldMapZoneMinimapDropDownText",
+}
+
+local fixedFunctionalFontStrings = {
+    ChatFrame1TabText = "综合",
+    ChatFrame2TabText = "战斗记录",
+}
+
+local function LocalizeMapFontString(fontString, text)
+    if not fontString or fontString.KajigeSettingMapText then return end
+    if type(text) ~= "string" or text == "" then return end
+    local translated = EpochCN_Overrides
+        and EpochCN_Overrides.maps
+        and EpochCN_Overrides.maps[Trim(text)]
+    if not translated or translated == text then return end
+    fontString.KajigeSettingMapText = true
+    fontString:SetText(translated)
+    fontString.KajigeSettingMapText = false
+end
+
+local function LocalizeFixedFunctionalFontString(fontString, text)
+    if not fontString or fontString.KajigeSettingFunctionalText then return end
+    if type(text) ~= "string" or text == "" then return end
+    local name = fontString.GetName and fontString:GetName()
+    local translated = name and fixedFunctionalFontStrings[name]
+    if not translated and text == "Combat Log" then
+        translated = "战斗记录"
+    end
+    if not translated or translated == text then return end
+    fontString.KajigeSettingFunctionalText = true
+    fontString:SetText(translated)
+    fontString.KajigeSettingFunctionalText = false
+end
+
+local function HookDynamicMapFontStrings()
+    for _, name in ipairs(dynamicMapFontStringNames) do
+        local fontString = getglobal(name)
+        if fontString and fontString.GetText and fontString.SetText then
+            if not fontString.KajigeMapTextHooked and hooksecurefunc then
+                fontString.KajigeMapTextHooked = true
+                pcall(hooksecurefunc, fontString, "SetText", function(self, text)
+                    LocalizeMapFontString(self, text)
+                end)
+            end
+            LocalizeMapFontString(fontString, fontString:GetText())
+        end
+    end
+    for name in pairs(fixedFunctionalFontStrings) do
+        local fontString = getglobal(name)
+        if fontString and fontString.GetText and fontString.SetText then
+            if not fontString.KajigeFunctionalTextHooked and hooksecurefunc then
+                fontString.KajigeFunctionalTextHooked = true
+                pcall(hooksecurefunc, fontString, "SetText", function(self, text)
+                    LocalizeFixedFunctionalFontString(self, text)
+                end)
+            end
+            LocalizeFixedFunctionalFontString(fontString, fontString:GetText())
+        end
+    end
+end
+
+local mapLocalizationFrame = CreateFrame("Frame")
+mapLocalizationFrame:RegisterEvent("PLAYER_LOGIN")
+mapLocalizationFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+mapLocalizationFrame:RegisterEvent("ZONE_CHANGED")
+mapLocalizationFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
+mapLocalizationFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+mapLocalizationFrame:RegisterEvent("MINIMAP_ZONE_CHANGED")
+mapLocalizationFrame:RegisterEvent("WORLD_MAP_UPDATE")
+mapLocalizationFrame:RegisterEvent("UPDATE_CHAT_WINDOWS")
+mapLocalizationFrame:SetScript("OnEvent", HookDynamicMapFontStrings)
+
+-- A few server-side system notifications contain an enUS DBC spell name even
+-- though their surrounding client template is Chinese.  Translate those at
+-- the chat event boundary so the visible combat/UI audit contains no isolated
+-- English phrases.
+local systemMessagePhrases = {
+    ["Curse of Doom"] = "末日诅咒",
+    ["Demonic Circle: Summon"] = "恶魔法阵：召唤",
+    ["Demonic Circle: Teleport"] = "恶魔法阵：传送",
+    ["Create Firestone"] = "制造火焰石",
+    ["The Sunwell"] = "太阳之井",
+    ["Apex Point"] = "巅峰平台",
+    ["Parhelion Plaza"] = "日珥广场",
+    ["Isle of Quel'Danas"] = "奎尔丹纳斯岛",
+    ["Release Spirit"] = "释放灵魂",
+}
+
+local function LocalizeSystemMessage(self, event, message, ...)
+    if type(message) ~= "string" then return false, message, ... end
+    for english, chinese in pairs(systemMessagePhrases) do
+        message = string.gsub(message, english, chinese)
+    end
+    return false, message, ...
+end
+
+if ChatFrame_AddMessageEventFilter then
+    ChatFrame_AddMessageEventFilter(
+        "CHAT_MSG_SYSTEM",
+        LocalizeSystemMessage
+    )
+end
+
+local tooltipNames = {
+    "GameTooltip",
+    "ItemRefTooltip",
+    "ShoppingTooltip1",
+    "ShoppingTooltip2",
+    "ItemRefShoppingTooltip1",
+    "ItemRefShoppingTooltip2",
+}
+
+local function ScanTooltip(tooltip)
+    if not tooltip or not tooltip.GetName or not tooltip.NumLines then return end
+    local name = tooltip:GetName()
+    if not name then return end
+    for lineIndex = 1, tooltip:NumLines() do
+        for _, side in ipairs({ "TextLeft", "TextRight" }) do
+            local line = getglobal(name .. side .. lineIndex)
+            if line and line.GetText and line.SetText then
+                local text = line:GetText()
+                local translated = TranslateLine(text)
+                if translated and translated ~= text then
+                    line:SetText(translated)
+                end
+            end
+        end
+    end
+end
+
+for _, tooltipName in ipairs(tooltipNames) do
+    local tooltip = getglobal(tooltipName)
+    if tooltip and tooltip.HookScript then
+        tooltip:HookScript("OnTooltipSetItem", ScanTooltip)
+        tooltip:HookScript("OnTooltipSetUnit", ScanTooltip)
+        tooltip:HookScript("OnTooltipSetSpell", ScanTooltip)
+        tooltip:HookScript("OnShow", ScanTooltip)
+    end
+end
+
+-- ElvUI/EpochCN may draw the target summary (for example "5 Humanoid" and
+-- "ID 1568") in unnamed frames and may refresh those FontStrings after the
+-- standard GameTooltip callbacks have returned.  Run a short, event-batched
+-- sweep after the target or mouseover unit changes.  Three passes cover the
+-- deferred refreshes without repeatedly walking every visible frame while a
+-- tooltip remains open.
+local visibleEnglishSweep = CreateFrame("Frame")
+local sweepPassesRemaining = 0
+local sweepElapsed = 0
+
+local function ScanVisibleFunctionalEnglish()
+    if type(EnumerateFrames) ~= "function" then return end
+    local frame = EnumerateFrames()
+    while frame do
+        if frame.IsVisible and frame:IsVisible() and frame.GetRegions then
+            local regions = { frame:GetRegions() }
+            for _, region in ipairs(regions) do
+                if region
+                    and region.GetObjectType
+                    and region:GetObjectType() == "FontString"
+                    and region.GetText
+                    and region.SetText then
+                    local text = region:GetText()
+                    local translated = TranslateLine(text)
+                    if translated and translated ~= text then
+                        region:SetText(translated)
+                    end
+                end
+            end
+        end
+        frame = EnumerateFrames(frame)
+    end
+end
+
+local function ScheduleVisibleEnglishSweep()
+    sweepPassesRemaining = 3
+    sweepElapsed = 0.1
+    visibleEnglishSweep:Show()
+end
+
+visibleEnglishSweep:RegisterEvent("PLAYER_ENTERING_WORLD")
+visibleEnglishSweep:RegisterEvent("PLAYER_TARGET_CHANGED")
+visibleEnglishSweep:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+visibleEnglishSweep:RegisterEvent("UPDATE_WORLD_STATES")
+visibleEnglishSweep:RegisterEvent("ZONE_CHANGED")
+visibleEnglishSweep:RegisterEvent("ZONE_CHANGED_INDOORS")
+visibleEnglishSweep:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+visibleEnglishSweep:RegisterEvent("GOSSIP_SHOW")
+visibleEnglishSweep:SetScript("OnEvent", ScheduleVisibleEnglishSweep)
+visibleEnglishSweep:SetScript("OnUpdate", function(self, elapsed)
+    if sweepPassesRemaining <= 0 then
+        self:Hide()
+        return
+    end
+    sweepElapsed = sweepElapsed + elapsed
+    if sweepElapsed < 0.1 then return end
+    sweepElapsed = 0
+    sweepPassesRemaining = sweepPassesRemaining - 1
+    ScanVisibleFunctionalEnglish()
+end)
+visibleEnglishSweep:Hide()
+
+-- Static popups are created after the login/zone sweeps.  Localize their
+-- standard functional text at the popup's existing OnShow boundary instead
+-- of polling the full UI.
+local function LocalizeStaticPopup(frame)
+    if not frame or not frame.GetName then return end
+    local name = frame:GetName()
+    local textRegion = name and getglobal(name .. "Text")
+    if textRegion and textRegion.GetText and textRegion.SetText then
+        local text = textRegion:GetText()
+        local translated = TranslateLine(text)
+        if translated and translated ~= text then
+            textRegion:SetText(translated)
+        end
+    end
+    for index = 1, 4 do
+        local button = name and getglobal(name .. "Button" .. index)
+        if button and button.GetText and button.SetText then
+            local text = button:GetText()
+            local translated = TranslateLine(text)
+            if translated and translated ~= text then
+                button:SetText(translated)
+            end
+        end
+    end
+end
+
+for index = 1, 4 do
+    local popup = getglobal("StaticPopup" .. index)
+    if popup and popup.HookScript then
+        popup:HookScript("OnShow", LocalizeStaticPopup)
+    end
+end
