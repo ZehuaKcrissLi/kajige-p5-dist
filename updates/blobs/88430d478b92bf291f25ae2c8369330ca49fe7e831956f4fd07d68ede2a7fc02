@@ -1,0 +1,439 @@
+-- 咔鸡哥太阳井坦克教练：为 3.3.5 客户端提供类 WA 的实时站位、仇恨、换坦与位移提示。
+KajigeSunwellTankCoachDB = KajigeSunwellTankCoachDB or {}
+local DB = KajigeSunwellTankCoachDB
+if DB.enabled == nil then DB.enabled = true end
+if DB.locked == nil then DB.locked = false end
+if DB.sound == nil then DB.sound = true end
+if DB.onlyTank == nil then DB.onlyTank = true end
+if DB.role == nil then DB.role = "auto" end
+
+local BOSS = {
+    [24850] = {
+        key = "kalecgos", name = "卡雷苟斯", icon = "Interface\\Icons\\INV_Misc_Head_Dragon_Blue",
+        aliases = {24891, 24892},
+        roles = {
+            main = {"外场主坦", "贴外圈定住龙头，龙头朝场外；正面与尾部不得朝团队。", "外场龙必须始终有人接仇恨；进门前确认接班坦已稳定第一仇恨。"},
+            off = {"内场/接班坦", "靠近本组传送点待命；入内后第一时间接萨索瓦尔并背向队伍。", "主坦被传送前提前做仇恨；看到龙转头立即嘲讽并定住。"},
+            add = {"灵魂界坦克", "萨索瓦尔固定在内场边缘，正面避开治疗与输出。", "腐蚀打击前覆盖减伤；离场前确认下一名坦克已接稳。"},
+        },
+        guide = {
+            "外场与灵魂界任何一侧都不能出现坦克真空。",
+            "主坦可能被幽灵冲击送入内场；副坦必须把嘲讽当成交接，不是补救。",
+            "双目标 10% 左右停手同步斩杀，坦克负责报告两侧血量与可接班状态。",
+        },
+    },
+    [24882] = {
+        key = "brutallus", name = "布鲁塔卢斯", icon = "Interface\\Icons\\Ability_Warrior_Devastate",
+        roles = {
+            main = {"当前坦克", "站在预设分摊扇区中心，首领脚不横移；两组近战稳定覆盖流星猛击。", "践踏前报层数并留嘲讽窗口；中践踏后不抢回仇恨。"},
+            off = {"接班坦克", "与当前坦重合站位并保持流星分摊；不要从侧面把首领拽转。", "践踏落地立即嘲讽，确认仇恨变红后再打高威胁技能。"},
+            add = {"机动坦克", "补入人数不足的流星分摊组，但绝不改变首领朝向。", "燃烧撤离通道保持净空；不要追燃烧目标。"},
+        },
+        guide = {
+            "两坦重合、首领不动，是低水平团队最重要的容错来源。",
+            "践踏会显著削弱当前坦克护甲：副坦立即接手，原坦继续分摊但停止抢仇恨。",
+            "燃烧路线从团队外侧离开，绝不能穿过坦克与近战分摊扇区。",
+        },
+    },
+    [25038] = {
+        key = "felmyst", name = "菲米丝", icon = "Interface\\Icons\\Ability_Creature_Poison_03",
+        roles = {
+            main = {"地面主坦", "将龙头朝外、尾部避开人群；落地后原地接稳，不追着龙转圈。", "腐蚀是 10 秒承伤放大窗口，不要求换嘲：连续覆盖个人/外部减伤。"},
+            off = {"空中小怪坦", "升空前回到集合侧；骷髅出现后在安全雾带内集中收拢。", "深呼吸优先活着穿安全带，禁止为了补怪穿雾。"},
+            add = {"机动坦克", "协助收散落骷髅，背向治疗；落地前 5 秒把场中交给主坦。", "主坦腐蚀期间提供外部减伤，不要无计划嘲讽。"},
+        },
+        guide = {
+            "腐蚀 45866 是物理承伤增加窗口；训练口令应是‘减伤链’，不是固定换坦。",
+            "空中阶段看雾的横向路线，坦克带怪也必须服从安全三分之一场地。",
+            "落地前预留主坦接怪空间，小怪坦不要把骷髅带过龙头。",
+        },
+    },
+    [25165] = {
+        key = "twins", name = "艾瑞达双子", icon = "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+        aliases = {25166},
+        roles = {
+            main = {"暗女坦克", "萨洛拉丝固定在团队预设侧，背向人群；不追奥蕾塞丝。", "混乱打击/暗影之刃前短减伤；暗女倒下后先确认火女仇恨再并位。"},
+            off = {"火女坦克", "沿外圈小步移动奥蕾塞丝，给燃烧目标留出直线撤离通道。", "不要横切团队；法术仇恨领先不足时先补威胁再移动。"},
+            add = {"机动坦克", "站两坦之间偏外侧，随时接死亡后的强化首领。", "燃烧点名经过坦克区时主动让路线，不要把首领带入人群。"},
+        },
+        guide = {
+            "默认先杀暗女萨洛拉丝，火女由远程坦或高法术仇恨坦稳定在外圈。",
+            "两只首领分离，任何一次换位都沿外圈走，禁止穿团。",
+            "第一只死亡后立即重建唯一仇恨线，坦克先定点再让全团合并。",
+        },
+    },
+    [25741] = {
+        key = "muru", name = "穆鲁 / 熵魔", icon = "Interface\\Icons\\Spell_Shadow_SummonVoidWalker",
+        aliases = {25840, 25798, 25799, 25824},
+        roles = {
+            main = {"左门坦克", "左门增援在门口截住，狂战士背向队伍；法师优先打断。", "转阶段读条开始后清残怪，熵魔激活立即在中央建立首仇。"},
+            off = {"右门坦克", "右门增援在门口截住，避免与中央黑暗区域重叠。", "下一波门怪时间不足时主动报停手；转阶段把残怪带离熵魔正面。"},
+            add = {"戒卫/熵魔坦", "虚空戒卫拉到场边背向团队，死亡小怪集中在远程火力区。", "P2 围绕黑洞小步带熵魔，宁可停手也不要横穿团队。"},
+        },
+        guide = {
+            "P1 是三坦责任链：左右门各自截怪，戒卫坦固定场边。",
+            "穆鲁崩解到熵魔可攻击约有 9–10 秒，先清场、补血、重新建立坦克站位。",
+            "P2 坦克只做最小位移躲黑洞，首领正面永远背离团队。",
+        },
+    },
+    [25315] = {
+        key = "kiljaeden", name = "基尔加丹", icon = "Interface\\Icons\\Spell_Shadow_SummonFelHunter",
+        aliases = {25608, 25588, 25708},
+        roles = {
+            main = {"基尔加丹主坦", "站太阳井外缘面对首领，保持唯一朝向；末日决战只做最短横移。", "85/55/25% 前把仇恨拉高，镜像出现时不追怪、不转首领。"},
+            off = {"镜像坦克", "每个阈值在团队侧后方接住 4 个邪恶镜像，集中后背向人群。", "先保治疗免受近战，再由远程转火；镜像清完回主坦侧待命。"},
+            add = {"欺诈者/镜像坦", "开场拉住欺诈者与狂暴魔，打断治疗；本体阶段转为镜像接怪。", "火花和末日区域优先让路，禁止带小怪穿过蓝龙护盾集合点。"},
+        },
+        guide = {
+            "本体不需要传统双坦轮换；副坦价值在三批各 4 个镜像的快速收拢。",
+            "阶段阈值 85/55/25%，主坦提前报告，副坦到预设镜像集合点。",
+            "千魂由全团进蓝龙盾处理；坦克同时保证首领/镜像正面不扫过集合点。",
+        },
+    },
+}
+
+for entry, data in pairs(BOSS) do
+    for _, alias in ipairs(data.aliases or {}) do BOSS[alias] = data end
+end
+
+local function CreatureID(guid)
+    if type(guid) ~= "string" or string.sub(guid, 1, 4) ~= "0xF1" then return nil end
+    return tonumber(string.sub(guid, 7, 12), 16)
+end
+
+local function Print(message)
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffb43b[坦克教练]|r " .. message)
+end
+
+local function PlayerRaidRole()
+    if DB.role ~= "auto" then return DB.role end
+    if UnitGroupRolesAssigned then
+        local role = UnitGroupRolesAssigned("player")
+        if role == "TANK" then return "main" end
+    end
+    if GetNumRaidMembers and GetNumRaidMembers() > 0 then
+        for i = 1, GetNumRaidMembers() do
+            local name, rank, subgroup, level, class, fileName, zone, online, dead, raidRole, isML = GetRaidRosterInfo(i)
+            if name == UnitName("player") and raidRole == "MAINTANK" then return "main" end
+        end
+    end
+    local _, class = UnitClass("player")
+    if class == "WARRIOR" or class == "PALADIN" or class == "DEATHKNIGHT" or class == "DRUID" then
+        return "main"
+    end
+    return nil
+end
+
+local activeBoss
+local activeEntry
+local activeRole
+local transient
+local transientUntil = 0
+local lastThreatPercent
+local encounterScore = 100
+local errorCount = 0
+local updateElapsed = 0
+local lastBossTarget
+
+local hud = CreateFrame("Frame", "KajigeSunwellTankHUD", UIParent)
+hud:SetWidth(430)
+hud:SetHeight(116)
+hud:SetPoint(DB.point or "TOP", UIParent, DB.relativePoint or "TOP", DB.x or 0, DB.y or -92)
+hud:SetFrameStrata("HIGH")
+hud:SetClampedToScreen(true)
+hud:SetMovable(true)
+hud:EnableMouse(true)
+hud:RegisterForDrag("LeftButton")
+hud:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 16, edgeSize = 14,
+    insets = {left = 4, right = 4, top = 4, bottom = 4},
+})
+hud:SetBackdropColor(0.015, 0.035, 0.06, 0.94)
+hud:SetBackdropBorderColor(0.94, 0.61, 0.16, 0.9)
+hud:SetScript("OnDragStart", function(self) if not DB.locked then self:StartMoving() end end)
+hud:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, _, relativePoint, x, y = self:GetPoint()
+    DB.point, DB.relativePoint, DB.x, DB.y = point, relativePoint, x, y
+end)
+
+local icon = hud:CreateTexture(nil, "ARTWORK")
+icon:SetWidth(48); icon:SetHeight(48); icon:SetPoint("TOPLEFT", 14, -16)
+local roleText = hud:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+roleText:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, 1)
+roleText:SetTextColor(1, 0.70, 0.25)
+local actionText = hud:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+actionText:SetPoint("TOPLEFT", roleText, "BOTTOMLEFT", 0, -5)
+actionText:SetPoint("RIGHT", hud, "RIGHT", -42, 0)
+actionText:SetJustifyH("LEFT")
+local detailText = hud:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+detailText:SetPoint("TOPLEFT", actionText, "BOTTOMLEFT", 0, -5)
+detailText:SetPoint("RIGHT", hud, "RIGHT", -42, 0)
+detailText:SetJustifyH("LEFT")
+
+local arrow = hud:CreateTexture(nil, "OVERLAY")
+arrow:SetTexture("Interface\\MINIMAP\\MiniMap-QuestArrow")
+arrow:SetWidth(28); arrow:SetHeight(28); arrow:SetPoint("RIGHT", -10, 8)
+
+local threatBar = CreateFrame("StatusBar", nil, hud)
+threatBar:SetPoint("BOTTOMLEFT", 14, 12); threatBar:SetPoint("BOTTOMRIGHT", -14, 12)
+threatBar:SetHeight(12); threatBar:SetMinMaxValues(0, 130); threatBar:SetValue(0)
+threatBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+threatBar:SetStatusBarColor(0.25, 0.75, 0.35)
+local threatBG = threatBar:CreateTexture(nil, "BACKGROUND")
+threatBG:SetAllPoints(); threatBG:SetTexture(0.08, 0.11, 0.14, 0.95)
+local threatText = threatBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+threatText:SetPoint("CENTER", 0, 0)
+
+local guide = CreateFrame("Frame", "KajigeSunwellTankGuide", UIParent)
+guide:SetWidth(720); guide:SetHeight(470); guide:SetPoint("CENTER")
+guide:SetFrameStrata("DIALOG"); guide:SetMovable(true); guide:EnableMouse(true)
+guide:RegisterForDrag("LeftButton"); guide:SetScript("OnDragStart", guide.StartMoving)
+guide:SetScript("OnDragStop", guide.StopMovingOrSizing)
+guide:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=11,right=12,top=12,bottom=11}})
+guide:Hide()
+local guideTitle = guide:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+guideTitle:SetPoint("TOPLEFT", 26, -24); guideTitle:SetText("太阳井坦克训练台")
+local close = CreateFrame("Button", nil, guide, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", -4, -4)
+local guideText = guide:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+guideText:SetPoint("TOPLEFT", 28, -76); guideText:SetPoint("BOTTOMRIGHT", -28, 82)
+guideText:SetJustifyH("LEFT"); guideText:SetJustifyV("TOP")
+
+local ORDER = {24850, 24882, 25038, 25165, 25741, 25315}
+local function RenderGuide(data)
+    local lines = {"|cffffb43b" .. data.name .. " · 坦克责任链|r", ""}
+    for _, role in ipairs({"main", "off", "add"}) do
+        local item = data.roles[role]
+        table.insert(lines, "|cff62c8ff" .. item[1] .. "|r")
+        table.insert(lines, "  站位：" .. item[2])
+        table.insert(lines, "  操作：" .. item[3])
+        table.insert(lines, "")
+    end
+    table.insert(lines, "|cffffd37a团长验收点|r")
+    for i, item in ipairs(data.guide) do table.insert(lines, "  " .. i .. ". " .. item) end
+    guideText:SetText(table.concat(lines, "\n"))
+end
+
+for index, entry in ipairs(ORDER) do
+    local data = BOSS[entry]
+    local button = CreateFrame("Button", nil, guide, "UIPanelButtonTemplate")
+    button:SetWidth(104); button:SetHeight(25)
+    button:SetPoint("BOTTOMLEFT", 25 + (index - 1) * 112, 30)
+    button:SetText(data.name)
+    button:SetScript("OnClick", function() RenderGuide(data) end)
+end
+RenderGuide(BOSS[24850])
+
+local function SetArrow(kind)
+    arrow:Show()
+    if kind == "left" then
+        arrow:SetTexCoord(1, 0, 0, 1)
+    elseif kind == "hold" then
+        arrow:Hide()
+    else
+        arrow:SetTexCoord(0, 1, 0, 1)
+    end
+end
+
+local function RoleData()
+    if not activeBoss then return nil end
+    activeRole = PlayerRaidRole() or activeRole or "main"
+    return activeBoss.roles[activeRole] or activeBoss.roles.main
+end
+
+local function Redraw()
+    if not DB.enabled or not activeBoss then hud:Hide(); return end
+    activeRole = PlayerRaidRole() or activeRole
+    if DB.onlyTank and not activeRole then hud:Hide(); return end
+    activeRole = activeRole or "main"
+    local data = RoleData()
+    icon:SetTexture(activeBoss.icon)
+    roleText:SetText(activeBoss.name .. " · " .. data[1] .. " · 评分 " .. encounterScore)
+    if transient and GetTime() < transientUntil then
+        actionText:SetText(transient.title)
+        detailText:SetText(transient.detail)
+        if transient.severity == 3 then
+            actionText:SetTextColor(1, 0.20, 0.16)
+            hud:SetBackdropBorderColor(1, 0.18, 0.10, 1)
+        else
+            actionText:SetTextColor(1, 0.72, 0.20)
+            hud:SetBackdropBorderColor(1, 0.58, 0.12, 0.95)
+        end
+        SetArrow(transient.arrow or "move")
+    else
+        transient = nil
+        actionText:SetText(data[2])
+        detailText:SetText(data[3])
+        actionText:SetTextColor(0.92, 0.95, 1)
+        hud:SetBackdropBorderColor(0.94, 0.61, 0.16, 0.9)
+        SetArrow("hold")
+    end
+    hud:Show()
+end
+
+local function Coach(title, detail, severity, duration, penalty, arrowKind)
+    transient = {title=title, detail=detail, severity=severity or 2, arrow=arrowKind}
+    transientUntil = GetTime() + (duration or 6)
+    if penalty and penalty > 0 then
+        encounterScore = math.max(0, encounterScore - penalty)
+        errorCount = errorCount + 1
+    end
+    if DB.sound and (severity or 2) >= 3 then PlaySoundFile("Sound\\Interface\\RaidWarning.wav") end
+    Redraw()
+end
+
+local function ScanBossUnit()
+    local units = {"target", "focus", "targettarget", "focustarget"}
+    if GetNumRaidMembers and GetNumRaidMembers() > 0 then
+        for i = 1, GetNumRaidMembers() do table.insert(units, "raid" .. i .. "target") end
+    elseif GetNumPartyMembers then
+        for i = 1, GetNumPartyMembers() do table.insert(units, "party" .. i .. "target") end
+    end
+    for _, unit in ipairs(units) do
+        if UnitExists(unit) then
+            local entry = CreatureID(UnitGUID(unit))
+            if entry and BOSS[entry] then return unit, entry end
+        end
+    end
+end
+
+local function UpdateThreat()
+    if not activeBoss then return end
+    local unit = ScanBossUnit()
+    if not unit then
+        threatBar:SetValue(0); threatText:SetText("仇恨：等待首领目标")
+        return
+    end
+    local isTanking, status, scaledPercent, rawPercent, threatValue
+    if UnitDetailedThreatSituation then
+        isTanking, status, scaledPercent, rawPercent, threatValue = UnitDetailedThreatSituation("player", unit)
+    end
+    local percent = rawPercent or scaledPercent or 0
+    lastThreatPercent = percent
+    threatBar:SetValue(math.min(130, percent))
+    if isTanking then
+        threatBar:SetStatusBarColor(0.22, 0.78, 0.36)
+        threatText:SetText(string.format("仇恨：主目标 %.0f%% · 已接稳", percent))
+    elseif percent >= 90 then
+        threatBar:SetStatusBarColor(1, 0.24, 0.14)
+        threatText:SetText(string.format("仇恨：%.0f%% · 即将 OT", percent))
+    elseif activeRole == "off" and percent < 70 then
+        threatBar:SetStatusBarColor(1, 0.63, 0.18)
+        threatText:SetText(string.format("仇恨：%.0f%% · 接班储备不足", percent))
+    else
+        threatBar:SetStatusBarColor(0.28, 0.62, 0.92)
+        threatText:SetText(string.format("仇恨：%.0f%% · 待命", percent))
+    end
+    local bossTarget = UnitName(unit .. "target")
+    if bossTarget and lastBossTarget and bossTarget ~= lastBossTarget and UnitAffectingCombat("player") then
+        if bossTarget == UnitName("player") and activeRole ~= "main" then
+            Coach("你已接到首领", "定住朝向，确认仇恨变红；不要边嘲讽边横移。", 3, 5, 0, "hold")
+        elseif lastBossTarget == UnitName("player") and activeRole == "main" then
+            Coach("首领已离开你", "检查是否为计划换坦；若不是，立即嘲讽并恢复原朝向。", 3, 5, 5, "hold")
+        end
+    end
+    lastBossTarget = bossTarget
+end
+
+local function Activate(entry)
+    local data = BOSS[entry]
+    if not data then return end
+    if activeBoss ~= data then
+        activeBoss, activeEntry = data, entry
+        activeRole = PlayerRaidRole() or (DB.role ~= "auto" and DB.role) or "main"
+        transient = nil; encounterScore = 100; errorCount = 0; lastBossTarget = nil
+        Coach("进入坦克训练", (RoleData() or data.roles.main)[2], 2, 8, 0, "hold")
+    end
+end
+
+function KajigeSunwellTankCoach_ActivateBoss(entry) Activate(entry) end
+function KajigeSunwellTankCoach_Reset()
+    if activeBoss and errorCount > 0 then
+        Print(activeBoss.name .. " 坦克复盘：评分 " .. encounterScore .. "，记录 " .. errorCount .. " 次关键失误。")
+    end
+    activeBoss=nil; activeEntry=nil; transient=nil; lastBossTarget=nil; hud:Hide()
+end
+
+local SPELL = {
+    [44799] = {"冰霜吐息", "主坦开减伤并保持龙头朝外；副坦观察是否发生传送交接。", 3, 0, "hold"},
+    [45001] = {"幽灵冲击 / 换界", "接班坦立即检查首领目标；内场坦落地第一时间接恶魔。", 3, 0, "hold"},
+    [45004] = {"腐蚀打击窗口", "内场坦开减伤，治疗预读；下一位接班坦保持仇恨。", 3, 0, "hold"},
+    [45150] = {"流星猛击", "两坦重合参与分摊；首领脚和朝向都不要移动。", 2, 0, "hold"},
+    [45185] = {"践踏：立即交接", "副坦原地嘲讽接稳；原坦停止抢仇恨但继续站在分摊扇区。", 3, 0, "hold"},
+    [46394] = {"燃烧通道", "保持坦克区不动，让点名从外侧撤离；绝不追人或转首领。", 3, 0, "hold"},
+    [45866] = {"腐蚀 10 秒", "这是减伤链，不是强制换嘲：个人减伤 → 外部减伤，龙头保持朝外。", 3, 0, "hold"},
+    [45402] = {"恶魔蒸汽", "小怪坦沿安全外圈收怪；不要把怪线带过团队。", 3, 0, "move"},
+    [45717] = {"深呼吸换边", "放弃补怪，横移到安全三分之一；禁止穿雾。", 3, 0, "move"},
+    [45248] = {"暗影之刃", "暗女坦开启短减伤，保持萨洛拉丝背向团队。", 3, 0, "hold"},
+    [45256] = {"混乱打击", "坦克高伤窗口，开短减伤并保持两首领分离。", 3, 0, "hold"},
+    [45342] = {"燃烧撤离", "火女坦留出外圈通道；不要横切或把首领带入人群。", 3, 0, "move"},
+    [45996] = {"黑暗：离开中央", "左右门坦保住增援；戒卫坦把怪留在场边，禁止踩黑暗。", 3, 0, "move"},
+    [46177] = {"9–10 秒转阶段", "清残怪、补满血、重组站位；熵魔激活时在中央接住再小步带位。", 3, 0, "hold"},
+    [46282] = {"黑洞位移", "熵魔坦沿外圈最短横移，正面背离团队；其他坦清残怪。", 3, 0, "move"},
+    [46087] = {"虚空冲击", "戒卫坦把正面朝场边，所有人离开地面范围。", 3, 0, "hold"},
+    [45892] = {"阶段阈值：镜像待命", "副坦到预设集合点接 4 个镜像；主坦保持基尔加丹朝向。", 3, 0, "hold"},
+    [46589] = {"邪恶镜像出现", "副坦先保护治疗、集中 4 个镜像并背向团队。", 3, 0, "hold"},
+    [46605] = {"千魂集合", "主坦确保首领正面不覆盖蓝龙盾；镜像坦不要把怪带进集合点。", 3, 0, "hold"},
+    [45915] = {"末日决战", "只做最短横移离开落点，随后恢复原朝向。", 3, 0, "move"},
+}
+
+local frame = CreateFrame("Frame")
+for _, event in ipairs({"PLAYER_TARGET_CHANGED","PLAYER_FOCUS_CHANGED","PLAYER_REGEN_DISABLED","PLAYER_REGEN_ENABLED","COMBAT_LOG_EVENT_UNFILTERED","UNIT_THREAT_SITUATION_UPDATE","UNIT_TARGET","RAID_ROSTER_UPDATE","PARTY_MEMBERS_CHANGED"}) do
+    frame:RegisterEvent(event)
+end
+frame:SetScript("OnEvent", function(_, event, ...)
+    if event == "PLAYER_REGEN_ENABLED" then
+        KajigeSunwellTankCoach_Reset(); return
+    end
+    if event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" or event == "PLAYER_REGEN_DISABLED" then
+        local _, entry = ScanBossUnit(); if entry then Activate(entry) end
+        Redraw(); UpdateThreat(); return
+    end
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        local _, subEvent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID = ...
+        local sourceEntry, destEntry = CreatureID(sourceGUID), CreatureID(destGUID)
+        if sourceEntry and BOSS[sourceEntry] then Activate(sourceEntry)
+        elseif destEntry and BOSS[destEntry] then Activate(destEntry) end
+        if not activeBoss or not spellID then return end
+        local item = SPELL[spellID]
+        if item then Coach(item[1], item[2], item[3], 6, item[4], item[5]) end
+        if subEvent == "SPELL_AURA_APPLIED_DOSE" and spellID == 45150 and destName == UnitName("player") then
+            local amount = select(13, ...)
+            if amount and amount >= 4 then Coach("流星层数 " .. amount, "检查本组分摊人数；层数过高时报告团长，不要移动首领。", 3, 6, 3, "hold") end
+        end
+        return
+    end
+    UpdateThreat(); Redraw()
+end)
+
+frame:SetScript("OnUpdate", function(_, elapsed)
+    updateElapsed = updateElapsed + elapsed
+    if updateElapsed < 0.35 then return end
+    updateElapsed = 0
+    if transient and GetTime() >= transientUntil then transient = nil; Redraw() end
+    if activeBoss then UpdateThreat() end
+end)
+
+SLASH_KAJIGESWTANK1 = "/swtank"
+SlashCmdList.KAJIGESWTANK = function(message)
+    local cmd, arg = string.match(string.lower(message or ""), "^(%S*)%s*(.-)$")
+    if cmd == "main" or cmd == "off" or cmd == "add" or cmd == "auto" then
+        DB.role = cmd; activeRole = PlayerRaidRole() or (cmd ~= "auto" and cmd); Redraw()
+        Print("职责已设为 " .. cmd .. "。")
+    elseif cmd == "lock" then DB.locked = true; Print("提示框已锁定。")
+    elseif cmd == "unlock" then DB.locked = false; Print("提示框可拖动。")
+    elseif cmd == "on" then DB.enabled = true; Redraw()
+    elseif cmd == "off" then DB.enabled = false; hud:Hide()
+    elseif cmd == "all" then DB.onlyTank = false; Print("所有职业均显示坦克提示。")
+    elseif cmd == "tank" then DB.onlyTank = true; Print("仅坦克职责显示提示。")
+    elseif cmd == "test" then Activate(tonumber(arg) or 24882); Coach("测试：立即换坦", "副坦原地嘲讽，主坦停止抢仇恨并保持分摊站位。", 3, 8, 0, "hold")
+    else
+        if guide:IsShown() then guide:Hide() else guide:Show() end
+        Print("命令：/swtank main|off|add|auto，lock|unlock，on|off，all|tank，test [首领ID]")
+    end
+end
+
+hud:Hide()

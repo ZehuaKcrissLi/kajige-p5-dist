@@ -1,0 +1,26 @@
+<Bindings>
+    <Binding name="KAJIGE_KALEC_READY" header="KAJIGE_KALEC">
+        KajigeKalecgosCoach_KeyCall("ready")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_ENTER">
+        KajigeKalecgosCoach_KeyCall("enter")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_TANK">
+        KajigeKalecgosCoach_KeyCall("tank")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_CURSE">
+        KajigeKalecgosCoach_KeyCall("curse")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_DISPEL">
+        KajigeKalecgosCoach_KeyCall("dispel")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_OUTSTOP">
+        KajigeKalecgosCoach_KeyCall("outstop")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_INSTOP">
+        KajigeKalecgosCoach_KeyCall("instop")
+    </Binding>
+    <Binding name="KAJIGE_KALEC_PUSH">
+        KajigeKalecgosCoach_KeyCall("push")
+    </Binding>
+</Bindings>

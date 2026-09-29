@@ -1,0 +1,29 @@
+# WenQuanYi Zen Hei
+
+`Support/ResourceOverrides/Fonts/KajigeCJKLegacy.ttf` is the proportional
+WenQuanYi Zen Hei face from upstream version 0.9.45, saved as a standalone
+TrueType font so the 2009 WoW build 12340 renderer does not need TTC support.
+No glyph outlines or character mappings were changed.
+
+- Upstream archive:
+  `https://downloads.sourceforge.net/wqy/wqy-zenhei-0.9.45.tar.gz`
+- Upstream archive SHA-256:
+  `e4b7e306475bf9427d1757578f0e4528930c84c44eaa3f167d4c42f110ee75d6`
+- Standalone font SHA-256:
+  `febf195294b363f3268d954531136ba0d99e9211fe584b07bbd1bd16dad84e8c`
+- License: GPL v2 with the font embedding exception described in the bundled
+  `README`; the complete upstream GPL text is bundled as `COPYING`.
+
+The standalone file is reproducible with FontTools 4.59.2:
+
+```python
+from fontTools.ttLib import TTFont
+
+font = TTFont(
+    "wqy-zenhei.ttc",
+    fontNumber=0,
+    recalcBBoxes=True,
+    recalcTimestamp=False,
+)
+font.save("KajigeCJKLegacy.ttf", reorderTables=False)
+```

@@ -1,0 +1,944 @@
+local addonName = ...
+local PROFILE_VERSION = 1000007
+local DISPLAY_VERSION = "1.3.8"
+local PROFILE_NAME = "露露-右布局25人"
+-- Keep the two font layers distinct. WoW's root aliases provide the global
+-- Chinese UI font, while the source Lulu profile explicitly selects Rurutia
+-- through LibSharedMedia for its designed elements.
+local RURUTIA_FONT_PATH =
+    "Interface\\AddOns\\SunwellLuluProfile\\Media\\Rurutia.ttf"
+
+if type(SunwellLuluProfileDB) ~= "table" then
+    SunwellLuluProfileDB = {}
+end
+if type(SunwellLuluProfileDB.characters) ~= "table" then
+    SunwellLuluProfileDB.characters = {}
+end
+if type(SunwellLuluProfileDB.loadAudit) ~= "table" then
+    SunwellLuluProfileDB.loadAudit = {}
+end
+local loadAudit = SunwellLuluProfileDB.loadAudit
+loadAudit.loaded = true
+loadAudit.version = PROFILE_VERSION
+loadAudit.displayVersion = DISPLAY_VERSION
+loadAudit.phase = "LOADED"
+
+local frame = CreateFrame("Frame")
+local elapsed = 0
+local pending = false
+local migrationAttempts = 0
+local setupGuardRemaining = 30
+local setupGuardElapsed = 0
+local chineseUiElapsed = 0
+local clearLoginChat = false
+
+local function Print(message)
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff559a露露训练配置：|r" .. tostring(message))
+    end
+end
+
+local function DeepCopy(source, seen)
+    if type(source) ~= "table" then
+        return source
+    end
+
+    seen = seen or {}
+    if seen[source] then
+        return seen[source]
+    end
+
+    local target = {}
+    seen[source] = target
+    for key, value in pairs(source) do
+        target[DeepCopy(key, seen)] = DeepCopy(value, seen)
+    end
+    return target
+end
+
+local function Merge(target, source)
+    if type(target) ~= "table" or type(source) ~= "table" then
+        return
+    end
+
+    for key, value in pairs(source) do
+        if type(value) == "table" then
+            if type(target[key]) ~= "table" then
+                target[key] = {}
+            end
+            Merge(target[key], value)
+        else
+            target[key] = value
+        end
+    end
+end
+
+local function NormalizeMedia(value)
+    if type(value) ~= "table" then
+        return
+    end
+
+    for key, child in pairs(value) do
+        if type(child) == "table" then
+            NormalizeMedia(child)
+        elseif type(child) == "string" then
+            if child == "Interface\\Addons\\MikScrollingBattleText\\Fonts\\Rurutia.ttf"
+                or child == RURUTIA_FONT_PATH then
+                value[key] = "Rurutia"
+            elseif child == "OUTLINE" then
+                -- ElvUI 6.09 renders the modern profile's one-pixel outline
+                -- too lightly. Preserve the intended bold outlined look on
+                -- build 30300 with its supported thick-outline flag.
+                value[key] = "THICKOUTLINE"
+            end
+        end
+    end
+end
+
+local function SanitizeDetails(value)
+    if type(value) ~= "table" then
+        return
+    end
+
+    for key, child in pairs(value) do
+        if key == "show_timer" and type(child) == "boolean" then
+            value[key] = { child, child, child }
+        elseif type(child) == "table" then
+            SanitizeDetails(child)
+        end
+    end
+end
+
+local function SanitizeElvTags(value)
+    if type(value) ~= "table" then
+        return
+    end
+
+    for key, child in pairs(value) do
+        if key == "text_format" and type(child) == "string" then
+            child = string.gsub(child, "%[classcolor%](%[power:)", "[powercolor]%1")
+            child = string.gsub(child, "%[classcolor%]", "[namecolor]")
+            child = string.gsub(child, "%[health:current:shortvalue%]", "[health:current]")
+            value[key] = child
+        elseif type(child) == "table" then
+            SanitizeElvTags(child)
+        end
+    end
+end
+
+-- The source profile was exported from the modern Titan client. ElvUI 6.09
+-- has no stable bar 8, so materialize its exact intended position and sizing
+-- on legacy bar 6 before the profile is committed. Doing this in the importer
+-- avoids a second ElvUI:UpdateAll during the initial world handshake.
+local function ApplyTitanCompatibilityProfile(profile)
+    profile.movers = profile.movers or {}
+    profile.movers.ElvAB_6 =
+        "BOTTOM,ElvUIParent,BOTTOM,296,1"
+
+    profile.actionbar = profile.actionbar or {}
+    local bar = profile.actionbar.bar6 or {}
+    profile.actionbar.bar6 = bar
+    bar.enabled = true
+    bar.buttons = 12
+    bar.buttonsPerRow = 4
+    bar.buttonSize = 35
+    bar.buttonSpacing = 1
+    bar.backdropSpacing = 4
+    bar.showGrid = false
+    bar.point = "TOPLEFT"
+    bar.macrotext = true
+    bar.macroFontSize = 14
+    bar.macroFontOutline = "THICKOUTLINE"
+    bar.macroTextPosition = "BOTTOM"
+    bar.macroTextYOffset = 2
+    bar.hotkeyFontSize = 14
+    bar.hotkeyFontOutline = "THICKOUTLINE"
+    bar.hotkeyTextYOffset = -1
+
+    -- ElvUI 6.09 only consumes the legacy raid/raid40 keys.  The source
+    -- Titan profile uses raid2 for 25-player content and raid3 for 40-player
+    -- content, so map them before the profile is committed.
+    local units = profile.unitframe and profile.unitframe.units
+    if type(units) == "table" then
+        if type(units.raid2) == "table" then
+            -- Preserve every ElvUI 6.09-only default, then overlay the modern
+            -- Titan raid2 appearance. Replacing this table outright drops
+            -- groupSpacing/minDuration and breaks headers after zoning.
+            local raid = DeepCopy(units.raid or {})
+            Merge(raid, units.raid2)
+            raid.enable = true
+            raid.numGroups = 5
+            raid.groupBy = "INDEX"
+            raid.width = 85
+            raid.height = 50
+            raid.growthDirection = "DOWN_RIGHT"
+            raid.visibility = "[@raid1,noexists][@raid41,exists] hide;show"
+            units.raid = raid
+        end
+        if type(units.raid3) == "table" then
+            local raid40 = DeepCopy(units.raid40 or {})
+            Merge(raid40, units.raid3)
+            raid40.enable = false
+            raid40.numGroups = 8
+            units.raid40 = raid40
+        end
+        units.raid1 = nil
+        units.raid2 = nil
+        units.raid3 = nil
+    end
+
+    profile.movers.ElvUF_RaidMover =
+        profile.movers.ElvUF_Raid2Mover
+        or "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-158,379"
+    profile.movers.ElvUF_Raid40Mover =
+        profile.movers.ElvUF_Raid3Mover
+        or "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-222,353"
+    profile.movers.ElvUF_Raid1Mover = nil
+    profile.movers.ElvUF_Raid2Mover = nil
+    profile.movers.ElvUF_Raid3Mover = nil
+end
+
+local function InstallLegacyIndexSort(E)
+    if not E or type(E.GetModule) ~= "function" then
+        return
+    end
+    local ok, UF = pcall(E.GetModule, E, "UnitFrames")
+    if not ok or not UF or type(UF.headerGroupBy) ~= "table" then
+        return
+    end
+    UF.headerGroupBy.INDEX = function(header)
+        header:SetAttribute("groupingOrder", "1,2,3,4,5,6,7,8")
+        header:SetAttribute("sortMethod", "INDEX")
+        header:SetAttribute("groupBy", nil)
+    end
+end
+
+local function SuppressSetupWizards()
+    if type(ElvUI) == "table" then
+        local E = unpack(ElvUI)
+        if E and E.private then
+            E.private.install_complete = E.version or true
+        end
+        if E and E.db then
+            E.db.hideTutorial = true
+        end
+    end
+    if ElvUIInstallFrame then
+        ElvUIInstallFrame:Hide()
+    end
+    if ElvUITutorialWindow then
+        ElvUITutorialWindow:Hide()
+    end
+
+    if type(_detalhes_global) == "table" then
+        _detalhes_global.got_first_run = true
+    end
+    if type(_detalhes) == "table" then
+        _detalhes.is_first_run = false
+        _detalhes.character_first_run = false
+    end
+    if DetailsWelcomeWindow then
+        DetailsWelcomeWindow:Hide()
+    end
+end
+
+local function RegisterMedia()
+    local media = LibStub and LibStub("LibSharedMedia-3.0", true)
+    if media then
+        -- Every embedded LSM copy shares this LibStub singleton. Correct the
+        -- live table as a final defense against addon load order, then use an
+        -- all-locale mask because legacy LSM rejects unmasked zhCN fonts.
+        if type(media.MediaTable) == "table" then
+            media.MediaTable.font = media.MediaTable.font or {}
+            media.MediaTable.font["伤害数字"] = "Fonts\\ARKai_C.ttf"
+            media.MediaTable.font["默认"] = "Fonts\\ARKai_T.ttf"
+            media.MediaTable.font["聊天"] = "Fonts\\ARHei.ttf"
+            media.MediaTable.font["Rurutia"] = RURUTIA_FONT_PATH
+        end
+        if type(media.DefaultMedia) == "table" then
+            media.DefaultMedia.font = "默认"
+        end
+        if type(media.Register) == "function" then
+            pcall(media.Register, media, "font", "Rurutia", RURUTIA_FONT_PATH, 255)
+        end
+        loadAudit.mediaTableFixed = true
+    end
+end
+
+local function MergeKnownSections(target, source, defaults)
+    for key, value in pairs(source or {}) do
+        if key == "movers" or (defaults and defaults[key] ~= nil) then
+            if type(value) == "table" then
+                if type(target[key]) ~= "table" then
+                    target[key] = {}
+                end
+                Merge(target[key], value)
+            else
+                target[key] = value
+            end
+        end
+    end
+end
+
+local function ApplyElvUI()
+    if type(ElvUI) ~= "table" or type(SunwellLuluElvProfile) ~= "table" then
+        return false, "ElvUI 尚未就绪"
+    end
+
+    local E = unpack(ElvUI)
+    if not E or not E.data or not E.DF then
+        return false, "ElvUI 数据库尚未就绪"
+    end
+
+    RegisterMedia()
+
+    local profile = DeepCopy(E.DF.profile)
+    MergeKnownSections(profile, SunwellLuluElvProfile, E.DF.profile)
+    SanitizeElvTags(profile)
+    ApplyTitanCompatibilityProfile(profile)
+    NormalizeMedia(profile)
+
+    local global = {}
+    MergeKnownSections(global, SunwellLuluElvGlobal, E.DF.global)
+    NormalizeMedia(global)
+    Merge(E.data.global, global)
+
+    if E.data:GetCurrentProfile() == PROFILE_NAME and type(E.data.profile) == "table" then
+        local activeProfile = E.data.profile
+        wipe(activeProfile)
+        Merge(activeProfile, profile)
+        E.data.profiles[PROFILE_NAME] = activeProfile
+    else
+        E.data.profiles[PROFILE_NAME] = profile
+        E.data:SetProfile(PROFILE_NAME)
+    end
+    E.db = E.data.profile
+    E.global = E.data.global
+    InstallLegacyIndexSort(E)
+    E:UpdateAll(true)
+    return true
+end
+
+local function ApplyDetails()
+    if type(_detalhes_global) ~= "table"
+        or type(SunwellLuluDetailsProfile) ~= "table"
+        or type(_detalhes) ~= "table"
+        or type(_detalhes.ApplyProfile) ~= "function" then
+        return false
+    end
+
+    local profile = DeepCopy(SunwellLuluDetailsProfile)
+    NormalizeMedia(profile)
+    SanitizeDetails(profile)
+    _detalhes_global.__profiles = _detalhes_global.__profiles or {}
+    _detalhes_global.__profiles[SunwellLuluDetailsProfileName or "露露缇娅"] = profile
+    _detalhes.always_use_profile = true
+    _detalhes.always_use_profile_name = SunwellLuluDetailsProfileName or "露露缇娅"
+    _detalhes:ApplyProfile(_detalhes.always_use_profile_name, true)
+    return true
+end
+
+local function ApplyWeakAuras()
+    if SunwellLuluProfileDB.weakAurasVersion == PROFILE_VERSION then
+        SunwellLuluWeakAuraDisplays = nil
+        return false
+    end
+
+    if type(WeakAurasSaved) ~= "table" or type(SunwellLuluWeakAuraDisplays) ~= "table" then
+        return false
+    end
+
+    WeakAurasSaved.displays = DeepCopy(SunwellLuluWeakAuraDisplays)
+    SunwellLuluProfileDB.weakAurasVersion = PROFILE_VERSION
+    SunwellLuluWeakAuraDisplays = nil
+    return true
+end
+
+local function RemoveIncompatibleWeakAuras()
+    if type(WeakAurasSaved) ~= "table" or type(WeakAurasSaved.displays) ~= "table" then
+        return 0
+    end
+
+    local remove = {}
+    for id in pairs(WeakAurasSaved.displays) do
+        if type(id) == "string" and string.find(id, "露露的问答-背景", 1, true) == 1 then
+            remove[#remove + 1] = id
+        end
+    end
+
+    for _, id in ipairs(remove) do
+        local data = WeakAurasSaved.displays[id]
+        if type(WeakAuras) == "table"
+            and type(WeakAuras.Delete) == "function"
+            and WeakAuras.regions
+            and WeakAuras.regions[id]
+            and WeakAuras.regions[id].region then
+            pcall(WeakAuras.Delete, data)
+        end
+        WeakAurasSaved.displays[id] = nil
+    end
+    return #remove
+end
+
+local function ApplyDBM()
+    if type(DBM_AllSavedOptions) == "table" then
+        DBM_AllSavedOptions.Default = DBM_AllSavedOptions.Default or {}
+        DBM_AllSavedOptions.Default.ChosenVoicePack2 = "Rurutia"
+        DBM_AllSavedOptions.Default.SpecialWarningFont = RURUTIA_FONT_PATH
+    end
+    if type(DBM) == "table" and type(DBM.Options) == "table" then
+        DBM.Options.ChosenVoicePack2 = "Rurutia"
+        DBM.Options.SpecialWarningFont = RURUTIA_FONT_PATH
+    end
+end
+
+local function ApplyEpochCN()
+    EpochCNDB = EpochCNDB or {}
+    EpochCNDB.enabled = true
+    EpochCNDB.questLog = true
+    EpochCNDB.tooltip = true
+    EpochCNDB.auctionHouse = true
+    EpochCNDB.ui = true
+    EpochCNDB.globalStrings = true
+    EpochCNDB.questTracker = true
+    EpochCNDB.forceChineseClientLocale = true
+    EpochCNDB.updateCheck = false
+    EpochCNDB.social = EpochCNDB.social or {}
+    EpochCNDB.social.enabled = false
+    EpochCNDB.social.autoJoinChannel = false
+end
+
+local function SafeSetCVar(name, value)
+    if SetCVar then
+        pcall(SetCVar, name, value)
+    end
+end
+
+local function ApplyCVars()
+    SafeSetCVar("alwaysShowActionBars", "1")
+    SafeSetCVar("autoLootDefault", "1")
+    SafeSetCVar("cameraDistanceMaxZoomFactor", "2.6")
+    SafeSetCVar("chatBubbles", "1")
+    SafeSetCVar("chatBubblesParty", "1")
+    SafeSetCVar("enableFloatingCombatText", "1")
+    SafeSetCVar("nameplateShowEnemies", "1")
+    SafeSetCVar("nameplateShowFriends", "0")
+    SafeSetCVar("showTargetOfTarget", "1")
+    SafeSetCVar("showTutorials", "0")
+    SafeSetCVar("useUiScale", "1")
+    SafeSetCVar("uiScale", "1")
+    if TutorialFrame then
+        TutorialFrame:Hide()
+    end
+end
+
+-- UI-only migrations deliberately avoid gameplay preferences such as loot,
+-- nameplates, chat bubbles and camera distance.
+local function ApplyLayoutCVars()
+    SafeSetCVar("useUiScale", "1")
+    SafeSetCVar("uiScale", "1")
+end
+
+local zoneTranslations = {
+    ["Shadow Grave"] = "影葬墓地",
+    ["Tirisfal Glades"] = "提瑞斯法林地",
+    ["Ghostlands"] = "幽魂之地",
+    ["Eversong Woods"] = "永歌森林",
+    ["Sunwell Plateau"] = "太阳之井高地",
+    ["Zul'Aman"] = "祖阿曼",
+    ["Dalaran"] = "达拉然",
+    ["Shattrath City"] = "沙塔斯城",
+    ["Orgrimmar"] = "奥格瑞玛",
+    ["Stormwind City"] = "暴风城",
+}
+
+local function SetNamedText(globalName, text)
+    local object = _G[globalName]
+    if object and type(object.SetText) == "function" then
+        object:SetText(text)
+    end
+end
+
+local function ApplyVisibleChinese()
+    SetNamedText("ChatFrame1TabText", "综合")
+    SetNamedText("ChatFrame2TabText", "战斗记录")
+
+    local minimapZone = GetMinimapZoneText and GetMinimapZoneText()
+    local zone = GetZoneText and GetZoneText()
+    local subZone = GetSubZoneText and GetSubZoneText()
+    if minimapZone and zoneTranslations[minimapZone] then
+        SetNamedText("MinimapZoneText", zoneTranslations[minimapZone])
+        if Minimap and Minimap.location and type(Minimap.location.SetText) == "function" then
+            Minimap.location:SetText(zoneTranslations[minimapZone])
+        end
+    end
+    if zone and zoneTranslations[zone] then
+        SetNamedText("ZoneTextString", zoneTranslations[zone])
+    end
+    if subZone and zoneTranslations[subZone] then
+        SetNamedText("SubZoneTextString", zoneTranslations[subZone])
+    end
+end
+
+local hiddenEnglishSystemMessages = {
+    "Welcome to an AzerothCore server",
+    "This server runs on AzerothCore",
+    "This server runs with.*mod%-playerbots",
+    "Playerbots:.*configured with",
+}
+
+local function ChineseSystemMessageFilter(_, _, message, ...)
+    if type(message) ~= "string" then
+        return false, message, ...
+    end
+    for _, pattern in ipairs(hiddenEnglishSystemMessages) do
+        if string.find(message, pattern) then
+            return true
+        end
+    end
+
+    local translated = message
+    translated = string.gsub(translated, "Joined Channel:", "已加入频道：")
+    translated = string.gsub(translated, "Left Channel:", "已离开频道：")
+    translated = string.gsub(translated, "General", "综合")
+    translated = string.gsub(translated, "LocalDefense", "本地防务")
+    for english, chinese in pairs(zoneTranslations) do
+        translated = string.gsub(translated, english, chinese)
+    end
+    return false, translated, ...
+end
+
+if ChatFrame_AddMessageEventFilter then
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", ChineseSystemMessageFilter)
+end
+
+local function SpellName(spellId)
+    local name = GetSpellInfo(spellId)
+    return name
+end
+
+local function MacroLine(spellId)
+    local name = SpellName(spellId)
+    return name and ("/cast " .. name) or nil
+end
+
+local function CreateOrUpdateMacro(definition)
+    local body = definition.body
+    if type(body) == "function" then
+        body = body()
+    end
+    if not body or body == "" then
+        return nil
+    end
+
+    if string.len(body) > 255 then
+        body = string.sub(body, 1, 255)
+    end
+
+    local index = GetMacroIndexByName(definition.name)
+    if index and index > 0 then
+        EditMacro(index, definition.name, definition.icon or 1, body, 1)
+        return index
+    end
+    return CreateMacro(definition.name, definition.icon or 1, body, 1)
+end
+
+local function CombatMacro(spellId, petAttack)
+    local spell = SpellName(spellId)
+    if not spell then
+        return nil
+    end
+    local lines = { "#showtooltip " .. spell }
+    if petAttack then
+        lines[#lines + 1] = "/petattack [harm,nodead]"
+    else
+        lines[#lines + 1] = "/startattack"
+    end
+    lines[#lines + 1] = "/cast " .. spell
+    return table.concat(lines, "\n")
+end
+
+local function WarlockMacros()
+    return {
+        { name = "露露暗影箭", body = function() return CombatMacro(47809, true) end },
+        { name = "露露献祭", body = function() return CombatMacro(47811, true) end },
+        { name = "露露燃烧", body = function() return CombatMacro(17962, true) end },
+        { name = "露露烧尽", body = function() return CombatMacro(47838, true) end },
+        { name = "露露混乱箭", body = function() return CombatMacro(59172, true) end },
+        { name = "露露暗灼", body = function() return CombatMacro(47827, true) end },
+        { name = "露露腐蚀", body = function() return CombatMacro(47813, true) end },
+        {
+            name = "露露诅咒",
+            body = function()
+                local elements, agony, doom = SpellName(47865), SpellName(47864), SpellName(47867)
+                if not elements or not agony or not doom then return nil end
+                return "#showtooltip\n/petattack [harm,nodead]\n/cast [mod:ctrl] " .. elements
+                    .. "; [mod:alt] " .. agony .. "; " .. doom
+            end,
+        },
+        {
+            name = "露露AOE",
+            body = function()
+                local rain, seed, fury = SpellName(47820), SpellName(47836), SpellName(47847)
+                if not rain or not seed or not fury then return nil end
+                return "#showtooltip\n/petattack [harm,nodead]\n/cast [mod:alt] " .. rain
+                    .. "; [mod:ctrl] " .. seed .. "; " .. fury
+            end,
+        },
+        {
+            name = "露露分流",
+            body = function()
+                local tap = SpellName(57946)
+                if not tap then return nil end
+                return "#showtooltip " .. tap .. "\n/use [mod:alt] 33448\n/cast " .. tap
+            end,
+        },
+        {
+            name = "露露法阵",
+            body = function()
+                local summon, teleport = SpellName(48018), SpellName(48020)
+                if not summon or not teleport then return nil end
+                return "#showtooltip\n/cast [mod:ctrl] " .. summon .. "; " .. teleport
+            end,
+        },
+        { name = "露露碎裂", body = function() return MacroLine(29858) end },
+    }
+end
+
+local function PaladinMacros()
+    return {
+        { name = "露露十字军", body = function() return CombatMacro(35395, false) end },
+        { name = "露露智慧审判", body = function() return CombatMacro(53408, false) end },
+        { name = "露露奉献", body = function() return CombatMacro(48819, false) end },
+        { name = "露露驱邪", body = function() return CombatMacro(48801, false) end },
+        { name = "露露愤怒锤", body = function() return CombatMacro(48806, false) end },
+        { name = "露露神圣风暴", body = function() return CombatMacro(53385, false) end },
+        {
+            name = "露露惩戒循环",
+            body = function()
+                local crusader = SpellName(35395)
+                local judgement = SpellName(53408)
+                local storm = SpellName(53385)
+                local consecration = SpellName(48819)
+                if not crusader or not judgement or not storm or not consecration then return nil end
+                return "#showtooltip\n/startattack\n/castsequence reset=6/combat "
+                    .. crusader .. "," .. judgement .. "," .. storm .. "," .. consecration
+            end,
+        },
+    }
+end
+
+local function RogueMacros()
+    return {
+        {
+            name = "露露贼1",
+            body = function()
+                local ambush, backstab, hemorrhage = SpellName(48691), SpellName(48657), SpellName(48660)
+                if not ambush or not backstab or not hemorrhage then return nil end
+                return "#showtooltip " .. backstab .. "\n/startattack\n/cast " .. ambush
+                    .. "\n/cast " .. backstab .. "\n/cast " .. hemorrhage
+            end,
+        },
+        { name = "露露贼2", body = function() return CombatMacro(48668, false) end },
+    }
+end
+
+local classMacroBuilders = {
+    WARLOCK = WarlockMacros,
+    PALADIN = PaladinMacros,
+    ROGUE = RogueMacros,
+}
+
+local function ClearActionBars()
+    if not PickupAction or not ClearCursor then
+        return
+    end
+    for slot = 1, 72 do
+        PickupAction(slot)
+        ClearCursor()
+    end
+end
+
+local function PlaceMacro(index, slot)
+    if not index or index <= 0 then
+        return
+    end
+    PickupMacro(index)
+    PlaceAction(slot)
+    ClearCursor()
+end
+
+local function FillGenericSpellBar()
+    if not GetSpellName or not PickupSpell then
+        return
+    end
+    local actionSlot = 1
+    local spellBookSlot = 1
+    while actionSlot <= 12 do
+        local name = GetSpellName(spellBookSlot, BOOKTYPE_SPELL)
+        if not name then
+            break
+        end
+        if not IsPassiveSpell(spellBookSlot, BOOKTYPE_SPELL) then
+            PickupSpell(spellBookSlot, BOOKTYPE_SPELL)
+            PlaceAction(actionSlot)
+            ClearCursor()
+            actionSlot = actionSlot + 1
+        end
+        spellBookSlot = spellBookSlot + 1
+    end
+end
+
+local function ApplyMacrosAndBars(classToken)
+    if InCombatLockdown and InCombatLockdown() then
+        return false
+    end
+
+    ClearActionBars()
+    local builder = classMacroBuilders[classToken]
+    if not builder then
+        FillGenericSpellBar()
+        return true
+    end
+
+    local indices = {}
+    local definitions = builder()
+    for position, definition in ipairs(definitions) do
+        indices[position] = CreateOrUpdateMacro(definition)
+        PlaceMacro(indices[position], position)
+    end
+
+    if classToken == "WARLOCK" then
+        local extraSlots = {
+            [1] = 64, [2] = 62, [3] = 65, [4] = 63, [5] = 66, [6] = 52,
+            [8] = 57, [9] = 49, [10] = 51, [11] = 55, [12] = 60,
+        }
+        for macroIndex, slot in pairs(extraSlots) do
+            PlaceMacro(indices[macroIndex], slot)
+        end
+    elseif classToken == "PALADIN" then
+        local extraSlots = { [1] = 49, [2] = 50, [3] = 51, [4] = 52, [5] = 53, [6] = 54 }
+        for macroIndex, slot in pairs(extraSlots) do
+            PlaceMacro(indices[macroIndex], slot)
+        end
+    end
+    return true
+end
+
+local function ApplyBindings(classToken)
+    if not SetBinding or not SaveBindings then
+        return
+    end
+
+    local common = {
+        { "A", "STRAFELEFT" },
+        { "D", "STRAFERIGHT" },
+        { "CTRL-W", "STARTAUTORUN" },
+        { "ALT-1", "MULTIACTIONBAR1BUTTON1" },
+        { "ALT-2", "MULTIACTIONBAR2BUTTON2" },
+        { "ALT-3", "ACTIONBUTTON7" },
+        { "ALT-4", "MULTIACTIONBAR2BUTTON4" },
+        { "SHIFT-H", "ELVUIBAR6BUTTON5" },
+    }
+    for _, binding in ipairs(common) do
+        SetBinding(binding[1], binding[2])
+    end
+
+    if classToken == "WARLOCK" or classToken == "ROGUE" then
+        local bindings = {
+            { "Q", "MULTIACTIONBAR2BUTTON1" },
+            { "E", "MULTIACTIONBAR1BUTTON2" },
+            { "R", "MULTIACTIONBAR1BUTTON3" },
+            { "F", "MULTIACTIONBAR1BUTTON4" },
+            { "Z", "MULTIACTIONBAR1BUTTON5" },
+            { "X", "MULTIACTIONBAR1BUTTON6" },
+            { "G", "MULTIACTIONBAR2BUTTON4" },
+            { "SHIFT-F", "MULTIACTIONBAR2BUTTON3" },
+            { "SHIFT-A", "MULTIACTIONBAR2BUTTON8" },
+            { "SHIFT-E", "MULTIACTIONBAR2BUTTON9" },
+            { "SHIFT-V", "MULTIACTIONBAR2BUTTON10" },
+            { "SHIFT-X", "MULTIACTIONBAR2BUTTON11" },
+            { "SHIFT-C", "MULTIACTIONBAR2BUTTON12" },
+        }
+        for _, binding in ipairs(bindings) do
+            SetBinding(binding[1], binding[2])
+        end
+    elseif classToken == "PALADIN" then
+        for index = 1, 8 do
+            SetBinding("SHIFT-" .. index, "MULTIACTIONBAR2BUTTON" .. index)
+        end
+    end
+    SaveBindings(2)
+end
+
+local function CurrentCharacterKey()
+    local name = type(UnitName) == "function" and UnitName("player")
+    local realm = type(GetRealmName) == "function" and GetRealmName()
+    if type(name) ~= "string" or name == ""
+        or type(realm) ~= "string" or realm == "" then
+        return nil
+    end
+    return name .. " - " .. realm
+end
+
+local function ApplyUIOnly(force)
+    local characterKey = CurrentCharacterKey()
+    if not characterKey then
+        return false, false, "CHARACTER_NOT_READY"
+    end
+    local characterVersion = SunwellLuluProfileDB.characters[characterKey]
+    local needsCharacterApply = force or characterVersion ~= PROFILE_VERSION
+
+    if not needsCharacterApply then
+        return true, false
+    end
+
+    ApplyLayoutCVars()
+    RegisterMedia()
+
+    local elvOk, elvApplied, elvError = pcall(ApplyElvUI)
+    if not elvOk then
+        Print("界面配置导入失败，请重载界面后重试。")
+        return false, false, "ELVUI_CALL_FAILED: " .. tostring(elvApplied)
+    elseif not elvApplied then
+        Print(elvError or "界面配置尚未应用，请确认统一界面插件已启用。")
+        return false, false, elvError or "ELVUI_NOT_READY"
+    end
+
+    local detailsOk, detailsApplied = pcall(ApplyDetails)
+    if not detailsOk then
+        Print("战斗统计配置导入失败；界面布局仍已应用。")
+    elseif not detailsApplied then
+        Print("战斗统计插件未启用；不影响露露界面布局。")
+    end
+
+    local dbmOk = pcall(ApplyDBM)
+    if not dbmOk then
+        Print("首领提示字体配置导入失败；界面布局仍已应用。")
+    end
+
+    -- Commit the per-character version only after the safe visual migration
+    -- has succeeded. No action slots, macros, bindings or WeakAuras are touched.
+    SunwellLuluProfileDB.characters[characterKey] = PROFILE_VERSION
+    SunwellLuluProfileDB.version = PROFILE_VERSION
+    SunwellLuluProfileDB.profileName = PROFILE_NAME
+    SunwellLuluProfileDB.loadAudit.applied = true
+    SunwellLuluProfileDB.loadAudit.characterVersion = PROFILE_VERSION
+    SunwellLuluProfileDB.loadAudit.detailsApplied = detailsOk and detailsApplied or false
+    SunwellLuluProfileDB.loadAudit.dbmApplied = dbmOk
+    SunwellLuluProfileDB.loadAudit.queued = false
+    SunwellLuluProfileDB.loadAudit.phase = "APPLIED"
+    SunwellLuluProfileDB.loadAudit.lastError = nil
+    collectgarbage("collect")
+    Print("已应用露露 25 人界面、现代粗体字体、战斗统计与首领提示；动作槽和按键未改动。")
+    return true, true
+end
+
+local function QueueMigration(force, source)
+    -- Do not read the character key during PLAYER_LOGIN. The legacy client can
+    -- still be initializing its unit/realm state while a LoadOnDemand addon is
+    -- loaded from another addon's event handler.
+    pending = true
+    elapsed = 0
+    migrationAttempts = 0
+    loadAudit.queued = true
+    loadAudit.force = force and true or false
+    loadAudit.source = tostring(source or "external")
+    loadAudit.phase = "QUEUED"
+    loadAudit.lastError = nil
+    return true
+end
+
+SunwellLuluProfile_QueueMigration = QueueMigration
+
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+pcall(RegisterMedia)
+SuppressSetupWizards()
+frame:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_LOGIN" then
+        local queueOk, queueError = pcall(QueueMigration, false, "PLAYER_LOGIN")
+        if not queueOk then
+            loadAudit.phase = "QUEUE_CALL_FAILED"
+            loadAudit.lastError = tostring(queueError)
+        end
+        setupGuardRemaining = 30
+        setupGuardElapsed = 0
+        clearLoginChat = false
+    elseif event == "PLAYER_REGEN_ENABLED" and pending then
+        elapsed = 0
+    end
+end)
+frame:SetScript("OnUpdate", function(_, delta)
+    -- Migration is the primary state machine. Optional visual refreshes below
+    -- are isolated so they can never prevent ApplyUIOnly from running.
+    if pending then
+        elapsed = elapsed + delta
+        if elapsed >= 4
+            and not (InCombatLockdown and InCombatLockdown()) then
+            pending = false
+            migrationAttempts = migrationAttempts + 1
+            loadAudit.attempts = migrationAttempts
+            loadAudit.phase = "APPLYING"
+            local callOk, applied, changed, reason = pcall(ApplyUIOnly, false)
+            if not callOk then
+                loadAudit.phase = "APPLY_CALL_FAILED"
+                loadAudit.lastError = tostring(applied)
+            elseif not applied then
+                loadAudit.phase = "RETRY_WAIT"
+                loadAudit.lastError = tostring(reason or "APPLY_DEFERRED")
+            end
+            if (not callOk or not applied) and migrationAttempts < 6 then
+                pending = true
+                elapsed = 0
+                loadAudit.queued = true
+            elseif not callOk or not applied then
+                loadAudit.queued = false
+                loadAudit.phase = "FAILED"
+            else
+                loadAudit.queued = false
+            end
+        end
+    end
+
+    chineseUiElapsed = chineseUiElapsed + delta
+    if chineseUiElapsed >= 0.5 then
+        chineseUiElapsed = 0
+        local visibleOk, visibleError = pcall(ApplyVisibleChinese)
+        loadAudit.visibleChineseOk = visibleOk and true or false
+        if not visibleOk then
+            loadAudit.visibleChineseError = tostring(visibleError)
+        end
+    end
+
+    if setupGuardRemaining > 0 then
+        setupGuardRemaining = setupGuardRemaining - delta
+        setupGuardElapsed = setupGuardElapsed + delta
+        if setupGuardElapsed >= 0.5 then
+            setupGuardElapsed = 0
+            local setupOk, setupError = pcall(SuppressSetupWizards)
+            loadAudit.setupGuardOk = setupOk and true or false
+            if not setupOk then
+                loadAudit.setupGuardError = tostring(setupError)
+            end
+        end
+    end
+end)
+
+SLASH_SUNWELLLULU1 = "/lulu"
+SlashCmdList.SUNWELLLULU = function(message)
+    message = string.lower(message or "")
+    if message == "apply" or message == "应用"
+        or message == "reset" or message == "重置" then
+        if InCombatLockdown and InCombatLockdown() then
+            Print("请脱离战斗后再应用界面配置。")
+            return
+        end
+        pending = false
+        migrationAttempts = 0
+        ApplyUIOnly(true)
+        return
+    end
+
+    Print("配置版本 " .. DISPLAY_VERSION .. "；输入 /lulu apply 可安全应用露露 25 人界面。")
+end

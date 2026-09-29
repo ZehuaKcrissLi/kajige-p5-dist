@@ -1,0 +1,75 @@
+-- 咔鸡哥 P5 团本训练服强制中文覆盖。
+-- 训练服客户端内核报告 enUS，因此不能依赖 GetLocale() 选择中文文件。
+local L
+
+L = DBM:GetModLocalization("Nalorakk")
+L:SetGeneralLocalization({name = "纳洛拉克"})
+L:SetWarningLocalization({
+    WarnBear = "熊形态",
+    WarnBearSoon = "5 秒后变为熊形态",
+    WarnNormal = "巨魔形态",
+    WarnNormalSoon = "5 秒后变为巨魔形态",
+})
+L:SetTimerLocalization({
+    TimerBear = "熊形态",
+    TimerNormal = "巨魔形态",
+})
+L:SetOptionLocalization({
+    WarnBear = "进入熊形态时显示警报",
+    WarnBearSoon = "进入熊形态前显示预警",
+    WarnNormal = "恢复巨魔形态时显示警报",
+    WarnNormalSoon = "恢复巨魔形态前显示预警",
+    TimerBear = "显示熊形态计时条",
+    TimerNormal = "显示巨魔形态计时条",
+})
+L:SetMiscLocalization({
+    YellPull = "上前去，卫兵！杀戮时间开始了！",
+    YellBear = "你们召唤野兽？你马上就要大大的后悔了！",
+    YellNormal = "纳洛拉克，变形，出发！",
+})
+
+L = DBM:GetModLocalization("Akilzon")
+L:SetGeneralLocalization({name = "埃基尔松"})
+L:SetMiscLocalization({
+    YellPull = "我是猎鹰，而你们，就是猎物！",
+})
+
+L = DBM:GetModLocalization("Janalai")
+L:SetGeneralLocalization({name = "加亚莱"})
+L:SetMiscLocalization({
+    YellPull = "风之圣魂将是你的梦魇！",
+    YellBomb = "烧死你们！",
+    YellAdds = "雌鹰哪里去了？快去孵蛋！",
+})
+
+L = DBM:GetModLocalization("Halazzi")
+L:SetGeneralLocalization({name = "哈尔拉兹"})
+L:SetWarningLocalization({
+    WarnSpirit = "灵魂分裂",
+    WarnNormal = "灵魂回归",
+})
+L:SetOptionLocalization({
+    WarnSpirit = "进入灵魂分裂阶段时显示警报",
+    WarnNormal = "恢复合体阶段时显示警报",
+})
+L:SetMiscLocalization({
+    YellPull = "在利爪与尖牙面前，下跪吧，祈祷吧，颤栗吧！",
+    YellSpirit = "狂野的灵魂与我同在……",
+    YellNormal = "灵魂，到我这里来！",
+})
+
+L = DBM:GetModLocalization("Malacrass")
+L:SetGeneralLocalization({name = "妖术领主玛拉卡斯"})
+L:SetMiscLocalization({
+    YellPull = "阴影将会降临在你们头上……",
+})
+
+L = DBM:GetModLocalization("ZulJin")
+L:SetGeneralLocalization({name = "祖尔金"})
+L:SetMiscLocalization({
+    YellPull = "没有人比我更强！",
+    YellPhase2 = "你看我有许多新招，变个熊……",
+    YellPhase3 = "变成猎鹰，谁也别想逃出我的眼睛！",
+    YellPhase4 = "现在来让你看看我的尖牙和利爪！",
+    YellPhase5 = "龙鹰，不用抬头就能看见！",
+})

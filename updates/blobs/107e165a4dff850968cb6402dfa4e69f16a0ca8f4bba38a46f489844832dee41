@@ -1,0 +1,9 @@
+## Interface: 30300
+## Title: |cffffd200太阳井训练服|r 中文加载器
+## Notes: 在其他插件载入前统一选择简体中文语言包。
+## Author: Local training tools
+## Version: 2026.07.26.1
+## DefaultState: Enabled
+## LoadOnDemand: 0
+
+!SunwellChineseBootstrap.lua

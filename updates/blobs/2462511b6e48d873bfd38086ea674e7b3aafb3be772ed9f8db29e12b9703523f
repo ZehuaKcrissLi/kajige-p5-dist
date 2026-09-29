@@ -1,0 +1,17 @@
+## Interface: 30300
+## Title: Details!: Tiny Threat (plugin)
+## Title-zhCN: 团队仇恨统计
+## Notes: Threat meter plugin, show threat for group members in the window. Select it from the Plugin menu in the Orange Cogwheel.
+## Notes-zhCN: 在战斗统计窗口显示团队成员仇恨。
+## DefaultState: Disabled
+## RequiredDeps: Details
+## OptionalDeps: Ace3
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
+enUS.lua
+ptBR.lua
+
+Details_TinyThreat.lua

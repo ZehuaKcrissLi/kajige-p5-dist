@@ -1,0 +1,56 @@
+## Interface: 30300
+## Title: |cff33ffccEpoch|cffffffffCN
+## Title-zhCN: 世界内容中文整合
+## Notes: Standalone Chinese localization for Project Epoch with an independent pfQuest-style world map quest marker core.
+## Notes-zhCN: 任务汉化、任务追踪、天赋技能与界面汉化，并内置世界地图任务标记。
+## Author: EpochCN 汉化组, Community
+## X-Designer: EpochCN
+## Version: 0.7.4
+## SavedVariables: EpochCNDB, GAME_LOCALE
+## SavedVariablesPerCharacter: EpochCNCharDB
+## DefaultState: enabled
+## LoadOnDemand: 0
+
+Data\Manifest.lua
+Data\FrameXMLStrings.lua
+Data\Glossary.lua
+Data\Overrides.lua
+
+Data\QuestCN_Data.lua
+Data\EpochQuestData.lua
+Data\MapData.lua
+Data\SpellData_Season.lua
+Data\SpellData_Epoch.lua
+Data\SpellRaw_Epoch.lua
+Data\ItemData.lua
+Data\ItemNameMap.lua
+Data\EpochConsumableData.lua
+Data\EpochItemData.lua
+Data\TooltipLineData.lua
+Data\UnitData.lua
+Data\ObjectiveNameData.lua
+Data\CallBoardData.lua
+Data\GlobalData.lua
+Data\EpochHeadData.lua
+Data\UnitNameDict.lua
+
+Core.lua
+Modules\GlobalStrings.lua
+Modules\QuestLog.lua
+Modules\Tooltip.lua
+Modules\SpellBook.lua
+Modules\Names.lua
+Modules\NamePlates.lua
+Modules\AuctionHouse.lua
+Modules\UI.lua
+Modules\Settings.lua
+Modules\PFQuestBridge.lua
+Modules\QuestSync.lua
+Modules\WorldMap.lua
+Modules\QuestTracker.lua
+Modules\UpdateChecker.lua
+Modules\Social.lua
+Modules\ChineseChannel.lua
+Modules\LFGBoard.lua
+Modules\QuickChat.lua
+Modules\Feedback.lua

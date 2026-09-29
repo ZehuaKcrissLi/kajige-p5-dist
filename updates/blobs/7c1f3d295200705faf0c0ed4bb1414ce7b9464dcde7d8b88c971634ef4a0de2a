@@ -1,0 +1,155 @@
+-- Modern Titan ElvUI cannot be loaded verbatim by the 3.3.5 ElvUI schema.
+-- This deterministic compatibility layer applies the parts that have a
+-- functional legacy equivalent after the base profile importer has finished.
+
+local COMPATIBILITY_VERSION = 2026080502
+local PROFILE_NAME = "露露-右布局25人"
+
+local titanMovers = {
+    ElvAB_1 = "BOTTOM,ElvUIParent,BOTTOM,0,-1",
+    ElvAB_2 = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-401,0",
+    ElvAB_3 = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,-205",
+    ElvAB_4 = "TOPRIGHT,ElvUIParent,TOPRIGHT,-32,-205",
+    ElvAB_5 = "BOTTOM,UIParent,BOTTOM,0,72",
+    -- Modern bar 8 has no stable 3.3.5 equivalent.  Bar 6 is reserved for it.
+    ElvAB_6 = "BOTTOM,ElvUIParent,BOTTOM,296,1",
+    ElvUF_PlayerMover = "BOTTOM,ElvUIParent,BOTTOM,-265,305",
+    ElvUF_TargetMover = "BOTTOM,ElvUIParent,BOTTOM,265,305",
+    ElvUF_PlayerCastbarMover = "BOTTOM,UIParent,BOTTOM,0,210",
+    ElvUF_TargetCastbarMover = "BOTTOM,ElvUIParent,BOTTOM,278,192",
+    ElvUF_TargetTargetMover = "BOTTOM,ElvUIParent,BOTTOM,325,345",
+    ElvUF_FocusMover = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,1,345",
+    ElvUF_FocusTargetMover = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,81,377",
+    ElvUF_PartyMover = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-435,373",
+    -- ElvUI 6.09 consumes these legacy mover names. Modern raid2 is the
+    -- source 25-player layout; modern raid3 is the disabled 40-player layout.
+    ElvUF_RaidMover = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-158,379",
+    ElvUF_Raid40Mover = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-222,353",
+    ElvUF_RaidpetMover = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,273",
+    MinimapMover = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,0",
+    BuffsMover = "TOPRIGHT,ElvUIParent,TOPRIGHT,-187,-2",
+    DebuffsMover = "TOPRIGHT,ElvUIParent,TOPRIGHT,-187,-153",
+    LeftChatMover = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,0,-1",
+    RightChatMover = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,0,0",
+}
+
+local function InstallLegacyIndexSort(E)
+    if not E or type(E.GetModule) ~= "function" then return end
+    local ok, UF = pcall(E.GetModule, E, "UnitFrames")
+    if not ok or not UF or type(UF.headerGroupBy) ~= "table" then return end
+    UF.headerGroupBy.INDEX = function(header)
+        header:SetAttribute("groupingOrder", "1,2,3,4,5,6,7,8")
+        header:SetAttribute("sortMethod", "INDEX")
+        header:SetAttribute("groupBy", nil)
+    end
+end
+
+local function ApplyLegacyRaidFrames(E)
+    if not E.db.unitframe or not E.db.unitframe.units then return end
+    local units = E.db.unitframe.units
+    local raid = units.raid or {}
+    units.raid = raid
+    raid.enable = true
+    raid.numGroups = 5
+    raid.groupBy = "INDEX"
+    raid.width = 85
+    raid.height = 50
+    raid.growthDirection = "DOWN_RIGHT"
+    raid.visibility = "[@raid1,noexists][@raid41,exists] hide;show"
+    for _, customText in pairs(raid.customTexts or {}) do
+        customText.font = "Rurutia"
+        customText.fontOutline = "THICKOUTLINE"
+    end
+
+    local raid40 = units.raid40 or {}
+    units.raid40 = raid40
+    raid40.enable = false
+end
+
+local function ApplyTitanCompatibility()
+    if not ElvUI or type(ElvUI) ~= "table" then return end
+
+    local E = ElvUI[1]
+    if not E or not E.db then return end
+
+    if SetCVar then
+        pcall(SetCVar, "useUiScale", "1")
+        pcall(SetCVar, "uiScale", "1")
+        pcall(SetCVar, "RenderScale", "1")
+    end
+
+    E.db.movers = E.db.movers or {}
+    for name, position in pairs(titanMovers) do
+        E.db.movers[name] = position
+    end
+    E.db.movers.ElvUF_Raid1Mover = nil
+    E.db.movers.ElvUF_Raid2Mover = nil
+    E.db.movers.ElvUF_Raid3Mover = nil
+
+    InstallLegacyIndexSort(E)
+    ApplyLegacyRaidFrames(E)
+
+    E.db.actionbar = E.db.actionbar or {}
+    local bar = E.db.actionbar.bar6 or {}
+    E.db.actionbar.bar6 = bar
+    bar.enabled = true
+    bar.buttons = 12
+    bar.buttonsPerRow = 4
+    bar.buttonSize = 35
+    bar.buttonSpacing = 1
+    bar.backdropSpacing = 4
+    bar.showGrid = false
+    bar.point = "TOPLEFT"
+    bar.macrotext = true
+    bar.macroFontSize = 14
+    bar.macroFontOutline = "THICKOUTLINE"
+    bar.macroTextPosition = "BOTTOM"
+    bar.macroTextYOffset = 2
+    bar.hotkeyFontSize = 14
+    bar.hotkeyFontOutline = "THICKOUTLINE"
+    bar.hotkeyTextYOffset = -1
+    bar.countFont = "Rurutia"
+    bar.countFontSize = 13
+    bar.countFontOutline = "THICKOUTLINE"
+    bar.countTextYOffset = 0
+
+    SunwellLuluProfileDB = SunwellLuluProfileDB or {}
+    SunwellLuluProfileDB.titanCompatibility = {
+        version = COMPATIBILITY_VERSION,
+        profile = PROFILE_NAME,
+        sourceProfile = PROFILE_NAME,
+        sourceBar = 8,
+        legacyBar = 6,
+        uiScale = 1,
+        appliedAt = date("%Y-%m-%d %H:%M:%S"),
+    }
+
+    if E.UpdateAll then pcall(E.UpdateAll, E, true) end
+    DEFAULT_CHAT_FRAME:AddMessage(
+        "|cff00ff96时光服兼容：|r已同步 25 人布局与动作条外观；"
+        .. "动作槽内容和按键未改动。"
+    )
+end
+
+SLASH_KAJIGETITAN1 = "/kjgtitan"
+SlashCmdList.KAJIGETITAN = function(message)
+    if string.lower(message or "") == "apply" then
+        ApplyTitanCompatibility()
+    else
+        DEFAULT_CHAT_FRAME:AddMessage(
+            "|cff00ff96/kjgtitan apply|r 可在需要修复时重新应用时光服兼容布局。"
+        )
+    end
+end
+
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("PLAYER_LOGIN")
+    -- The base importer has already materialized this layout. Calling
+    -- ElvUI:UpdateAll during build 12340's initial world handshake makes the
+    -- client request logout before SavedVariables are committed.
+    DEFAULT_CHAT_FRAME:AddMessage(
+        "|cff00ff96时光服兼容：|r布局兼容层已就绪；修复时输入 /kjgtitan apply。"
+    )
+end)

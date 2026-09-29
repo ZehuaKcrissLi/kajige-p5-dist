@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: |cffff8a00咔鸡哥团本机制教练|r
+## Notes: 太阳井、祖阿曼与奥杜尔机制教学和强提醒
+## Author: 咔鸡哥 P5 团本训练服
+## Version: 2026.08.07.1
+## SavedVariables: KajigeRaidCoachDB, KajigeSunwellTankCoachDB
+
+UlduarCoach.lua
+KajigeRaidCoach.lua
+SunwellTankCoach.lua
+KalecgosCommandCoach.lua
+Bindings.xml

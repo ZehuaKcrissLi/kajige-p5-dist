@@ -1,0 +1,22 @@
+-- P6 预备档沿用 P5 候选装备，默认整套采用跨阵营通用候选。
+-- 独立于生成文件，正式 P6 数据到位后可直接替换这一层。
+local data = KajigeTitanGearData
+if data and data.templates and data.templates.P5 and data.candidates then
+    data.phases[#data.phases + 1] = "P6"
+    data.templates.P6 = {}
+    for specKey, template in pairs(data.templates.P5) do
+        local gear = {}
+        for slot, choice in pairs(template.gear) do
+            gear[slot] = choice
+        end
+        for slot, choice in pairs((KajigeP6NeutralDefaults or {})[specKey] or {}) do
+            gear[slot] = choice
+        end
+        data.templates.P6[specKey] = {
+            buildName = "P6备战·沿用P5候选·跨阵营：" .. (template.buildName or "现有装备"),
+            source = "P5训练候选装备",
+            gear = gear,
+        }
+    end
+    data.candidates.P6 = data.candidates.P5
+end

@@ -1,0 +1,10 @@
+## Interface: 30300
+## Title: |cffffd200咔鸡哥训练服|r Mac 兼容修复
+## Notes: 修复 CrossOver 下旧版姓名板字体初始化与 ElvUI/NotPlater 冲突。
+## Author: Local training tools
+## Version: 2026.07.28.1
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## RequiredDeps: ElvUI, NotPlater
+
+KajigeMacCompat.lua
