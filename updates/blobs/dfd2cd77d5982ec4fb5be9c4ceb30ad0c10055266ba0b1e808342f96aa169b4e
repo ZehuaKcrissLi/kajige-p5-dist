@@ -1,0 +1,12 @@
+# WoW 3.3.5a / Direct3D 9 tuning for the verified CrossOver DXVK runtime.
+# Keep the application DPI-aware so Wine does not blur the final framebuffer.
+d3d9.dpiAware = True
+
+# Do not hard-cap ProMotion displays to the old 60 Hz test monitor.
+# The game owns its frame limit; keep presentation independent of VSync.
+d3d9.maxFrameLatency = 1
+d3d9.maxFrameRate = 0
+d3d9.presentInterval = 0
+
+# Match the time-server texture filtering without the cost of full-scene MSAA.
+d3d9.samplerAnisotropy = 16

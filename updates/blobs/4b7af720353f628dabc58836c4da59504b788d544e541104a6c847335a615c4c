@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: |cffff8a00咔鸡哥团本机制教练|r
+## Notes: P6 奥杜尔优先、太阳井与祖阿曼机制教学和强提醒
+## Author: 咔鸡哥 P6 团本训练服
+## Version: 2026.10.02.1
+## SavedVariables: KajigeRaidCoachDB, KajigeSunwellTankCoachDB
+
+UlduarCoach.lua
+KajigeRaidCoach.lua
+SunwellTankCoach.lua
+KalecgosCommandCoach.lua
+# Bindings.xml is discovered by the client binding loader, not FrameXML.

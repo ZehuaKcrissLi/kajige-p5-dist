@@ -1,0 +1,1004 @@
+KajigeRaidCoachDB = KajigeRaidCoachDB or {}
+local DB = KajigeRaidCoachDB
+if DB.enabled == nil then DB.enabled = true end
+if DB.sound == nil then DB.sound = true end
+
+local bosses = {
+    [24850] = {
+        name = "卡雷苟斯",
+        phases = {
+            "开场：外场围绕首领分散，内外场坦克同时建立仇恨；不要让传送门附近拥挤。",
+            "灵魂世界：被传送者立刻攻击腐蚀者萨索瓦尔，治疗同时照顾卡雷苟斯；诅咒必须按分组驱散。",
+            "同步斩杀：龙与恶魔任一方压到低血量后停手，确认另一侧就绪再同时击杀。",
+        },
+        health = {{threshold = 10, phase = 3}},
+        openers = {
+            {"portal", "首个灵魂传送门", 15, nil, "传送组提前靠近但不要重叠。", 2},
+            {"breath", "首个冰霜吐息", 16, nil, "坦克面向外场，治疗预读坦克。", 2},
+            {"buffet", "首层奥术冲击", 8, nil, "注意八码循环和叠层。", 1},
+        },
+        timers = {
+            [44799] = {"breath", "下一次冰霜吐息", 10, 20, "坦克准备减伤，正面无人。", 2},
+            [45018] = {"buffet", "下一层奥术冲击", 8, nil, "关注叠层和治疗压力。", 1},
+            [44866] = {"portal", "下一次幽灵冲击 / 传送门", 20, 30, "下一传送组准备接门。", 2},
+        },
+        phaseBySpell = {[46021] = 2},
+        alerts = {
+            [44799] = {"冰霜吐息", "坦克立即开减伤；首领正面绝不能站人。", 3},
+            [45018] = {"奥术冲击叠层", "层数持续提高受到的奥术伤害；治疗关注高层目标。", 2},
+            [44978] = {"狂野魔法", "根据自身增益调整输出或治疗，不要打乱站位。", 1},
+            [44866] = {"幽灵冲击 / 传送门", "目标即将进入灵魂世界；本轮授权组进门，其他人不要抢门。", 3},
+            [45032] = {"无尽痛苦诅咒", "按团长口令和驱散链处理；禁止无授权秒驱导致伤害转移失控。", 3},
+            [45034] = {"诅咒转移", "记录转移目标和层数，下一名驱散者等待口令。", 3},
+            [46021] = {"灵魂世界标记", "确认所在世界并执行对应内外场任务。", 2},
+        },
+    },
+    [24882] = {
+        name = "布鲁塔卢斯",
+        phases = {
+            "站位：两组近战分别站在首领两侧分摊流星猛击；远程和治疗在后方扇形分散。",
+            "常规循环：两坦按层数换嘲；燃烧目标立即离团，绝不能穿过近战分摊组。",
+            "狂暴前：六分钟硬狂暴，最后一分钟开启全团爆发并保留战复处理减员。",
+        },
+        health = {},
+        timedPhases = {
+            {at = 12, phase = 2},
+            {at = 300, phase = 3},
+        },
+        openers = {
+            {"meteor", "首个流星猛击", 11, nil, "分摊组进入正面扇形。", 3},
+            {"stomp", "首个践踏", 30, nil, "副坦准备嘲讽，治疗预读。", 2},
+            {"burn", "首个燃烧", 20, nil, "所有人确认燃烧撤离路线。", 2},
+            {"berserk", "硬狂暴", 360, nil, "六分钟内完成击杀。", 3},
+        },
+        timers = {
+            [45150] = {"meteor", "下一次流星猛击", 12, nil, "正面小组集合分摊。", 3},
+            [45185] = {"stomp", "下一次践踏", 30, nil, "双坦准备换嘲。", 2},
+            [46394] = {"burn", "下一次燃烧", 20, nil, "检查撤离通道。", 2},
+        },
+        alerts = {
+            [45150] = {"流星猛击", "正面小组共同分摊；非分摊组不要进入扇形。", 2},
+            [45185] = {"践踏", "当前坦克护甲被削弱，另一坦准备嘲讽；治疗开坦克减伤。", 3},
+            [46394] = {"燃烧", "中燃烧者立即跑向预定外场，远离所有队友！", 3, true},
+            [45141] = {"燃烧伤害", "治疗持续照顾燃烧目标，其他人不要靠近。", 2},
+        },
+    },
+    [25038] = {
+        name = "菲米丝",
+        phases = {
+            "地面阶段：三组分散；腐蚀使当前坦 10 秒内物理承伤 +100%，执行减伤链而不是固定换嘲；毒气新星第一时间群驱。",
+            "升空阶段：每轮两次恶魔蒸汽，被追踪者走预定外圈；小怪坦在安全侧集中骷髅。",
+            "深呼吸：每个空阶段三次扫场，先判断飞行方向和危险通道，再横移到安全三分之一，绝不穿雾。",
+        },
+        health = {},
+        openers = {
+            {"gas", "首个毒气新星", 20, 25, "主群驱与备份群驱就位，治疗准备抬团。", 3},
+            {"corrosion", "首个腐蚀", 13, 18, "当前坦准备 10 秒减伤链，禁止无计划换嘲。", 3},
+            {"air", "升空阶段", 61, nil, "提前收拢并观察飞行方向。", 3},
+            {"berserk", "硬狂暴（待实录复核）", 600, nil, "当前按 10 分钟核心基线。", 3},
+        },
+        timers = {
+            [45855] = {"gas", "下一次毒气新星", 21, 31, "随机窗预警；真实施法后重同步。", 3},
+            [45866] = {"corrosion", "下一次腐蚀", 32, 36, "当前坦与外部减伤准备。", 3},
+            [45665] = {
+                "encaps",
+                "下一次压缩",
+                30,
+                nil,
+                "全团保持 20 码；目标被控制 6 秒，每 1 秒承受固定 3500 点伤害。",
+                3,
+            },
+            [45717] = {"breath", "下一次深呼吸（事件窗）", 16, 22, "等待方向口令，横移到安全三分之一。", 3},
+        },
+        alerts = {
+            [45866] = {"腐蚀：物理承伤 +100%", "当前坦连续覆盖 10 秒减伤链；治疗预读，不要固定换嘲。", 3},
+            [45855] = {"毒气新星", "牧师群体驱散；所有治疗立刻抬全团。", 3},
+            [45392] = {"毒气", "离开毒云并保持分散。", 2},
+            [45402] = {"恶魔蒸汽", "被追踪者沿外圈跑，其他人远离轨迹。", 3, true},
+            [45665] = {
+                "压缩：持续 6 秒",
+                "目标被定身、缴械并沉默；每 1 秒承受固定 3500 点伤害。20 码内队友立刻散开；共 6 跳，治疗连续单抬。",
+                3,
+                true,
+            },
+            [45717] = {"深呼吸", "立即判断飞行方向并横移到安全区域！", 3},
+        },
+    },
+    [25165] = {
+        name = "艾瑞达双子",
+        phases = {
+            "开场：优先击杀萨洛拉丝；奥蕾塞丝只由火坦维持。暗/火两坦分开，火坦沿外圈小步铺火。",
+            "双子同场：暗伤叠黑暗触摸、火伤叠烈焰触摸；两种触摸只能由相反属性命中清除，不存在吃球。",
+            "火女强化：萨洛拉丝死亡后，按 A/B 组利用暗影新星清烈焰层；高热持续主备驱散。",
+        },
+        health = {},
+        openers = {
+            {"blades", "首个暗影之刃", 11, 14, "团队暗伤与黑暗触摸，治疗准备抬团。", 2},
+            {"conflag", "首个燃烧", 18, 21, "点名走 8 码外固定停车位。", 3},
+            {"nova", "首个暗影新星", 30, 36, "点名按团长口令进 A/B 清层组。", 3},
+            {"sear", "首轮烈焰灼热", 11, 13, "5 个目标，持续约 6 秒，治疗覆盖。", 3},
+            {"berserk", "硬狂暴（待实录复核）", 360, nil, "当前按 6 分钟核心基线。", 3},
+        },
+        timers = {
+            [45248] = {"blades", "下一次暗影之刃", 11, 14, "团队暗伤并叠黑触，治疗抬团。", 2},
+            [45329] = {"nova", "下一次暗影新星", 20, 26, "按清层组处理，不要机械外放。", 3},
+            [45342] = {"conflag", "下一次燃烧", 30, 35, "预留 8 码停车位。", 3},
+            [45256] = {"blow", "下一次混乱重击", 38, 44, "暗女坦和治疗准备。", 2},
+            [46771] = {"sear", "下一轮烈焰灼热", 8, 13, "5 目标持续伤害，准备火层清除。", 3},
+        },
+        phaseBySpell = {[45248] = 2, [45366] = 3},
+        alerts = {
+            [45230] = {"高热：立即驱散", "奥蕾塞丝火焰伤害提高 35%、持续 15 秒；主驱散处理，2.5 秒后备份接管。", 3},
+            [45347] = {"黑暗触摸", "留意暗影层数，按策略用火焰效果清除。", 1},
+            [45348] = {"火焰触摸", "留意火焰层数，按策略用暗影效果清除。", 1},
+            [45248] = {"暗影之刃", "团队暗影伤害并叠黑暗触摸；治疗抬团，可用于清烈焰触摸。", 2},
+            [45329] = {"暗影新星", "点名按 A/B 组口令进入 10 码清层区；不是一律跑远。", 3, true},
+            [45342] = {"燃烧读条", "点名者立刻离团；周围玩家马上散开。", 3, true},
+            [45256] = {"迷乱冲击", "坦克承受高额暗影伤害，治疗立即抬血。", 2},
+            [45333] = {"燃烧", "被点名者在外场停留，其他人远离。", 3, true},
+            [46771] = {"烈焰灼热：5 目标", "持续约 6 秒并快速叠烈焰触摸；治疗覆盖，准备下一次暗影清层。", 3},
+        },
+    },
+    [25166] = "alias:25165",
+    [25741] = {
+        name = "穆鲁 / 熵魔",
+        phases = {
+            "P1 穆鲁：3T5H 基线，左右门各自截增援并打断/驱散怒火法师；第三坦接虚空戒卫，远程转火。",
+            "转阶段：打开传送门后约 9–10 秒才激活熵魔；先清残怪、群驱黑暗魔、补满并重组。",
+            "P2 熵魔：坦克小步绕奇点；黑暗外放并驱散黑暗魔，负能量每约 12 秒升一个治疗台阶。",
+        },
+        health = {},
+        openers = {
+            {"human", "首波暗誓精灵", 15, nil, "两侧控制并按标记击杀。", 2},
+            {"void", "首个虚空戒卫", 36.5, nil, "背向团队，远程优先转火。", 3},
+            {"darkness", "首轮黑暗", 48, nil, "离开中央并准备击杀黑暗魔。", 3},
+        },
+        timers = {
+            [45996] = {"darkness", "下一轮黑暗", 45, nil, "离开中央，远程准备转火。", 3},
+            [46269] = {"darkness2", "下一轮 P2 黑暗", 13, 18, "黑圈外放，远程准备驱散黑暗魔。", 3},
+            [46282] = {"blackhole", "下一次黑洞", 19, 21, "观察奇点移动路径，坦克最短位移。", 3},
+        },
+        phaseBySpell = {[46177] = 2},
+        delayedPhaseBySpell = {
+            [46177] = {phase = 3, delay = 9},
+        },
+        alerts = {
+            [45996] = {"P1 黑暗", "离开中央；8 只黑暗魔锁在 1% 后必须群驱/进攻驱散，禁止接触玩家。", 3},
+            [46177] = {"九秒转场", "先清活怪、群驱黑暗魔并补满；第三坦到接怪点，熵魔激活再开爆发。", 3},
+            [46268] = {"黑暗魔", "压到 1% 后进攻驱散其维持光环；保持距离，接触即爆炸。", 3},
+            [46269] = {"P2 黑暗", "黑圈外放，远程准备进攻驱散生成的黑暗魔。", 3},
+            [46282] = {"黑洞 / 奇点", "持续观察移动路径；坦克最短横移，其他人不要穿坦克正面。", 3, true},
+            [46087] = {"暗影脉冲", "周期性全团暗伤，治疗抬团；它不是地面技能，也不能靠背向规避。", 3},
+            [46161] = {"虚空冲击", "立刻打断；失败则戒卫坦开减伤并由治疗预读。", 3},
+            [46285] = {"P2 负能量", "治疗压力每约 12 秒上台阶，按 12/24/36/48 秒接团队减伤。", 2},
+            [46238] = {"奇点命中", "你被奇点拉扯；立刻离开其移动路径。", 3, true},
+        },
+    },
+    [25840] = "alias:25741",
+    [25315] = {
+        name = "基尔加丹",
+        raid = "太阳之井",
+        phases = {
+            "P1 欺诈者：左中右三只分组接怪，先定序击杀；打断治疗，传送门出狂暴魔后远程转火风筝。",
+            "P2 100–85%：10–12 码网格分散；火焰之花目标停在个人格，宝珠远程转火，85% 前门检。",
+            "P3 85–55%：4 个镜像由副坦集中；处理暗影之刺和首轮千魂，驾驶 A 按编号开蓝龙盾。",
+            "P4 55–25%：第二批镜像、3 宝珠并加入末日决战；先报盾点与让路方向，再进盾。",
+            "P5 25–0%：第三批镜像与过场后进入终局；千魂约 25 秒、末日约 20 秒，清场后再爆发。",
+        },
+        health = {
+            {threshold = 85, phase = 3},
+            {threshold = 55, phase = 4},
+            {threshold = 25, phase = 5},
+        },
+        openers = {
+            {"bloom", "首轮火焰之花", 8, 18, "五名目标原地不动，其他人避让。", 3},
+            {"berserk", "硬狂暴（待实录复核）", 600, nil, "当前统一按 10 分钟待复核。", 3},
+        },
+        timers = {
+            [45641] = {"bloom", "下一轮火焰之花", 20, 25, "全团保持分散。", 3},
+            [45737] = {"dart", "下一轮烈焰飞镖", 20, nil, "治疗准备抬团并驱散减速。", 2},
+            [45740] = {"dart", "下一轮烈焰飞镖", 20, nil, "治疗准备抬团并驱散减速。", 2},
+            [46605] = {"souls", "下一次千魂之暗", 45, nil, "确认蓝龙护盾和集合点。", 3},
+        },
+        alerts = {
+            [45641] = {"火焰之花", "点名者原地不动；其他人立即远离目标。", 3, true},
+            [46605] = {"千魂之暗", "全团立即进入蓝龙护盾，停止贪输出！", 3},
+            [45737] = {"烈焰飞镖", "治疗准备全团伤害并驱散减速。", 2},
+            [45740] = {"烈焰飞镖", "治疗准备全团伤害并驱散减速。", 2},
+            [46680] = {"暗影之刺", "保持移动，躲开飞来的暗影尖刺。", 3},
+            [45680] = {"暗影宝珠", "远程立刻转火空中的护盾宝珠。", 3},
+            [45848] = {"蓝龙之盾", "驾驶员按编号在千魂爆炸前覆盖全团；盾后立即重新分散。", 3},
+            [45892] = {"邪恶镜像 / 阈值事件", "副坦接 4 个镜像，先控危险职业；主坦保持本体朝向。", 3},
+            [46589] = {"暗影之刺目标", "全团移动躲刺，治疗关注减疗目标。", 3, true},
+            [45664] = {"军团闪电", "保持 10–12 码分散，治疗注意连锁伤害。", 2},
+            [45442] = {"灵魂鞭笞", "主坦高伤窗口，开启短减伤并保持首领朝向。", 3},
+            [45885] = {"暗影之刺", "持续移动躲开尖刺，不要穿过盾点。", 3},
+            [45915] = {"末日决战", "离开陨石落点，不能封住蓝龙盾集合路线。", 3, true},
+            [45921] = {"末日决战预警", "先确认盾点，再向预定让路方向移动。", 3},
+            [45657] = {"千魂爆炸", "检查蓝龙盾覆盖；爆炸后立即出盾恢复分散。", 3},
+        },
+    },
+    [25608] = "alias:25315",
+    [25588] = "alias:25315",
+    [25708] = "alias:25315",
+    [23574] = {
+        name = "埃基尔松",
+        raid = "祖阿曼",
+        phases = {
+            "常规阶段：全团八码以上分散，远离屋檐和墙角；坦克让首领背对团队，治疗准备覆盖静电伤害。",
+            "电能风暴：被点名者停在开阔处，所有人立刻进入目标脚下的安全区；风暴结束马上重新分散。",
+        },
+        health = {},
+        openers = {
+            {"storm", "首轮电能风暴", 48.3, 53, "提前确认开阔集合点，点名后全团进目标脚下。", 3},
+            {"berserk", "硬狂暴", 600, nil, "十分钟内完成击杀。", 3},
+        },
+        timers = {
+            [43648] = {"storm", "下一次电能风暴", 48.3, 53, "点名者停稳；全团进入目标脚下安全区。", 3},
+        },
+        phaseBySpell = {[43648] = 2},
+        delayedPhaseBySpell = {
+            [43648] = {phase = 1, delay = 8},
+        },
+        alerts = {
+            [43648] = {"电能风暴", "立即跑到被点名者脚下集合；不要站在目标外围！", 3, true},
+        },
+    },
+    [23576] = {
+        name = "纳洛拉克",
+        raid = "祖阿曼",
+        phases = {
+            "巨魔形态：两坦重合站位分担冲锋，治疗和远程保持距离；震耳咆哮前停止长读条。",
+            "熊形态：坦克承受流血与高额近战，按层换嘲；治疗预读，其他人不要抢正面。",
+        },
+        health = {},
+        openers = {
+            {"bear", "首次熊形态", 30, 75, "副坦准备接手，治疗保留坦克减伤。", 3},
+            {"berserk", "硬狂暴", 600, nil, "十分钟内完成击杀。", 3},
+        },
+        timers = {
+            [42398] = {"roar", "下一次震耳咆哮", 20, 30, "施法者停止长读条，治疗提前抬血。", 2},
+        },
+        speechPhases = {
+            {phase = 2, patterns = {"召唤野兽", "call on da beast"}},
+            {phase = 1, patterns = {"纳洛拉克，变形", "Make way for Nalorakk"}},
+        },
+        alerts = {
+            [42398] = {"震耳咆哮", "全团受到伤害并沉默；治疗提前铺持续治疗。", 3},
+            [42397] = {"奔踏", "两坦重合分担冲锋伤害，其他玩家远离坦克线。", 3},
+            [42384] = {"割裂肉体", "坦克流血伤害很高，换嘲并覆盖减伤。", 3},
+            [42395] = {"撕裂", "治疗持续照顾流血坦克，不能让层数失控。", 2},
+        },
+    },
+    [23578] = {
+        name = "加亚莱",
+        raid = "祖阿曼",
+        phases = {
+            "常规阶段：全团在首领侧后分散，火焰吐息点名者沿外侧移动，其他人离开直线。",
+            "孵蛋阶段：按团长标记控制两侧孵化速度，先处理驯龙者，再集中清理龙鹰。",
+            "火焰炸弹：停止输出观察落点，站进没有火球的空隙；爆炸结束后再回位。",
+        },
+        health = {},
+        openers = {
+            {"hatchers", "首批孵化者", 10, 15, "两侧按计划分配输出并控制孵蛋数量。", 2},
+            {"bomb", "首轮火焰炸弹", 45, 60, "提前留出视野，看到火球后找安全空隙。", 3},
+            {"berserk", "硬狂暴", 600, nil, "十分钟内完成击杀。", 3},
+        },
+        timers = {
+            [43962] = {"hatchers", "下一批孵化者", 89.9, 91, "转火孵化者并检查两侧蛋量。", 2},
+            [42630] = {"bomb", "下一轮火焰炸弹", 45, 60, "停手观察地面，准备进入安全空隙。", 3},
+            [43140] = {"breath", "下一次火焰吐息", 10, 20, "保持分散，点名者不要穿过团队。", 2},
+            [43113] = {
+                "firewall",
+                "火墙结束",
+                11,
+                nil,
+                "火墙严格持续 11 秒；离开 3 码伤害区。",
+                3,
+            },
+        },
+        phaseBySpell = {
+            [43962] = 2,
+            [42630] = 3,
+        },
+        delayedPhaseBySpell = {
+            [42630] = {phase = 1, delay = 12},
+        },
+        speechAlerts = {
+            {
+                title = "孵化者出现",
+                action = "立刻转火孵化者；按计划控制两侧龙鹰数量。",
+                severity = 3,
+                patterns = {"雌鹰哪里去了", "Where ma hatcha"},
+            },
+            {
+                title = "火焰炸弹",
+                action = "停止输出，看清火球落点并进入安全空隙。",
+                severity = 3,
+                patterns = {"烧死你们", "I burn ya now"},
+            },
+        },
+        alerts = {
+            [43140] = {"火焰吐息", "点名者沿外侧移动，其他人立即离开吐息直线。", 3, true},
+            [43962] = {"阿曼尼孵化者", "立刻转火孵化者并按计划控制孵蛋数量。", 3},
+            [42630] = {"火焰炸弹", "停手观察地面，进入没有火球的安全空隙！", 3},
+            [43113] = {
+                "火墙：持续 11 秒",
+                "立即离开火墙中心 3 码；每 1 秒承受 3063–3938 点伤害，直到第 11 秒结束。",
+                3,
+                true,
+            },
+            [43114] = {
+                "火墙伤害",
+                "你仍在 3 码伤害区内，立刻横向离开！",
+                3,
+                true,
+            },
+        },
+    },
+    [23577] = {
+        name = "哈尔拉兹",
+        raid = "祖阿曼",
+        phases = {
+            "合体阶段：坦克让首领背对团队，狂怒必须驱散；山猫乱舞时开减伤。",
+            "灵魂分裂：副坦接住山猫之魂，团队优先击杀图腾并驱散烈焰震击，再按策略压低分身。",
+        },
+        health = {},
+        openers = {
+            {"split", "首次灵魂分裂", 45, 60, "副坦准备接山猫，所有人优先闪电图腾。", 3},
+            {"berserk", "硬狂暴", 600, nil, "十分钟内完成击杀。", 3},
+        },
+        timers = {
+            [43303] = {"shock", "下一次烈焰震击", 12, nil, "治疗驱散目标并补满血量。", 2},
+            [43302] = {"totem", "下一根闪电图腾", 15, 25, "全团立即转火图腾。", 3},
+        },
+        speechPhases = {
+            {phase = 2, patterns = {"狂野的灵魂", "untamed spirit"}},
+            {phase = 1, patterns = {"灵魂，到我这里来", "Spirit, come back"}},
+        },
+        alerts = {
+            [43303] = {"烈焰震击", "治疗立即驱散；不要让持续伤害叠加。", 3, true},
+            [43139] = {"狂怒", "猎人或德鲁伊立即驱散首领狂怒。", 3},
+            [43290] = {"山猫乱舞", "坦克开启减伤，治疗集中抬坦克。", 3},
+            [43302] = {"腐化闪电图腾", "所有输出立即转火图腾！", 3},
+        },
+    },
+    [24239] = {
+        name = "妖术领主玛拉卡斯",
+        raid = "祖阿曼",
+        phases = {
+            "开场与随从：按标记控制并击杀危险随从，坦克稳定首领；保留打断处理治疗法术。",
+            "灵魂之箭循环：读条前全团满血并开启团队减伤；结束后立即恢复站位和打断链。",
+            "汲取灵魂：识别被复制职业的危险技能，及时驱散、打断、躲地面并转火图腾。",
+        },
+        health = {},
+        openers = {
+            {"bolts", "首轮灵魂之箭", 40, 44, "全团满血，治疗开启团队减伤。", 3},
+            {"siphon", "首次汲取灵魂", 20, 30, "观察复制职业并准备对应反制。", 2},
+        },
+        timers = {
+            [43383] = {"bolts", "下一轮灵魂之箭", 41, 44, "全团满血并开启团队减伤。", 3},
+            [43501] = {"siphon", "下一次汲取灵魂", 30, nil, "识别复制职业，准备打断或驱散。", 2},
+            [43429] = {"consecration", "下一次奉献", 20, nil, "近战准备离开首领脚下。", 2},
+        },
+        phaseBySpell = {[43383] = 2, [43501] = 3},
+        alerts = {
+            [43383] = {"灵魂之箭", "治疗连续抬全团并开启团队减伤！", 3},
+            [43501] = {"汲取灵魂", "确认被复制职业，立刻执行对应反制。", 3, true},
+            [43548] = {"强效治疗术", "打断首领治疗！", 3},
+            [43451] = {"圣光术", "打断首领治疗！", 3},
+            [43431] = {"治疗波", "打断首领治疗！", 3},
+            [43421] = {"生命绽放", "立即驱散首领身上的治疗效果。", 3},
+            [43429] = {"奉献", "近战立刻离开首领脚下的地面伤害。", 3},
+            [43436] = {"火焰新星图腾", "所有输出立即转火图腾！", 3},
+        },
+    },
+    [23863] = {
+        name = "祖尔金",
+        raid = "祖阿曼",
+        phases = {
+            "P1 巨魔：坦克背对团队，重伤投掷目标由治疗抬满；转阶段前清理持续伤害。",
+            "P2 熊：全团分散，麻痹立刻群驱或单驱；未驱散者在爆发前抬满。",
+            "P3 雄鹰：停止不必要施法，持续移动躲旋风；治疗用瞬发维持全团。",
+            "P4 山猫：利爪之怒点名者开个人减伤，治疗集中；其他人不要追着点名跑。",
+            "P5 龙鹰：分散躲火焰旋涡，柱火出现立即横移；保留爆发快速斩杀。",
+        },
+        health = {
+            {threshold = 80, phase = 2},
+            {threshold = 60, phase = 3},
+            {threshold = 40, phase = 4},
+            {threshold = 20, phase = 5},
+        },
+        openers = {
+            {"throw", "首个重伤投掷", 8, 15, "治疗准备把点名目标抬满。", 2},
+            {"bear", "熊阶段", 60, 90, "驱散职业准备处理麻痹。", 3},
+        },
+        timers = {
+            [43093] = {"throw", "下一次重伤投掷", 10, 20, "治疗准备把点名目标抬满。", 2},
+            [43095] = {"paralyze", "下一次麻痹", 27, nil, "驱散职业准备，全团保持分散。", 3},
+            [43150] = {"claw", "下一次利爪之怒", 20, 35, "点名者准备个人减伤，治疗准备集中抬血。", 3},
+            [43213] = {"whirl", "下一次火焰旋涡", 15, 25, "全团分散并观察脚下。", 3},
+        },
+        speechPhases = {
+            {phase = 2, patterns = {"变个熊", "brudda bear"}},
+            {phase = 3, patterns = {"变成猎鹰", "from da eagle"}},
+            {phase = 4, patterns = {"尖牙和利爪", "fang and claw"}},
+            {phase = 5, patterns = {"龙鹰", "dragonhawk"}},
+        },
+        alerts = {
+            [43093] = {"重伤投掷", "治疗把目标抬满以移除重伤效果。", 3, true},
+            [43095] = {"麻痹", "驱散职业立即驱散；无法驱散时全团抬满等待爆发。", 3},
+            [43150] = {"利爪之怒", "点名者开个人减伤，治疗集中；其他人保持原位。", 3, true},
+            [43213] = {"火焰旋涡", "立刻远离火焰，保持分散并观察下一处地面效果。", 3},
+            [43152] = {"山猫冲锋", "不要追逐首领，治疗注意被连续攻击的目标。", 2},
+            [43215] = {"柱火", "脚下出现火柱，立即横移离开！", 3, true},
+        },
+    },
+}
+
+for creatureID, boss in pairs(KajigeUlduarBosses or {}) do
+    bosses[creatureID] = boss
+end
+
+for creatureID, boss in pairs(bosses) do
+    if type(boss) == "string" then
+        local target = tonumber(string.match(boss, "alias:(%d+)"))
+        bosses[creatureID] = bosses[target]
+    end
+end
+
+local activeBoss
+local activeCreatureID
+local pendingCreatureID
+local activePhase = 1
+local activeStartedAt = 0
+local lastAlert = {}
+local activeTimers = {}
+local delayedPhase
+local displayUntil = 0
+local pollElapsed = 0
+
+local alert = CreateFrame("Frame", "KajigeRaidCoachAlert", UIParent)
+alert:SetWidth(680)
+alert:SetHeight(150)
+alert:SetPoint("TOP", UIParent, "TOP", 0, -145)
+alert:SetFrameStrata("HIGH")
+alert:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true,
+    tileSize = 16,
+    edgeSize = 16,
+    insets = {left = 5, right = 5, top = 5, bottom = 5},
+})
+alert:SetBackdropColor(0.04, 0.04, 0.04, 0.94)
+alert:Hide()
+
+local alertTitle = alert:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+alertTitle:SetPoint("TOP", alert, "TOP", 0, -18)
+alertTitle:SetWidth(640)
+local alertAction = alert:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+alertAction:SetPoint("TOP", alertTitle, "BOTTOM", 0, -12)
+alertAction:SetWidth(630)
+alertAction:SetJustifyH("CENTER")
+alertAction:SetJustifyV("TOP")
+
+local timeline = CreateFrame("Frame", "KajigeRaidCoachTimeline", UIParent)
+timeline:SetWidth(680)
+timeline:SetHeight(38)
+timeline:SetPoint("TOP", UIParent, "TOP", 0, -302)
+timeline:SetFrameStrata("HIGH")
+timeline:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true,
+    tileSize = 16,
+    edgeSize = 12,
+    insets = {left = 4, right = 4, top = 4, bottom = 4},
+})
+timeline:SetBackdropColor(0.02, 0.02, 0.02, 0.88)
+timeline:Hide()
+local timelineText = timeline:CreateFontString(
+    nil,
+    "OVERLAY",
+    "GameFontHighlightLarge"
+)
+timelineText:SetPoint("CENTER", timeline, "CENTER", 0, 0)
+timelineText:SetWidth(650)
+timelineText:SetJustifyH("CENTER")
+
+local function ShowAlert(title, action, severity, duration)
+    if not DB.enabled then return end
+    local colors = {
+        [1] = "|cffffff00",
+        [2] = "|cffff9a00",
+        [3] = "|cffff3030",
+    }
+    alertTitle:SetText((colors[severity] or colors[2]) .. title .. "|r")
+    alertAction:SetText(action)
+    alert:SetBackdropBorderColor(
+        severity == 3 and 1 or 1,
+        severity == 3 and 0.12 or 0.58,
+        0.05,
+        1
+    )
+    alert:Show()
+    displayUntil = GetTime() + (duration or (severity == 3 and 7 or 4))
+    if DB.sound and severity >= 2 then
+        PlaySoundFile("Sound\\Interface\\RaidWarning.wav")
+    end
+    if RaidNotice_AddMessage and RaidWarningFrame then
+        RaidNotice_AddMessage(RaidWarningFrame, title .. "： " .. action, ChatTypeInfo.RAID_WARNING)
+    end
+end
+
+local function ScheduleTimer(definition)
+    if not definition then return end
+    local key = definition[1]
+    local minimum = tonumber(definition[3])
+    if not key or not minimum then return end
+    activeTimers[key] = {
+        label = definition[2],
+        at = GetTime() + minimum,
+        latestAt = GetTime() + (tonumber(definition[4]) or minimum),
+        minimum = minimum,
+        maximum = tonumber(definition[4]),
+        action = definition[5],
+        severity = definition[6] or 2,
+        warned = false,
+    }
+end
+
+local function PrimeTimers(boss)
+    activeTimers = {}
+    for _, definition in ipairs(boss.openers or {}) do
+        ScheduleTimer(definition)
+    end
+    if next(activeTimers) then timeline:Show() else timeline:Hide() end
+end
+
+local function SetPhase(phase, severity)
+    if not activeBoss or not activeBoss.phases[phase] then return end
+    activePhase = phase
+    ShowAlert(
+        activeBoss.name .. "：进入阶段 " .. phase,
+        activeBoss.phases[phase],
+        severity or 3,
+        11
+    )
+end
+
+local guide = CreateFrame("Frame", "KajigeRaidCoachGuide", UIParent)
+guide:SetWidth(760)
+guide:SetHeight(665)
+guide:SetFrameStrata("DIALOG")
+guide:SetPoint("CENTER", UIParent, "CENTER", 0, 25)
+guide:SetMovable(true)
+guide:EnableMouse(true)
+guide:RegisterForDrag("LeftButton")
+guide:SetScript("OnDragStart", guide.StartMoving)
+guide:SetScript("OnDragStop", guide.StopMovingOrSizing)
+guide:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true,
+    tileSize = 32,
+    edgeSize = 32,
+    insets = {left = 11, right = 12, top = 12, bottom = 11},
+})
+guide:Hide()
+
+local guideTitle = guide:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+guideTitle:SetPoint("TOPLEFT", guide, "TOPLEFT", 24, -20)
+guideTitle:SetText("咔鸡哥团本机制教练")
+local close = CreateFrame("Button", nil, guide, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", guide, "TOPRIGHT", -5, -5)
+
+local guideText = guide:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+guideText:SetPoint("TOPLEFT", guide, "TOPLEFT", 24, -60)
+guideText:SetWidth(712)
+guideText:SetHeight(350)
+guideText:SetJustifyH("LEFT")
+guideText:SetJustifyV("TOP")
+
+local bossOrder = {
+    33113, 33118, 33186, 33293, 32867, 32930,
+    33515, 32845, 32865, 32906, 33350, 33271,
+    33288, 32871,
+    24850, 24882, 25038, 25165, 25741, 25315,
+    23574, 23576, 23578, 23577, 24239, 23863,
+}
+local bossButtons = {}
+
+local function RenderGuide(boss)
+    local text = ""
+    for index, phase in ipairs(boss.phases) do
+        text = text .. "|cffffd100阶段 " .. index .. "|r\n" .. phase .. "\n\n"
+    end
+    text = text .. "|cff00ff96战斗中会显示下一机制倒计时，并根据技能、点名、首领台词和血量自动弹出大字行动指令。|r"
+    guideTitle:SetText(
+        "咔鸡哥团本机制教练 - "
+        .. (boss.raid or "太阳之井")
+        .. " - "
+        .. boss.name
+    )
+    guideText:SetText(text)
+end
+
+for index, creatureID in ipairs(bossOrder) do
+    local boss = bosses[creatureID]
+    local button = CreateFrame("Button", nil, guide, "UIPanelButtonTemplate")
+    button:SetWidth(112)
+    button:SetHeight(24)
+    local column = (index - 1) % 6
+    local row = math.floor((index - 1) / 6)
+    local rows = math.ceil(#bossOrder / 6)
+    button:SetPoint(
+        "BOTTOMLEFT",
+        guide,
+        "BOTTOMLEFT",
+        24 + (column * 118),
+        22 + ((rows - 1 - row) * 30)
+    )
+    button:SetText(boss.name)
+    button:SetScript("OnClick", function() RenderGuide(boss) end)
+    bossButtons[index] = button
+end
+RenderGuide(bosses[33113])
+
+function KajigeRaidCoach_ShowGuide(creatureID)
+    RenderGuide(bosses[creatureID] or bosses[33113])
+    guide:Show()
+end
+
+local function CreatureID(guid)
+    if type(guid) ~= "string" or string.sub(guid, 1, 4) ~= "0xF1" then return nil end
+    return tonumber(string.sub(guid, 7, 12), 16)
+end
+
+local function ActivateBoss(creatureID)
+    local boss = bosses[creatureID]
+    if not boss then return end
+    if activeBoss == boss then
+        if boss == bosses[25315] and creatureID == 25315 and activePhase == 1 then
+            activeCreatureID = creatureID
+            activeStartedAt = GetTime()
+            delayedPhase = nil
+            PrimeTimers(boss)
+            SetPhase(2, 3)
+        elseif boss == bosses[25741] and creatureID == 25840 and activePhase < 3 then
+            activeCreatureID = creatureID
+            delayedPhase = nil
+            SetPhase(3, 3)
+        end
+        return
+    end
+    pendingCreatureID = nil
+    activeBoss = boss
+    activeCreatureID = creatureID
+    activePhase = 1
+    activeStartedAt = GetTime()
+    delayedPhase = nil
+    PrimeTimers(boss)
+    if KajigeSunwellTankCoach_ActivateBoss then
+        KajigeSunwellTankCoach_ActivateBoss(creatureID)
+    end
+    ShowAlert(
+        boss.name .. "：阶段 1",
+        boss.phases[1],
+        2,
+        10
+    )
+end
+
+local function UnitIsEncounterActive(unit)
+    return UnitAffectingCombat and UnitAffectingCombat(unit)
+end
+
+local function CheckUnit(unit)
+    if not UnitExists(unit) then return end
+    local creatureID = CreatureID(UnitGUID(unit))
+    if creatureID and bosses[creatureID] and activeBoss ~= bosses[creatureID] then
+        if UnitIsEncounterActive(unit) then
+            ActivateBoss(creatureID)
+        else
+            pendingCreatureID = creatureID
+        end
+    end
+    if not activeBoss or not activeBoss.health or not UnitCanAttack("player", unit) then return end
+    local maximum = UnitHealthMax(unit)
+    if not maximum or maximum <= 0 then return end
+    local percent = UnitHealth(unit) * 100 / maximum
+    for _, transition in ipairs(activeBoss.health) do
+        if transition.phase > activePhase and percent <= transition.threshold then
+            SetPhase(transition.phase, 3)
+        end
+    end
+end
+
+local function IsEncounterCombatEvent(subEvent)
+    if not subEvent then return false end
+    return subEvent == "SWING_DAMAGE"
+        or subEvent == "SWING_MISSED"
+        or string.find(subEvent, "_DAMAGE", 1, true)
+        or string.find(subEvent, "_MISSED", 1, true)
+        or string.find(subEvent, "_CAST_", 1, true)
+        or string.find(subEvent, "_AURA_APPLIED", 1, true)
+        or string.find(subEvent, "_SUMMON", 1, true)
+end
+
+local function HandleCombatLog(...)
+    local _, subEvent, sourceGUID, _, _, destGUID, destName, _, spellID = ...
+    local sourceID = CreatureID(sourceGUID)
+    local destID = CreatureID(destGUID)
+    if IsEncounterCombatEvent(subEvent) then
+        if sourceID and bosses[sourceID] then
+            ActivateBoss(sourceID)
+        elseif destID and bosses[destID] then
+            ActivateBoss(destID)
+        end
+    end
+    if not activeBoss then return end
+    if subEvent == "UNIT_DIED"
+        and (destID == 25165 or destID == 25166)
+        and activeBoss == bosses[25165] then
+        SetPhase(3, 3)
+        return
+    end
+    if not spellID then return end
+    local nextPhase = activeBoss.phaseBySpell
+        and activeBoss.phaseBySpell[spellID]
+    if nextPhase and nextPhase > activePhase then SetPhase(nextPhase, 3) end
+    if activeBoss == bosses[25315] and spellID == 45892 and activePhase >= 2 and activePhase < 5 then
+        SetPhase(activePhase + 1, 3)
+    end
+    if activeBoss == bosses[25038]
+        and activePhase > 1
+        and (spellID == 45855 or spellID == 45866) then
+        delayedPhase = nil
+        SetPhase(1, 3)
+    end
+    local delayed = activeBoss.delayedPhaseBySpell
+        and activeBoss.delayedPhaseBySpell[spellID]
+    if delayed then
+        delayedPhase = {
+            at = GetTime() + delayed.delay,
+            phase = delayed.phase,
+        }
+    end
+    local timerDefinition = activeBoss.timers
+        and activeBoss.timers[spellID]
+    if timerDefinition then
+        ScheduleTimer(timerDefinition)
+        timeline:Show()
+    end
+    local mechanic = activeBoss.alerts[spellID]
+    if not mechanic then return end
+    if mechanic[4] and destName and destName ~= UnitName("player") then
+        if subEvent ~= "SPELL_AURA_APPLIED" then return end
+    end
+    local key = tostring(spellID) .. ":" .. tostring(destName) .. ":" .. tostring(subEvent)
+    local now = GetTime()
+    if lastAlert[key] and now - lastAlert[key] < 2.5 then return end
+    lastAlert[key] = now
+    local title = mechanic[1]
+    if destName and destName ~= "" then title = title .. " → " .. destName end
+    ShowAlert(title, mechanic[2], mechanic[3])
+end
+
+local function HandleBossSpeech(event, message)
+    if not activeBoss or type(message) ~= "string" then return end
+    local normalized = string.lower(message)
+    for _, transition in ipairs(activeBoss.speechPhases or {}) do
+        for _, pattern in ipairs(transition.patterns or {}) do
+            if string.find(normalized, string.lower(pattern), 1, true) then
+                SetPhase(transition.phase, 3)
+                break
+            end
+        end
+    end
+    for _, speechAlert in ipairs(activeBoss.speechAlerts or {}) do
+        for _, pattern in ipairs(speechAlert.patterns or {}) do
+            if string.find(normalized, string.lower(pattern), 1, true) then
+                ShowAlert(
+                    speechAlert.title,
+                    speechAlert.action,
+                    speechAlert.severity or 3,
+                    speechAlert.duration
+                )
+                break
+            end
+        end
+    end
+    if activeBoss == bosses[25038] then
+        if event == "CHAT_MSG_MONSTER_YELL"
+            and (string.find(message, "我比以前更强大了", 1, true)
+                or string.find(message, "stronger than ever", 1, true)) then
+            SetPhase(2, 3)
+        elseif event == "CHAT_MSG_RAID_BOSS_WHISPER"
+            and (string.find(message, "深深地吸了一口气", 1, true)
+                or string.find(message, "deep breath", 1, true)) then
+            SetPhase(3, 3)
+        end
+    end
+end
+
+local function ResetEncounterState()
+    activeBoss = nil
+    activeCreatureID = nil
+    pendingCreatureID = nil
+    activePhase = 1
+    activeStartedAt = 0
+    activeTimers = {}
+    delayedPhase = nil
+    lastAlert = {}
+    displayUntil = 0
+    alert:Hide()
+    timeline:Hide()
+    if KajigeSunwellTankCoach_Reset then
+        KajigeSunwellTankCoach_Reset()
+    end
+end
+
+function KajigeRaidCoach_Reset()
+    ResetEncounterState()
+end
+
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+eventFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
+eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+eventFrame:RegisterEvent("CHAT_MSG_MONSTER_YELL")
+eventFrame:RegisterEvent("CHAT_MSG_RAID_BOSS_WHISPER")
+eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+eventFrame:SetScript("OnEvent", function(_, event, ...)
+    if event == "PLAYER_TARGET_CHANGED" then
+        CheckUnit("target")
+    elseif event == "PLAYER_FOCUS_CHANGED" then
+        CheckUnit("focus")
+    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        HandleCombatLog(...)
+    elseif event == "CHAT_MSG_MONSTER_YELL"
+        or event == "CHAT_MSG_RAID_BOSS_WHISPER" then
+        HandleBossSpeech(event, ...)
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        CheckUnit("target")
+        CheckUnit("focus")
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        ResetEncounterState()
+    end
+end)
+
+-- Timers display tenths of a second. Updating identical text every rendered
+-- frame adds allocation/layout work without adding timing precision.
+local timelineElapsed = 0
+eventFrame:SetScript("OnUpdate", function(_, elapsed)
+    timelineElapsed = timelineElapsed + elapsed
+    if timelineElapsed < 0.1 then return end
+    elapsed = timelineElapsed
+    timelineElapsed = 0
+    local now = GetTime()
+    if alert:IsShown() and now >= displayUntil then alert:Hide() end
+    if activeBoss then
+        for _, transition in ipairs(activeBoss.timedPhases or {}) do
+            if activePhase < transition.phase
+                and now - activeStartedAt >= transition.at then
+                SetPhase(transition.phase, 3)
+            end
+        end
+    end
+    if delayedPhase and now >= delayedPhase.at then
+        local phase = delayedPhase.phase
+        delayedPhase = nil
+        SetPhase(phase, 3)
+    end
+    local nextTimer
+    local expired = {}
+    for key, timer in pairs(activeTimers) do
+        if now > timer.latestAt + 2 then
+            table.insert(expired, key)
+        elseif not nextTimer or timer.at < nextTimer.at then
+            nextTimer = timer
+        end
+    end
+    for _, key in ipairs(expired) do activeTimers[key] = nil end
+    if nextTimer and activeBoss then
+        local remaining = nextTimer.at - now
+        local countdown
+        if remaining > 0 then
+            countdown = string.format("%.1f 秒", remaining)
+            if nextTimer.maximum then
+                countdown = countdown .. "～"
+                    .. string.format(
+                        "%.1f 秒",
+                        math.max(0, nextTimer.latestAt - now)
+                    )
+            end
+        else
+            countdown = "即将发生"
+        end
+        timelineText:SetText(
+            "|cffffd100" .. activeBoss.name .. "|r　"
+            .. nextTimer.label .. "：|cffffffff" .. countdown .. "|r"
+        )
+        timeline:Show()
+        if remaining <= 5 and not nextTimer.warned then
+            nextTimer.warned = true
+            ShowAlert(
+                nextTimer.label .. "：5 秒内",
+                nextTimer.action,
+                nextTimer.severity,
+                5
+            )
+        end
+    elseif activeBoss then
+        timelineText:SetText(
+            "|cffffd100" .. activeBoss.name
+            .. "|r　等待下一项可识别机制"
+        )
+        timeline:Show()
+    else
+        timeline:Hide()
+    end
+    pollElapsed = pollElapsed + elapsed
+    if pollElapsed < 0.35 then return end
+    pollElapsed = 0
+    CheckUnit("target")
+    CheckUnit("focus")
+end)
+
+-- Deterministic read-only hooks for the release gate. They exercise the same
+-- event handlers, phase state, timers, alert frame and sound path as combat;
+-- no gameplay command, unit state or SavedVariables value is changed.
+KajigeRaidCoachTestHooks = {
+    definitions = bosses,
+    order = bossOrder,
+    activate = ActivateBoss,
+    checkUnit = CheckUnit,
+    combat = HandleCombatLog,
+    speech = HandleBossSpeech,
+    clearTimers = function()
+        activeTimers = {}
+        timeline:Hide()
+    end,
+    update = function(elapsed)
+        eventFrame:GetScript("OnUpdate")(eventFrame, elapsed)
+    end,
+    reset = function()
+        ResetEncounterState()
+    end,
+    snapshot = function()
+        local timerCount = 0
+        for _ in pairs(activeTimers) do timerCount = timerCount + 1 end
+        return {
+            creatureID = activeCreatureID,
+            phase = activePhase,
+            timerCount = timerCount,
+            alertShown = alert:IsShown(),
+            alertTitle = alertTitle:GetText(),
+            alertAction = alertAction:GetText(),
+            timelineShown = timeline:IsShown(),
+            timelineText = timelineText:GetText(),
+        }
+    end,
+}
+
+SLASH_KAJIGERAIDCOACH1 = "/swcoach"
+SLASH_KAJIGERAIDCOACH2 = "/p6coach"
+SlashCmdList.KAJIGERAIDCOACH = function(message)
+    message = string.lower(message or "")
+    if message == "on" then
+        DB.enabled = true
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96机制强提示已开启。|r")
+    elseif message == "off" then
+        DB.enabled = false
+        alert:Hide()
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffff00机制强提示已关闭。|r")
+    elseif message == "sound" then
+        DB.sound = not DB.sound
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96提示音：" .. (DB.sound and "开启" or "关闭") .. "。|r")
+    else
+        if guide:IsShown() then guide:Hide() else guide:Show() end
+    end
+end

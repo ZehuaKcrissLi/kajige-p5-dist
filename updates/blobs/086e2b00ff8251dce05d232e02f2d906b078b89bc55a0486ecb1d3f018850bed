@@ -1,0 +1,11 @@
+## Interface: 30300
+## Title: |cffffd200咔鸡哥训练服|r 装备汉化补齐
+## Notes: 补齐旧版英文客户端物品提示左右栏中的常用装备属性。
+## Author: Local training tools
+## Version: 2026.10.02.1
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## RequiredDeps: EpochCN
+
+KajigeMapNames.lua
+KajigeChinesePolish.lua
