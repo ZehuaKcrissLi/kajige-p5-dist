@@ -1,0 +1,16 @@
+# AllTheThings localized data notice
+
+The managed 3.3.5 achievement localization tables are derived by stable ID
+and exact English text matching from the MIT-licensed localized CSV datasets
+in `ATTWoWAddon/AllTheThings`:
+
+- Wrath Classic `Achievement`, build `3.4.5.63697`
+- Wrath Classic `CriteriaTree`, build `3.4.5.63697`
+- Wrath Classic `AchievementCategory`, build `3.4.5.63697`
+
+Repository: <https://github.com/ATTWoWAddon/AllTheThings>
+
+The project imports only Simplified Chinese display strings for matching
+Wrath-era records. Original 3.3.5 numeric record layout and gameplay values
+remain unchanged.
+

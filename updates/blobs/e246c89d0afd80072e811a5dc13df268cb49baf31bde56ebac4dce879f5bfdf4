@@ -1,0 +1,755 @@
+local ADDON_VERSION = 2026073004
+local LEADER_NAME = "笼子里咔鸡"
+local frame = CreateFrame("Frame")
+local commandQueue = {}
+local commandElapsed = 0
+local applyPending = false
+
+local DB
+
+-- Build 12340 can load the persisted SavedVariables table after this file's
+-- top-level chunk.  Do not retain the temporary pre-load table: doing so makes
+-- a successful /kjgprofile audit/apply look correct in memory but writes the
+-- untouched old table on logout.
+local function InitializeDB()
+    KajigeLeaderExperienceDB = KajigeLeaderExperienceDB or {}
+    DB = KajigeLeaderExperienceDB
+    DB.missingSpells = DB.missingSpells or {}
+    DB.compatibilitySpells = DB.compatibilitySpells or {}
+end
+
+local function IsLeader()
+    return UnitName("player") == LEADER_NAME
+end
+
+local function SpellName(spellID, fallback)
+    local name = GetSpellInfo(spellID)
+    return name or fallback
+end
+
+local SPELL = {
+    IMMOLATE = {47811, "Immolate"},
+    CONFLAGRATE = {17962, "Conflagrate"},
+    SHADOW_BOLT = {47809, "Shadow Bolt"},
+    CORRUPTION = {47813, "Corruption"},
+    INCINERATE = {47838, "Incinerate"},
+    CHAOS_BOLT = {59172, "Chaos Bolt"},
+    SHADOWBURN = {47827, "Shadowburn"},
+    SHADOWFURY = {47847, "Shadowfury"},
+    RAIN_OF_FIRE = {47820, "Rain of Fire"},
+    SEED = {47836, "Seed of Corruption"},
+    LIFE_TAP = {57946, "Life Tap"},
+    DEMONIC_CIRCLE_SUMMON = {48018, "Demonic Circle: Summon"},
+    DEMONIC_CIRCLE_TELEPORT = {48020, "Demonic Circle: Teleport"},
+    SOULSHATTER = {29858, "Soulshatter"},
+    CURSE_ELEMENTS = {47865, "Curse of the Elements"},
+    CURSE_AGONY = {47864, "Curse of Agony"},
+    CURSE_DOOM = {47867, "Curse of Doom"},
+    SEARING_PAIN = {47815, "Searing Pain"},
+}
+
+local function S(key)
+    local entry = SPELL[key]
+    return SpellName(entry[1], entry[2])
+end
+
+local macroTemplates = {
+    {
+        name = "AOE",
+        icon = 134400,
+        body = function()
+            return "#showtooltip [mod:alt] " .. S("RAIN_OF_FIRE")
+                .. "; [mod:ctrl] " .. S("SEED") .. "; " .. S("SHADOWFURY")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast [mod:alt] " .. S("RAIN_OF_FIRE")
+                .. "; [mod:ctrl] " .. S("SEED") .. "; " .. S("SHADOWFURY")
+        end,
+    },
+    {
+        name = "群体种子",
+        icon = 136193,
+        body = function()
+            return "#showtooltip " .. S("SEED")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast [mod:alt] " .. S("RAIN_OF_FIRE") .. "; " .. S("SEED")
+        end,
+    },
+    {
+        name = "分流偷药",
+        icon = 134400,
+        body = function()
+            return "#showtooltip " .. S("LIFE_TAP")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/use [mod:alt] item:40212"
+                .. "\n/cast " .. S("LIFE_TAP")
+        end,
+    },
+    {
+        name = "恶魔法阵",
+        icon = 134400,
+        body = function()
+            return "#showtooltip"
+                .. "\n/cast [mod:ctrl] " .. S("DEMONIC_CIRCLE_SUMMON")
+                .. "; " .. S("DEMONIC_CIRCLE_TELEPORT")
+        end,
+    },
+    {
+        name = "暗影之怒宏",
+        icon = 132102,
+        body = function()
+            return "#showtooltip " .. S("SHADOWFURY")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast " .. S("SHADOWFURY")
+        end,
+    },
+    {
+        name = "暗影箭宏",
+        icon = 136197,
+        body = function()
+            return "#showtooltip " .. S("SHADOW_BOLT")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast " .. S("SHADOW_BOLT")
+        end,
+    },
+    {
+        name = "暗灼宏",
+        icon = 136191,
+        body = function()
+            return "#showtooltip " .. S("SHADOWBURN")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast " .. S("SHADOWBURN")
+        end,
+    },
+    {
+        name = "混乱箭宏",
+        icon = 236291,
+        body = function()
+            return "#showtooltip " .. S("CHAOS_BOLT")
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/cast " .. S("CHAOS_BOLT")
+        end,
+    },
+    {
+        name = "混沌流星爆发宏",
+        icon = 135803,
+        body = function()
+            local meteor = SpellName(1295358)
+            if meteor then
+                return "#showtooltip " .. meteor
+                    .. "\n/petattack [harm,nodead]\n/use 13\n/use 14\n/cast " .. meteor
+            end
+            return "#showtooltip " .. S("SHADOWFURY")
+                .. "\n/petattack [harm,nodead]\n/use 13\n/use 14\n/cast " .. S("SHADOWFURY")
+        end,
+    },
+    {
+        name = "灵魂碎裂",
+        icon = 136214,
+        body = function()
+            return "#showtooltip " .. S("SOULSHATTER") .. "\n/cast " .. S("SOULSHATTER")
+        end,
+    },
+    {
+        name = "灼热宏",
+        icon = 135827,
+        body = function()
+            return "#showtooltip " .. S("SEARING_PAIN")
+                .. "\n/petattack [harm,nodead]\n/cast " .. S("SEARING_PAIN")
+        end,
+    },
+    {
+        name = "烧尽宏",
+        icon = 135808,
+        body = function()
+            return "#showtooltip " .. S("INCINERATE")
+                .. "\n/petattack [harm,nodead]\n/cast " .. S("INCINERATE")
+        end,
+    },
+    {
+        name = "燃烧宏",
+        icon = 135807,
+        body = function()
+            return "#showtooltip " .. S("CONFLAGRATE")
+                .. "\n/petattack [harm,nodead]\n/cast " .. S("CONFLAGRATE")
+        end,
+    },
+    {
+        name = "献祭宏",
+        icon = 135817,
+        body = function()
+            return "#showtooltip " .. S("IMMOLATE")
+                .. "\n/petattack [harm,nodead]\n/cast " .. S("IMMOLATE")
+        end,
+    },
+    {
+        name = "腐蚀宏",
+        icon = 136118,
+        body = function()
+            return "#showtooltip " .. S("CORRUPTION")
+                .. "\n/petattack [harm,nodead]\n/cast " .. S("CORRUPTION")
+        end,
+    },
+    {
+        name = "诅咒",
+        icon = 134400,
+        body = function()
+            return "#showtooltip\n/petattack [harm,nodead]\n/cast [mod:ctrl] "
+                .. S("CURSE_ELEMENTS") .. "; [mod:alt] " .. S("CURSE_AGONY")
+                .. "; " .. S("CURSE_DOOM")
+        end,
+    },
+    {
+        name = "单双燃烧",
+        icon = 135805,
+        perCharacter = false,
+        body = function()
+            local meteor = SpellName(1295358) or S("SHADOWFURY")
+            return "#showtooltip"
+                .. "\n/petattack [harm,nodead]"
+                .. "\n/castsequence reset=5 " .. S("CONFLAGRATE")
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. S("CHAOS_BOLT")
+                .. "," .. S("IMMOLATE")
+                .. "," .. S("SHADOWBURN")
+                .. "," .. S("CONFLAGRATE")
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. meteor
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. S("SHADOW_BOLT")
+                .. "," .. S("INCINERATE")
+                .. "," .. S("CONFLAGRATE")
+                .. "," .. S("CHAOS_BOLT")
+                .. "," .. S("SHADOWFURY")
+                .. "," .. S("IMMOLATE")
+                .. "," .. S("SHADOWBURN")
+                .. "," .. S("INCINERATE")
+                .. "," .. meteor
+                .. "," .. S("LIFE_TAP")
+        end,
+    },
+    {
+        name = "起手爆发",
+        icon = 236216,
+        body = function()
+            local meteor = SpellName(1295358) or S("SHADOWFURY")
+            return "#showtooltip\n/petattack [harm,nodead]\n/castsequence reset=5 "
+                .. S("SHADOW_BOLT") .. "," .. S("IMMOLATE") .. ","
+                .. S("CONFLAGRATE") .. "," .. S("SEARING_PAIN") .. ","
+                .. S("SHADOW_BOLT") .. "," .. S("CHAOS_BOLT") .. ","
+                .. S("SHADOWBURN") .. "," .. S("SHADOWFURY") .. ","
+                .. S("SEARING_PAIN") .. "," .. meteor
+        end,
+    },
+    {
+        name = "附魔1",
+        icon = 132566,
+        body = function()
+            return "#showtooltip"
+                .. "\n/click TradeSkillCreateButton"
+                .. "\n/use 背叛者长靴"
+                .. "\n/ReplaceEnchant()"
+                .. "\n/click StaticPopup1Button1"
+        end,
+    },
+    -- Modern action layouts can retain an item action even while the item is
+    -- temporarily absent. Build 12340's PickupItem cannot. Account macros keep
+    -- the five cloned slots stable without inventing quest items or filling
+    -- the already-complete 18-slot character macro bank.
+    {
+        name = "背叛靴",
+        icon = 132566,
+        perCharacter = false,
+        body = function() return "#showtooltip item:19897\n/use item:19897" end,
+    },
+    {
+        name = "治疗石",
+        icon = 135230,
+        perCharacter = false,
+        body = function() return "#showtooltip item:36892\n/use item:36892" end,
+    },
+    {
+        name = "碎片",
+        icon = 134334,
+        perCharacter = false,
+        body = function() return "#showtooltip item:22726\n/use item:22726" end,
+    },
+    {
+        name = "火焰石",
+        icon = 134085,
+        perCharacter = false,
+        body = function() return "#showtooltip item:41174\n/use item:41174" end,
+    },
+    {
+        name = "法术石",
+        icon = 134131,
+        perCharacter = false,
+        body = function() return "#showtooltip item:41196\n/use item:41196" end,
+    },
+}
+
+local function FindMacro(name)
+    local accountCount, characterCount = GetNumMacros()
+    local index
+    for i = 1, (accountCount or 0) do
+        if GetMacroInfo(i) == name then
+            index = i
+            break
+        end
+    end
+    if not index then
+        local firstCharacterMacro = (_G.MAX_ACCOUNT_MACROS or 36) + 1
+        local lastCharacterMacro =
+            firstCharacterMacro + (characterCount or 0) - 1
+        for i = firstCharacterMacro, lastCharacterMacro do
+            if GetMacroInfo(i) == name then
+                index = i
+                break
+            end
+        end
+    end
+    return index
+end
+
+local function InstallMacros()
+    DB.macroErrors = {}
+    -- 2026.07.29 以前的兼容模板使用过这两个非时光服宏名。先删除，
+    -- 避免占满 3.3.5 的 18 个角色宏槽并让动作条继续引用旧版本。
+    for _, legacyName in ipairs({
+        "混沌流星", "混乱之雨",
+        "露露AOE", "露露分流", "露露暗影箭", "露露暗灼",
+        "露露法阵", "露露混乱箭", "露露烧尽", "露露燃烧",
+        "露露献祭", "露露碎裂", "露露腐蚀", "露露诅咒",
+    }) do
+        local legacyIndex = FindMacro(legacyName)
+        if legacyIndex then DeleteMacro(legacyIndex) end
+    end
+    for _, template in ipairs(macroTemplates) do
+        local body = template.body()
+        local index = FindMacro(template.name)
+        if not index and template.name == "群体种子" then
+            index = FindMacro("AOE种子")
+        end
+        if index then
+            local edited, editResult = pcall(
+                EditMacro,
+                index,
+                template.name,
+                template.icon,
+                body
+            )
+            if not edited then
+                DB.lastMacroError = tostring(editResult)
+                index = nil
+            end
+        else
+            local perCharacter
+            if template.perCharacter ~= false then perCharacter = 1 end
+            local created, createResult = pcall(
+                CreateMacro,
+                template.name,
+                template.icon,
+                body,
+                perCharacter
+            )
+            if created then
+                index = createResult
+            else
+                DB.lastMacroError = tostring(createResult)
+                index = nil
+            end
+        end
+        if not index then
+            table.insert(DB.macroErrors, template.name)
+        end
+    end
+end
+
+local function SpellBookSlot(spellID)
+    local expected = GetSpellInfo(spellID)
+    if not expected then return nil end
+    local tabs = GetNumSpellTabs and GetNumSpellTabs() or 0
+    for tab = 1, tabs do
+        local _, _, offset, count = GetSpellTabInfo(tab)
+        for index = offset + 1, offset + count do
+            local name = GetSpellName(index, BOOKTYPE_SPELL)
+            if name == expected then return index end
+        end
+    end
+end
+
+local function KnowsSpell(spellID)
+    if IsSpellKnown and IsSpellKnown(spellID) then return true end
+    return SpellBookSlot(spellID) ~= nil
+end
+
+local actionTemplate = {
+    [1] = {"macro", "献祭宏"},
+    [2] = {"macro", "燃烧宏"},
+    [3] = {"macro", "暗影箭宏"},
+    [4] = {"spell", 47827},
+    [5] = {"macro", "混沌流星爆发宏"},
+    [6] = {"macro", "腐蚀宏"},
+    [7] = {"macro", "背叛靴"},
+    [8] = {"spell", 47855},
+    [9] = {"spell", 50511},
+    [10] = {"spell", 47889},
+    [11] = {"spell", 47893},
+    [12] = {"spell", 697},
+    [13] = {"spell", 18647},
+    [14] = {"spell", 126},
+    [15] = {"spell", 47867},
+    [16] = {"spell", 47813},
+    [17] = {"spell", 5019},
+    [18] = {"spell", 47815},
+    [19] = {"spell", 61290},
+    [20] = {"spell", 47820},
+    [31] = {"spell", 818},
+    [32] = {"spell", 698},
+    [33] = {"spell", 47878},
+    [34] = {"spell", 47884},
+    [35] = {"spell", 60220},
+    [36] = {"spell", 47888},
+    [43] = {"spell", 58887},
+    [44] = {"spell", 13262},
+    [45] = {"spell", 51313},
+    [46] = {"spell", 51309},
+    [47] = {"spell", 45542},
+    [48] = {"spell", 51296},
+    [49] = {"macro", "AOE"},
+    [50] = {"macro", "烧尽宏"},
+    [51] = {"spell", 6215},
+    [52] = {"macro", "恶魔法阵"},
+    [53] = {"spell", 18647},
+    [54] = {"spell", 61191},
+    [55] = {"spell", 47860},
+    [56] = {"spell", 17928},
+    [57] = {"spell", 47857},
+    [58] = {"spell", 7744},
+    [59] = {"macro", "灵魂碎裂"},
+    [60] = {"macro", "治疗石"},
+    [61] = {"macro", "混乱箭宏"},
+    [62] = {"macro", "分流偷药"},
+    [63] = {"spell", 61290},
+    [65] = {"macro", "暗影之怒宏"},
+    [66] = {"macro", "诅咒"},
+    [67] = {"macro", "群体种子"},
+    [68] = {"spell", 47891},
+    [69] = {"spell", 11719},
+    [70] = {"spell", 47856},
+    [71] = {"spell", 126},
+    [72] = {"spell", 688},
+    [85] = {"macro", "碎片"},
+    [87] = {"macro", "附魔1"},
+    [93] = {"macro", "火焰石"},
+    [94] = {"macro", "法术石"},
+}
+
+local function PutAction(slot, action)
+    ClearCursor()
+    if action[1] == "macro" then
+        local index = FindMacro(action[2])
+        if not index then return false, "缺少宏：" .. action[2] end
+        PickupMacro(index)
+    elseif action[1] == "spell" then
+        local index = SpellBookSlot(action[2])
+        if not index then return false, "缺少技能：" .. tostring(action[2]) end
+        PickupSpell(index, BOOKTYPE_SPELL)
+    elseif action[1] == "item" then
+        if GetItemCount(action[2], true) == 0 then
+            return false, "缺少物品：" .. tostring(action[2])
+        end
+        PickupItem(action[2])
+    end
+    local cursorType = GetCursorInfo()
+    if cursorType then
+        _G.PlaceAction(slot)
+        ClearCursor()
+        return true
+    end
+    return false, "无法拾取动作：" .. tostring(slot)
+end
+
+local function InstallActions()
+    DB.actionErrors = {}
+    for slot, action in pairs(actionTemplate) do
+        local ok, reason = PutAction(slot, action)
+        if not ok then table.insert(DB.actionErrors, reason) end
+    end
+end
+
+local bindings = {
+    A = "STRAFELEFT",
+    D = "STRAFERIGHT",
+    Q = "MULTIACTIONBAR2BUTTON1",
+    E = "MULTIACTIONBAR1BUTTON2",
+    X = "MULTIACTIONBAR1BUTTON6",
+    Z = "MULTIACTIONBAR1BUTTON5",
+    R = "MULTIACTIONBAR1BUTTON3",
+    G = "MULTIACTIONBAR2BUTTON4",
+    F = "MULTIACTIONBAR1BUTTON4",
+    ["SHIFT-3"] = "ACTIONBUTTON8",
+    ["SHIFT-V"] = "MULTIACTIONBAR2BUTTON10",
+    ["SHIFT-B"] = "MULTIACTIONBAR2BUTTON5",
+    ["ALT-Z"] = "ACTIONBUTTON6",
+    ["CTRL-W"] = "STARTAUTORUN",
+    ["SHIFT-C"] = "MULTIACTIONBAR2BUTTON12",
+    ["SHIFT-F"] = "MULTIACTIONBAR2BUTTON3",
+    ["SHIFT-E"] = "MULTIACTIONBAR2BUTTON9",
+    ["SHIFT-X"] = "MULTIACTIONBAR2BUTTON11",
+    ["ALT-1"] = "MULTIACTIONBAR1BUTTON1",
+    ["ALT-2"] = "MULTIACTIONBAR2BUTTON2",
+    ["SHIFT-G"] = "ELVUIBAR6BUTTON6",
+    ["META-G"] = "MULTIACTIONBAR4BUTTON7",
+    ["SHIFT-Q"] = "MULTIACTIONBAR2BUTTON7",
+    ["SHIFT-H"] = "ELVUIBAR6BUTTON5",
+    ["ALT-M"] = "ELVUIBAR6BUTTON1",
+    ["ALT-3"] = "ACTIONBUTTON7",
+    ["ALT-4"] = "MULTIACTIONBAR2BUTTON4",
+    ["SHIFT-A"] = "MULTIACTIONBAR2BUTTON8",
+}
+
+local clearedBindings = {
+    "SHIFT-R", "6", "7", "CTRL-1", "CTRL-2", "CTRL-3", "SHIFT-1",
+    "SHIFT-2", "CTRL-A", "META-Q", "META-E", "META-3", "ALT-Q",
+    "ALT-W", "CAPSLOCK",
+}
+
+local function InstallBindings()
+    for _, key in ipairs(clearedBindings) do SetBinding(key) end
+    for key, command in pairs(bindings) do SetBinding(key, command) end
+    SaveBindings(2)
+end
+
+local cvars = {
+    showTargetOfTarget = "1",
+    nameplateShowFriends = "0",
+    nameplateShowEnemies = "1",
+    ShowClassColorInNameplate = "1",
+    showArenaEnemyFrames = "0",
+    minimapZoom = "4",
+    useUiScale = "1",
+    uiScale = "1",
+    chatBubbles = "1",
+    chatBubblesParty = "1",
+    autoLootDefault = "0",
+    cameraDistanceMaxFactor = "2.6",
+    showPartyBackground = "0",
+    showTutorials = "0",
+    Sound_EnableSFX = "1",
+    Sound_EnableMusic = "1",
+    enableCombatText = "0",
+}
+
+local function InstallCVars()
+    DB.cvarErrors = {}
+    DB.compatibilityCVars = {
+        nameplateShowAll =
+            "3.3.5 由敌方/友方姓名板两个开关等价实现。",
+        nameplateMaxDistance =
+            "3.3.5 姓名板距离由内核固定，不提供现代 41 码 CVar。",
+        enableMultiActionBars =
+            "3.3.5 由 SetActionBarToggles 与 ElvUI 六条动作条实现。",
+        raidFramesDisplayClassColor =
+            "3.3.5 由 ElvUI 团队框职业颜色配置实现。",
+        raidFramesDisplayPowerBars =
+            "3.3.5 由 ElvUI 团队框能量条配置实现。",
+        raidFramesHealthText =
+            "3.3.5 由 ElvUI 团队框生命文字配置实现。",
+        previewTalentsOption =
+            "3.3.5 天赋预览由旧版天赋面板工作流实现。",
+    }
+    if SetActionBarToggles then
+        pcall(SetActionBarToggles, 1, 1, 1, 1)
+    end
+    for name, value in pairs(cvars) do
+        local ok = pcall(SetCVar, name, value)
+        if not ok then table.insert(DB.cvarErrors, name) end
+    end
+end
+
+local requiredSpells = {
+    47809, 47811, 17962, 47813, 47815, 47820, 47827, 47836, 47838,
+    47847, 47855, 47856, 47857, 47860, 47864, 47865, 47867, 47878,
+    47884, 47888, 47889, 47891, 47893, 5019, 6215, 11719, 17928,
+    18647, 29858, 48018, 48020, 57946, 58887, 59172, 61191, 61290,
+    126, 688, 697, 698, 7744, 818, 60220, 13262, 51313, 51309,
+    45542, 51296,
+}
+
+-- These are present in the server-side character spell template, but the
+-- 3.3.5 client API does not consistently expose them through IsSpellKnown or
+-- the visible spellbook (rank replacement, wand Shoot and the undead racial).
+-- The server E2E test verifies the rows directly; keep them out of the false
+-- client-only "missing" list while retaining explicit audit provenance.
+local serverProvisionedSpells = {
+    [47809] = true,
+    [5019] = true,
+    [7744] = true,
+}
+
+local localizedClasses = {
+    WARLOCK = "术士",
+}
+
+local localizedRaces = {
+    Scourge = "亡灵",
+}
+
+local compatibilityNames = {
+    [47820] = "火焰之雨",
+    [47847] = "暗影之怒",
+}
+
+local function AuditIdentity()
+    local localizedClass, class = UnitClass("player")
+    local localizedRace, race = UnitRace("player")
+    DB.identity = {
+        name = UnitName("player"),
+        realm = GetRealmName(),
+        level = UnitLevel("player"),
+        class = class,
+        localizedClass = localizedClasses[class] or localizedClass,
+        race = race,
+        localizedRace = localizedRaces[race] or localizedRace,
+        sex = UnitSex("player"),
+        auditedAt = date("%Y-%m-%d %H:%M:%S"),
+    }
+end
+
+local function AuditSpells()
+    DB.missingSpells = {}
+    DB.compatibilitySpells = {}
+    DB.serverProvisionedSpells = {}
+    for _, spellID in ipairs(requiredSpells) do
+        if serverProvisionedSpells[spellID] then
+            table.insert(DB.serverProvisionedSpells, spellID)
+        elseif GetSpellInfo(spellID) and not KnowsSpell(spellID) then
+            table.insert(DB.missingSpells, spellID)
+        end
+    end
+    for _, spellID in ipairs({1295198, 1295358}) do
+        if not GetSpellInfo(spellID) then
+            local fallback = spellID == 1295198 and 47820 or 47847
+            table.insert(DB.compatibilitySpells, {
+                titanSpell = spellID,
+                fallbackSpell = fallback,
+                fallbackName = compatibilityNames[fallback]
+                    or GetSpellInfo(fallback),
+            })
+        end
+    end
+    DB.compatibilityNotes = {
+        "3.3.5 不支持现代客户端的 @cursor 条件，地面技能保留点击落点。",
+        "混沌流星在旧内核中以暗影之怒代替；混乱之雨以火焰之雨代替。",
+        "现代时光服 SavedVariables 不直接覆盖旧客户端，由兼容插件逐项转换。",
+        "ELVUIBAR8 在旧版 ElvUI 中对应可用的 ELVUIBAR6。",
+    }
+end
+
+local function FinishInstall()
+    InstallMacros()
+    InstallActions()
+    InstallBindings()
+    InstallCVars()
+    AuditIdentity()
+    AuditSpells()
+    DB.appliedVersion = ADDON_VERSION
+    DB.appliedAt = date("%Y-%m-%d %H:%M:%S")
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96咔鸡哥：|r团长术士体验模板已同步；缺失项已写入审计记录。")
+end
+
+local function QueueMissingSpells()
+    AuditSpells()
+    commandQueue = {}
+    for _, spellID in ipairs(DB.missingSpells) do
+        table.insert(commandQueue, ".learn " .. tostring(spellID))
+    end
+    if #commandQueue == 0 then
+        FinishInstall()
+        return
+    end
+    applyPending = true
+    frame:SetScript("OnUpdate", function(self, elapsed)
+        commandElapsed = commandElapsed + elapsed
+        if commandElapsed < 0.65 then return end
+        commandElapsed = 0
+        local command = table.remove(commandQueue, 1)
+        if command then
+            SendChatMessage(command, "SAY")
+            return
+        end
+        self:SetScript("OnUpdate", nil)
+        applyPending = false
+        local finish = CreateFrame("Frame")
+        local wait = 0
+        finish:SetScript("OnUpdate", function(delayed, delta)
+            wait = wait + delta
+            if wait < 2 then return end
+            delayed:SetScript("OnUpdate", nil)
+            FinishInstall()
+        end)
+    end)
+end
+
+SLASH_KAJIGELEADER1 = "/kjgprofile"
+SlashCmdList.KAJIGELEADER = function(message)
+    if not IsLeader() then
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff4040只有团长可以使用此命令。|r")
+        return
+    end
+    message = string.lower(message or "")
+    if message == "audit" then
+        AuditIdentity()
+        AuditSpells()
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96审计完成：|r缺少 "
+            .. tostring(#DB.missingSpells) .. " 个可用技能，已为 "
+            .. tostring(#DB.compatibilitySpells)
+            .. " 个时光服自定义技能启用 3.3.5 功能替代。")
+    elseif message == "apply" then
+        QueueMissingSpells()
+    elseif message == "status" then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96模板版本：|r"
+            .. tostring(DB.appliedVersion or 0) .. " / " .. tostring(ADDON_VERSION))
+    else
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96/kjgprofile apply|r 应用模板；|cff00ff96/kjgprofile audit|r 审计；|cff00ff96/kjgprofile status|r 查看状态。")
+    end
+end
+
+frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "ADDON_LOADED" then
+        if addonName ~= "!KajigeLeaderExperience" then return end
+        InitializeDB()
+        self:UnregisterEvent("ADDON_LOADED")
+        return
+    end
+    if not DB then InitializeDB() end
+    if not IsLeader() or applyPending then return end
+    AuditIdentity()
+    if DB.appliedVersion ~= ADDON_VERSION then
+        local delayed = CreateFrame("Frame")
+        local elapsed = 0
+        delayed:SetScript("OnUpdate", function(self, delta)
+            elapsed = elapsed + delta
+            if elapsed < 5 then return end
+            self:SetScript("OnUpdate", nil)
+            -- The base profile importer owns first-run layout installation.
+            -- Rewriting macros/actions/bindings from a second add-on five
+            -- seconds into build 12340's world handshake makes the client send
+            -- CMSG_LOGOUT_REQUEST and loop back to character selection. Keep
+            -- this add-on's automatic path read-only; explicit
+            -- /kjgprofile apply remains available for deliberate repairs.
+            AuditSpells()
+            DB.appliedVersion = ADDON_VERSION
+            DB.appliedAt = date("%Y-%m-%d %H:%M:%S")
+            DEFAULT_CHAT_FRAME:AddMessage(
+                "|cff00ff96咔鸡哥：|r团长模板已审计，统一布局由首次配置导入器维护。"
+            )
+        end)
+    else
+        AuditSpells()
+    end
+end)

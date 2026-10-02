@@ -1,0 +1,5367 @@
+-- Generated from the local time-server ElvUI SavedVariables.
+-- Contains UI configuration only; no account credentials.
+SunwellLuluElvProfileName = "露露-右布局25人"
+SunwellLuluElvProfile = {
+    ["actionbar"] = {
+        ["addNewSpells"] = true,
+        ["bar1"] = {
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFont"] = "默认",
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["paging"] = {
+                ["DRUID"] = "[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 7; [bonusbar:2] 10; [bonusbar:3] 9; [bonusbar:4] 10;",
+                ["WARLOCK"] = "[form:1] 1;",
+            },
+        },
+        ["bar10"] = {
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["buttonsPerRow"] = 4,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["point"] = "TOPLEFT",
+            ["showGrid"] = false,
+        },
+        ["bar13"] = {
+            ["countFont"] = "Rurutia",
+        },
+        ["bar14"] = {
+            ["countFont"] = "Rurutia",
+        },
+        ["bar15"] = {
+            ["countFont"] = "Rurutia",
+        },
+        ["bar2"] = {
+            ["backdropSpacing"] = 0,
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["buttonsPerRow"] = 4,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+        },
+        ["bar3"] = {
+            ["backdropSpacing"] = 3,
+            ["buttonSpacing"] = 1,
+            ["buttons"] = 12,
+            ["buttonsPerRow"] = 1,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["point"] = "TOPLEFT",
+            ["showGrid"] = false,
+        },
+        ["bar4"] = {
+            ["backdrop"] = false,
+            ["backdropSpacing"] = 3,
+            ["buttonSpacing"] = 1,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["point"] = "TOPLEFT",
+            ["showGrid"] = false,
+        },
+        ["bar5"] = {
+            ["backdropSpacing"] = 3,
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["buttons"] = 12,
+            ["buttonsPerRow"] = 12,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+        },
+        ["bar6"] = {
+            ["backdropSpacing"] = 3,
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["enabled"] = true,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+        },
+        ["bar7"] = {
+            ["backdropSpacing"] = 4,
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["buttonsPerRow"] = 2,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["showGrid"] = false,
+        },
+        ["bar8"] = {
+            ["backdropSpacing"] = 4,
+            ["buttonSize"] = 35,
+            ["buttonSpacing"] = 1,
+            ["buttonsPerRow"] = 4,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["enabled"] = true,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["point"] = "TOPLEFT",
+            ["showGrid"] = false,
+        },
+        ["bar9"] = {
+            ["backdropSpacing"] = 4,
+            ["buttonSpacing"] = 1,
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 13,
+            ["countTextYOffset"] = 0,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontOutline"] = "OUTLINE",
+            ["macroFontSize"] = 14,
+            ["macroTextPosition"] = "BOTTOM",
+            ["macroTextYOffset"] = 2,
+            ["macrotext"] = true,
+            ["showGrid"] = false,
+        },
+        ["barPet"] = {
+            ["backdrop"] = false,
+            ["backdropSpacing"] = 1,
+            ["buttonSize"] = 25,
+            ["buttonSpacing"] = 1,
+            ["buttonsPerRow"] = 10,
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 14,
+            ["countTextYOffset"] = 1,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontSize"] = 14,
+            ["macroTextYOffset"] = 2,
+            ["point"] = "TOPLEFT",
+        },
+        ["cooldown"] = {
+            ["override"] = false,
+        },
+        ["countTextYOffset"] = 1,
+        ["equippedItem"] = true,
+        ["extraActionButton"] = {
+            ["clean"] = true,
+            ["countFontSize"] = 14,
+            ["countTextYOffset"] = 1,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontSize"] = 14,
+            ["macroTextYOffset"] = 2,
+            ["scale"] = 0.8,
+        },
+        ["font"] = "默认",
+        ["fontOutline"] = "OUTLINE",
+        ["fontSize"] = 14,
+        ["globalFadeAlpha"] = 1,
+        ["hotkeyTextYOffset"] = -1,
+        ["keyDown"] = false,
+        ["macroTextYOffset"] = 2,
+        ["microbar"] = {
+            ["backdropSpacing"] = 0,
+            ["buttonHeight"] = 25,
+            ["buttonSpacing"] = 0,
+            ["buttons"] = 11,
+        },
+        ["noPowerColor"] = {
+            ["g"] = 0.25490196078431,
+            ["r"] = 0.30588235294118,
+        },
+        ["stanceBar"] = {
+            ["backdropSpacing"] = 0,
+            ["buttonSize"] = 28,
+            ["buttonSpacing"] = 1,
+            ["countFontSize"] = 14,
+            ["countTextYOffset"] = 1,
+            ["hotkeyFont"] = "默认",
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextPosition"] = "TOP",
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontSize"] = 14,
+            ["macroTextYOffset"] = 2,
+            ["point"] = "BOTTOMLEFT",
+            ["style"] = "classic",
+        },
+        ["totemBar"] = {
+            ["buttonSize"] = 34,
+            ["font"] = "默认",
+            ["fontSize"] = 16,
+            ["spacing"] = 2,
+        },
+        ["transparent"] = true,
+        ["vehicleExitButton"] = {
+            ["countFontSize"] = 14,
+            ["countTextYOffset"] = 1,
+            ["hotkeyFontOutline"] = "OUTLINE",
+            ["hotkeyFontSize"] = 14,
+            ["hotkeyTextYOffset"] = -1,
+            ["macroFontSize"] = 14,
+            ["macroTextYOffset"] = 2,
+            ["size"] = 28,
+        },
+        ["zoneActionButton"] = {
+            ["clean"] = true,
+            ["scale"] = 0.8,
+        },
+    },
+    ["auras"] = {
+        ["buffs"] = {
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 14,
+            ["horizontalSpacing"] = 4,
+            ["size"] = 36,
+            ["timeFont"] = "Rurutia",
+            ["timeFontOutline"] = "OUTLINE",
+            ["timeFontSize"] = 13,
+            ["timeYOffset"] = -2,
+            ["wrapAfter"] = 14,
+        },
+        ["cooldown"] = {
+            ["checkSeconds"] = true,
+            ["hhmmThreshold"] = 1440,
+            ["mmssThreshold"] = 10800,
+        },
+        ["debuffs"] = {
+            ["countFont"] = "Rurutia",
+            ["countFontOutline"] = "OUTLINE",
+            ["countFontSize"] = 15,
+            ["horizontalSpacing"] = 3,
+            ["size"] = 40,
+            ["timeFont"] = "Rurutia",
+            ["timeFontOutline"] = "OUTLINE",
+            ["timeFontSize"] = 15,
+            ["timeYOffset"] = -2,
+            ["wrapAfter"] = 13,
+        },
+    },
+    ["bags"] = {
+        ["autoToggle"] = {
+            ["guildBank"] = true,
+            ["professions"] = true,
+            ["trade"] = true,
+        },
+        ["bagButtonSpacing"] = 3,
+        ["bagSize"] = 39,
+        ["bagWidth"] = 390,
+        ["bankSize"] = 40,
+        ["bankWidth"] = 550,
+        ["clearSearchOnClose"] = true,
+        ["countFont"] = "Rurutia",
+        ["countFontOutline"] = "OUTLINE",
+        ["countFontSize"] = 14,
+        ["currencyFormat"] = "ICON",
+        ["itemInfoFont"] = "Rurutia",
+        ["itemInfoFontOutline"] = "OUTLINE",
+        ["itemInfoFontSize"] = 14,
+        ["itemLevelFont"] = "Rurutia",
+        ["itemLevelFontOutline"] = "OUTLINE",
+        ["itemLevelFontSize"] = 14,
+        ["junkDesaturate"] = true,
+        ["junkIcon"] = true,
+        ["moneyCoins"] = false,
+        ["reverseSlots"] = true,
+        ["shownBags"] = {
+            ["bag-2"] = false,
+        },
+        ["split"] = {
+            ["bag1"] = true,
+            ["bag2"] = true,
+            ["bag3"] = true,
+            ["bag4"] = true,
+            ["bagSpacing"] = 3,
+        },
+        ["transparent"] = true,
+        ["vendorGrays"] = {
+            ["enable"] = true,
+            ["progressBar"] = false,
+        },
+    },
+    ["chat"] = {
+        ["chatHistory"] = false,
+        ["fadeTabsNoBackdrop"] = false,
+        ["font"] = "默认",
+        ["fontOutline"] = "OUTLINE",
+        ["fontSize"] = 18,
+        ["hideChatToggles"] = true,
+        ["inactivityTimer"] = 60,
+        ["panelBackdrop"] = "HIDEBOTH",
+        ["panelColor"] = {
+            ["a"] = 0.75,
+            ["b"] = 0.050980392156863,
+            ["g"] = 0.050980392156863,
+            ["r"] = 0.050980392156863,
+        },
+        ["panelHeight"] = 256,
+        ["panelHeightRight"] = 230,
+        ["panelSnapLeftID"] = 1,
+        ["panelTabTransparency"] = true,
+        ["panelWidth"] = 400,
+        ["panelWidthRight"] = 420,
+        ["separateSizes"] = true,
+        ["shortChannels"] = false,
+        ["tabFont"] = "默认",
+        ["tabFontOutline"] = "OUTLINE",
+        ["tabFontSize"] = 16,
+        ["useCustomTimeColor"] = false,
+    },
+    ["convertPages"] = true,
+    ["cooldown"] = {
+        ["checkSeconds"] = true,
+        ["enable"] = false,
+        ["fonts"] = {
+            ["enable"] = true,
+            ["font"] = "默认",
+        },
+        ["hhmmColor"] = {
+            ["b"] = 1,
+            ["g"] = 1,
+            ["r"] = 1,
+        },
+        ["hhmmThreshold"] = 0,
+        ["mmssColor"] = {
+            ["b"] = 1,
+            ["g"] = 1,
+            ["r"] = 1,
+        },
+        ["mmssThreshold"] = 3,
+        ["targetaura"] = {
+            ["enable"] = false,
+        },
+        ["threshold"] = 1,
+    },
+    ["databars"] = {
+        ["azerite"] = {
+            ["enable"] = false,
+            ["fontOutline"] = "OUTLINE",
+            ["fontSize"] = 14,
+            ["height"] = 250,
+            ["width"] = 14,
+        },
+        ["customTexture"] = true,
+        ["experience"] = {
+            ["enable"] = false,
+            ["fontOutline"] = "OUTLINE",
+            ["fontSize"] = 14,
+            ["height"] = 8,
+            ["mouseover"] = true,
+            ["width"] = 175,
+        },
+        ["honor"] = {
+            ["enable"] = false,
+            ["fontOutline"] = "OUTLINE",
+            ["height"] = 160,
+            ["mouseover"] = true,
+            ["width"] = 12,
+        },
+        ["petExperience"] = {
+            ["enable"] = false,
+            ["height"] = 8,
+            ["mouseover"] = true,
+            ["width"] = 220,
+        },
+        ["reputation"] = {
+            ["enable"] = true,
+            ["fontOutline"] = "OUTLINE",
+            ["fontSize"] = 14,
+            ["height"] = 6,
+            ["mouseover"] = true,
+            ["width"] = 175,
+        },
+        ["statusbar"] = "ElvUI Blank",
+        ["threat"] = {
+            ["enable"] = false,
+            ["fontOutline"] = "OUTLINE",
+            ["fontSize"] = 12,
+            ["width"] = 420,
+        },
+    },
+    ["datatexts"] = {
+        ["battlePanel"] = {
+            ["上方"] = {
+                [1] = "",
+                [2] = "",
+                [3] = "",
+                [4] = "",
+                [5] = "",
+                [6] = "",
+            },
+            ["左上"] = {
+                [1] = "",
+            },
+            ["移动速度"] = {
+                [1] = "",
+            },
+            ["距离"] = {
+                [1] = "",
+            },
+            ["集合石"] = {
+                [1] = "",
+            },
+        },
+        ["font"] = "默认",
+        ["fontOutline"] = "OUTLINE",
+        ["fontSize"] = 18,
+        ["panels"] = {
+            ["LeftChatDataPanel"] = {
+                [1] = "DualSpecialization",
+                [3] = "ElvUI",
+                ["backdrop"] = false,
+                ["left"] = "Bags",
+                ["right"] = "Spell/Heal Power",
+            },
+            ["MinimapPanel"] = {
+                ["backdrop"] = false,
+            },
+            ["RightChatDataPanel"] = {
+                ["backdrop"] = false,
+                ["panelTransparency"] = true,
+            },
+            ["TopDataTextsBar1"] = {
+                ["enable"] = false,
+            },
+            ["TopDataTextsBar2"] = {
+                ["enable"] = false,
+            },
+            ["TopDataTextsBar3"] = {
+                ["enable"] = false,
+            },
+            ["TopDataTextsBar4"] = {
+                ["enable"] = false,
+            },
+            ["上方"] = {
+                [1] = "Primary Stat",
+                [2] = "Haste",
+                [3] = "Crit",
+                [4] = "Mastery",
+                [5] = "Versatility",
+                [6] = "MeetingStone",
+                ["battleground"] = false,
+                ["enable"] = false,
+            },
+            ["左上"] = {
+                [1] = "Micro Menu",
+                ["battleground"] = false,
+                ["enable"] = false,
+            },
+            ["移动速度"] = {
+                [1] = "MovementSpeed",
+                ["battleground"] = false,
+                ["enable"] = false,
+            },
+            ["距离"] = {
+                [1] = "Target Range",
+                ["battleground"] = false,
+                ["enable"] = false,
+            },
+            ["集合石"] = {
+                [1] = "MeetingHorn",
+                ["battleground"] = false,
+                ["enable"] = false,
+            },
+        },
+    },
+    ["dbConverted"] = 15.17,
+    ["general"] = {
+        ["afkChat"] = false,
+        ["afkSpin"] = false,
+        ["altPowerBar"] = {
+            ["font"] = "默认",
+            ["fontSize"] = 15,
+            ["statusBar"] = "ElvUI Blank",
+        },
+        ["autoRepair"] = "GUILD",
+        ["backdropcolor"] = {
+            ["b"] = 0.062745098039216,
+            ["g"] = 0.062745098039216,
+            ["r"] = 0.062745098039216,
+        },
+        ["backdropfadecolor"] = {
+            ["a"] = 0.5,
+            ["b"] = 0.050980392156863,
+            ["g"] = 0.050980392156863,
+            ["r"] = 0.050980392156863,
+        },
+        ["bonusObjectivePosition"] = "AUTO",
+        ["bordercolor"] = {
+            ["b"] = 0.094117647058824,
+            ["g"] = 0.094117647058824,
+            ["r"] = 0.094117647058824,
+        },
+        ["bottomPanel"] = false,
+        ["customGlow"] = {
+            ["style"] = "Action Button Glow",
+        },
+        ["durabilityScale"] = 0.5,
+        ["font"] = "聊天",
+        ["fontSize"] = 18,
+        ["itemLevel"] = {
+            ["displayCharacterInfo"] = false,
+            ["itemLevelFont"] = "默认",
+            ["itemLevelFontSize"] = 11,
+            ["showGems"] = false,
+        },
+        ["loginmessage"] = false,
+        ["lootRoll"] = {
+            ["buttonSize"] = 30,
+            ["height"] = 38,
+            ["nameFont"] = "默认",
+            ["nameFontSize"] = 18,
+            ["qualityItemLevel"] = true,
+            ["spacing"] = 3,
+            ["statusBarTexture"] = "Solid",
+            ["width"] = 320,
+        },
+        ["minimap"] = {
+            ["icons"] = {
+                ["battlefield"] = {
+                    ["scale"] = 0.8,
+                    ["xOffset"] = -29,
+                    ["yOffset"] = 0,
+                },
+                ["classHall"] = {
+                    ["position"] = "LEFT",
+                    ["scale"] = 1,
+                    ["xOffset"] = -19,
+                    ["yOffset"] = 39,
+                },
+                ["mail"] = {
+                    ["scale"] = 1.3,
+                    ["texture"] = "Mail2",
+                    ["xOffset"] = 6,
+                    ["yOffset"] = 5,
+                },
+            },
+            ["locationFont"] = "默认",
+            ["locationFontSize"] = 16,
+            ["locationText"] = "SHOW",
+            ["size"] = 180,
+        },
+        ["numberPrefixStyle"] = "CHINESE",
+        ["objectiveFrameAutoHideInKeystone"] = true,
+        ["objectiveFrameHeight"] = 500,
+        ["resurrectSound"] = true,
+        ["smoothingAmount"] = 0.25,
+        ["tagUpdateRate"] = 0.5,
+        ["talkingHeadFrameScale"] = 1,
+        ["torghastBuffsPosition"] = "AUTO",
+        ["totems"] = {
+            ["growthDirection"] = "HORIZONTAL",
+            ["size"] = 30,
+            ["spacing"] = 1,
+        },
+        ["valuecolor"] = {
+            ["b"] = 0.41,
+            ["g"] = 0.96,
+            ["r"] = 1,
+        },
+        ["vehicleSeatIndicatorSize"] = 72,
+    },
+    ["movers"] = {
+        ["AlertFrameMover"] = "TOP,UIParent,TOP,0,-237",
+        ["AltPowerBarMover"] = "TOP,ElvUIParent,TOP,0,-213",
+        ["ArenaHeaderMover"] = "TOPLEFT,UIParent,TOPLEFT,364,-352",
+        ["ArtifactBarMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,441,2",
+        ["AutoButtonAnchor2Mover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-430,1",
+        ["AutoButtonAnchor3Mover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,0,322",
+        ["AutoButtonAnchorMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,0,267",
+        ["AutoButtonBar1Mover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-227,149",
+        ["AutoButtonBar2Mover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-227,110",
+        ["AutoButtonBar3Mover"] = "TOPLEFT,UIParent,TOPLEFT,254,-314",
+        ["AutoButtonBar4Mover"] = "TOPLEFT,UIParent,TOPLEFT,254,-272",
+        ["AutoButtonBar5Mover"] = "TOPLEFT,UIParent,TOPLEFT,254,-230",
+        ["AzeriteBarMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,427,-1",
+        ["BNETMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,430,-29",
+        ["BattleResAnchorMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,1,280",
+        ["BelowMinimapContainerMover"] = "TOPLEFT,UIParent,TOPLEFT,428,-179",
+        ["BossButton"] = "TOP,UIParent,TOP,174,-340",
+        ["BossHeaderMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,362,-146",
+        ["BuffsMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-187,-2",
+        ["ClassBarMover"] = "BOTTOMElvUIParentBOTTOM0338",
+        ["CooldownFlashMover"] = "BOTTOMElvUIParentBOTTOM0440",
+        ["DTPanel上方Mover"] = "TOP,ElvUIParent,TOP,0,0",
+        ["DTPanel左上Mover"] = "TOP,ElvUIParent,TOP,-174,-25",
+        ["DTPanel移动速度Mover"] = "TOP,ElvUIParent,TOP,180,-27",
+        ["DTPanel距离Mover"] = "BOTTOM,ElvUIParent,BOTTOM,0,390",
+        ["DTPanel集合石Mover"] = "TOP,ElvUIParent,TOP,0,-27",
+        ["DebuffsMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-187,-153",
+        ["DurabilityFrameMover"] = "TOPLEFT,UIParent,TOPLEFT,428,-211",
+        ["EUIMinimapButtonMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-169,0",
+        ["EUIRaidToolBox1Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,4,-75",
+        ["EUIRaidToolBox2Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,4,-142",
+        ["EUIRaidToolBox3Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,4,-28",
+        ["ElvAB_1"] = "BOTTOM,ElvUIParent,BOTTOM,0,-1",
+        ["ElvAB_10"] = "BOTTOM,ElvUIParent,BOTTOM,295,0",
+        ["ElvAB_2"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-401,0",
+        ["ElvAB_3"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,-205",
+        ["ElvAB_4"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-32,-205",
+        ["ElvAB_5"] = "BOTTOM,UIParent,BOTTOM,0,72",
+        ["ElvAB_6"] = "BOTTOM,ElvUIParent,BOTTOM,0,36",
+        ["ElvAB_7"] = "BOTTOM,ElvUIParent,BOTTOM,188,376",
+        ["ElvAB_8"] = "BOTTOM,ElvUIParent,BOTTOM,296,1",
+        ["ElvUF_AssistMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-265",
+        ["ElvUF_FocusCastbarMover"] = "TOP,ElvUIParent,TOP,16,-142",
+        ["ElvUF_FocusMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,1,345",
+        ["ElvUF_FocusTargetMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,81,377",
+        ["ElvUF_PartyMover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-435,373",
+        ["ElvUF_PetCastbarMover"] = "BOTTOM,ElvUIParent,BOTTOM,-265,197",
+        ["ElvUF_PetMover"] = "BOTTOM,ElvUIParent,BOTTOM,-315,223",
+        ["ElvUF_PetTargetMover"] = "BOTTOM,ElvUIParent,BOTTOM,-204,223",
+        ["ElvUF_PlayerCastbarMover"] = "BOTTOM,UIParent,BOTTOM,0,210",
+        ["ElvUF_PlayerMover"] = "BOTTOM,ElvUIParent,BOTTOM,-265,305",
+        ["ElvUF_PlayerSwingBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,149",
+        ["ElvUF_Raid1Mover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-340,377",
+        ["ElvUF_Raid2Mover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-158,379",
+        ["ElvUF_Raid3Mover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-222,353",
+        ["ElvUF_RaidpetMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,273",
+        ["ElvUF_TankMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,-1,-288",
+        ["ElvUF_TargetCastbarMover"] = "BOTTOM,ElvUIParent,BOTTOM,278,192",
+        ["ElvUF_TargetMover"] = "BOTTOM,ElvUIParent,BOTTOM,265,305",
+        ["ElvUF_TargetTargetMover"] = "BOTTOM,ElvUIParent,BOTTOM,325,345",
+        ["ElvUIBagMover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-171,290",
+        ["ElvUIBankMover"] = "TOPLEFT,UIParent,TOPLEFT,232,-207",
+        ["EuiDistance30Mover"] = "BOTTOMLEFTElvUIParentBOTTOMLEFT427291",
+        ["EuiExecuteMover"] = "TOPLEFTElvUIParentTOPLEFT554-348",
+        ["EuiInfoBar1Mover"] = "TOP,ElvUIParent,TOP,-135,0",
+        ["EuiInfoBar2Mover"] = "TOP,ElvUIParent,TOP,135,0",
+        ["EuiInfoBar3Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,0",
+        ["EuiInfoBar4Mover"] = "TOP,ElvUIParent,TOP,0,0",
+        ["EuiObjectiveTrackerMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-91,-220",
+        ["EuiVegeanceIconMover"] = "BOTTOMLEFTElvUIParentBOTTOMLEFT439302",
+        ["EuiWorldStateMover"] = "TOP,ElvUIParent,TOP,0,-169",
+        ["ExAE_FrameMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,541,176",
+        ["ExperienceBarMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,-197",
+        ["GMMover"] = "TOPLEFT,UIParent,TOPLEFT,429,-80",
+        ["HonorBarMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,440,0",
+        ["LeftChatMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,0,-1",
+        ["LootFrameMover"] = "TOP,ElvUIParent,TOP,0,-184",
+        ["LossControlMover"] = "TOP,ElvUIParent,TOP,-111,-409",
+        ["MERMinimapButtonBarAnchor"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-178,-181",
+        ["MER_BagMover"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-151,241",
+        ["MER_BankMover"] = "BOTTOMLEFT,UIParent,BOTTOMLEFT,130,211",
+        ["MER_CooldownFlashMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,532,304",
+        ["MER_MinimapButtonBarAnchor"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-180,-181",
+        ["MawBuffsBelowMinimapMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-67,-209",
+        ["MinimapMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,0",
+        ["MirrorTimer1Mover"] = "TOP,UIParent,TOP,0,-180",
+        ["ObjectiveFrameMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-158,-236",
+        ["PRIESTAnchorMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,103,279",
+        ["PetAB"] = "BOTTOM,ElvUIParent,BOTTOM,0,142",
+        ["PetExperienceBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,-266,189",
+        ["PlayerChoiceToggle"] = "BOTTOM,UIParent,BOTTOM,0,424",
+        ["QuestTimerFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-307,-207",
+        ["QuestWatchFrameMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,-185,-223",
+        ["QuestieBaseFrameMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-132,-227",
+        ["RaidCDAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,4,-27",
+        ["ReputationBarMover"] = "TOPRIGHT,ElvUIParent,TOPRIGHT,0,-200",
+        ["RightChatMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,0,0",
+        ["ShiftAB"] = "BOTTOM,ElvUIParent,BOTTOM,0,168",
+        ["SpellFeedback"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,521,310",
+        ["SquareMinimapButtonBarMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-178,-150",
+        ["TalkingHeadFrameMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,258,-98",
+        ["TaxiButtonMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,186",
+        ["ThreatBarMover"] = "BOTTOM,ElvUIParent,BOTTOM,0,142",
+        ["TimeManagerFrameMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,280,0",
+        ["TooltipMover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,1,275",
+        ["TopCenterContainerMover"] = "TOP,ElvUIParent,TOP,0,-102",
+        ["TotemBarMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-368,-432",
+        ["TotemTrackerMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-459,-437",
+        ["VOICECHAT"] = "TOPLEFT,UIParent,TOPLEFT,429,-157",
+        ["VehicleLeaveButton"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,555,223",
+        ["VehicleSeatMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-353,-246",
+        ["WTChatBarMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,4,284",
+        ["WTCombatAlertFrameMover"] = "TOP,ElvUIParent,TOP,0,-251",
+        ["WTCustomEmoteFrameMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,214,281",
+        ["WTExtraItemsBar1Mover"] = "BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,0,392",
+        ["WTExtraItemsBar2Mover"] = "TOPLEFT,UIParent,TOPLEFT,220,-281",
+        ["WTExtraItemsBar3Mover"] = "TOPLEFT,UIParent,TOPLEFT,251,-280",
+        ["WTExtraItemsBar4Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,201,-217",
+        ["WTExtraItemsBar5Mover"] = "TOPLEFT,ElvUIParent,TOPLEFT,201,-190",
+        ["WTGameBarAnchor"] = "TOP,ElvUIParent,TOP,0,-29",
+        ["WTMinimapButtonBarAnchor"] = "TOPRIGHT,UIParent,TOPRIGHT,-178,-162",
+        ["WTParagonReputationToastFrameMover"] = "TOP,ElvUIParent,TOP,0,-299",
+        ["WTRaidMarkersBarAnchor"] = "TOP,ElvUIParent,TOP,0,-23",
+        ["WTSwitchButtonBarMover"] = "TOPRIGHT,UIParent,TOPRIGHT,-130,-223",
+        ["ZoneAbility"] = "BOTTOMRIGHT,UIParent,BOTTOMRIGHT,-603,177",
+        ["playerAnchorMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,485,253",
+        ["playerBuffAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-126",
+        ["playerDebuffAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-92",
+        ["spellCDAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-72",
+        ["targetAnchorMover"] = "BOTTOMLEFT,ElvUIParent,BOTTOMLEFT,1085,307",
+        ["targetBuffAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-229",
+        ["targetDebuffAnchorMover"] = "TOPLEFT,ElvUIParent,TOPLEFT,0,-169",
+    },
+    ["mui"] = {
+        ["CombatAlert"] = {
+            ["enable"] = false,
+            ["font"] = {
+                ["name"] = "默认",
+                ["style"] = "OUTLINE",
+            },
+        },
+        ["actionbars"] = {
+            ["keyfeedback"] = {
+                ["lineDirection"] = "LEFT",
+                ["lineIconSize"] = 30,
+                ["mirrorSize"] = 30,
+            },
+        },
+        ["announcement"] = {
+            ["enable"] = false,
+            ["keystone"] = {
+                ["enable"] = false,
+            },
+            ["resetInstance"] = {
+                ["enable"] = false,
+            },
+            ["utility"] = {
+                ["enable"] = false,
+            },
+        },
+        ["armory"] = {
+            ["StatOrder"] = "14235",
+            ["character"] = {
+                ["enable"] = false,
+            },
+        },
+        ["autoButtons"] = {
+            ["bar1"] = {
+                ["buttonHeight"] = 35,
+                ["fadeTime"] = 0,
+            },
+            ["bar2"] = {
+                ["buttonHeight"] = 35,
+                ["fadeTime"] = 0,
+            },
+            ["bar3"] = {
+                ["enable"] = false,
+            },
+            ["enable"] = false,
+        },
+        ["bags"] = {
+            ["BagsPerRow"] = 10,
+            ["BagsWidth"] = 10,
+            ["BankWidth"] = 14,
+            ["FilterCollection"] = false,
+            ["FilterQuest"] = true,
+            ["FontSize"] = 17,
+            ["HideWidgets"] = false,
+            ["IconSize"] = 42,
+            ["IconSpacing"] = 2,
+        },
+        ["blizzard"] = {
+            ["filter"] = {
+                ["enable"] = false,
+            },
+            ["friendsList"] = {
+                ["enable"] = false,
+                ["infoFont"] = {
+                    ["size"] = 16,
+                },
+                ["nameFont"] = {
+                    ["size"] = 16,
+                },
+                ["textures"] = {
+                    ["factionIcon"] = true,
+                },
+            },
+        },
+        ["chat"] = {
+            ["chatBar"] = {
+                ["enable"] = false,
+            },
+            ["chatLink"] = {
+                ["armorCategory"] = false,
+                ["translateItem"] = false,
+                ["weaponCategory"] = false,
+            },
+            ["chatText"] = {
+                ["enable"] = false,
+                ["removeBrackets"] = false,
+                ["roleIconStyle"] = "DEFAULT",
+            },
+            ["customOnlineMessage"] = false,
+            ["expandPanel"] = 150,
+            ["filter"] = {
+                ["enable"] = false,
+            },
+            ["hidePlayerBrackets"] = false,
+            ["panelHeight"] = 256,
+            ["roleIcons"] = {
+                ["roleIconStyle"] = "DEFAULT",
+            },
+            ["seperators"] = {
+                ["enable"] = false,
+            },
+        },
+        ["cooldownFlash"] = {
+            ["enable"] = false,
+        },
+        ["core"] = {
+            ["installed"] = true,
+        },
+        ["cvars"] = {
+            ["combatText"] = {
+                ["WorldTextScale"] = 1,
+                ["targetCombatText"] = {
+                    ["floatingCombatTextCombatDamageDirectionalScale"] = 0,
+                    ["floatingCombatTextCombatHealingAbsorbTarget"] = true,
+                    ["floatingCombatTextCombatLogPeriodicSpells"] = true,
+                },
+                ["worldTextScale"] = 1.2,
+            },
+            ["general"] = {
+                ["alwaysCompareItems"] = true,
+                ["autoDismountFlying"] = false,
+                ["autoLootDefault"] = true,
+                ["breakUpLargeNumbers"] = false,
+                ["removeChatDelay"] = false,
+                ["screenshotQuality"] = 3,
+                ["scriptErrors"] = false,
+            },
+        },
+        ["general"] = {
+            ["AFK"] = false,
+            ["FlightPoint"] = false,
+            ["GameMenu"] = false,
+            ["splashScreen"] = false,
+        },
+        ["gradient"] = {
+            ["enable"] = false,
+        },
+        ["locPanel"] = {
+            ["enable"] = false,
+        },
+        ["mail"] = {
+            ["defaultPage"] = "FAVORITE",
+            ["enable"] = false,
+            ["forceHide"] = true,
+        },
+        ["maps"] = {
+            ["minimap"] = {
+                ["coords"] = {
+                    ["enable"] = false,
+                },
+                ["flash"] = false,
+                ["ping"] = {
+                    ["fadeInTime"] = 0,
+                    ["fadeOutTime"] = 0,
+                    ["font"] = {
+                        ["size"] = 18,
+                    },
+                    ["stayTime"] = 2,
+                    ["yOffset"] = -40,
+                },
+                ["queueStatus"] = false,
+            },
+            ["worldMap"] = {
+                ["enable"] = false,
+                ["reveal"] = {
+                    ["enable"] = false,
+                },
+            },
+        },
+        ["media"] = {
+            ["miscText"] = {
+                ["mail"] = {
+                    ["font"] = "默认",
+                    ["size"] = 20,
+                },
+            },
+            ["zoneText"] = {
+                ["enable"] = false,
+                ["pvp"] = {
+                    ["font"] = "默认",
+                },
+                ["subzone"] = {
+                    ["font"] = "默认",
+                },
+                ["zone"] = {
+                    ["font"] = "默认",
+                },
+            },
+        },
+        ["microBar"] = {
+            ["enable"] = false,
+        },
+        ["misc"] = {
+            ["alerts"] = {
+                ["announce"] = false,
+                ["feasts"] = false,
+                ["itemAlert"] = false,
+                ["lfg"] = false,
+                ["portals"] = false,
+                ["toys"] = false,
+            },
+            ["funstuff"] = false,
+            ["gmotd"] = false,
+            ["quest"] = {
+                ["selectQuestReward"] = false,
+            },
+            ["wowheadlinks"] = false,
+        },
+        ["nameHover"] = {
+            ["enable"] = false,
+        },
+        ["nameplates"] = {
+            ["castbarShield"] = false,
+            ["enhancedAuras"] = {
+                ["enable"] = false,
+            },
+            ["gradient"] = false,
+        },
+        ["notification"] = {
+            ["paragon"] = false,
+            ["textFont"] = {
+                ["name"] = "默认",
+                ["size"] = 19,
+            },
+            ["titleFont"] = {
+                ["name"] = "默认",
+                ["size"] = 22,
+            },
+        },
+        ["panels"] = {
+            ["bottomPanel"] = false,
+            ["stylePanels"] = {
+                ["bottomLeftPanel"] = false,
+                ["bottomRightPanel"] = false,
+                ["topLeftPanel"] = false,
+                ["topRightPanel"] = false,
+            },
+            ["topPanel"] = false,
+        },
+        ["raidBuffs"] = {
+            ["enable"] = false,
+        },
+        ["raidmanager"] = {
+            ["enable"] = false,
+        },
+        ["reminder"] = {
+            ["enable"] = false,
+        },
+        ["smb"] = {
+            ["backdrop"] = false,
+            ["backdropSpacing"] = 0,
+            ["buttonsPerRow"] = 10,
+            ["calendar"] = true,
+            ["enable"] = false,
+            ["spacing"] = 0,
+        },
+        ["unitframes"] = {
+            ["auras"] = false,
+            ["castbar"] = {
+                ["enable"] = false,
+                ["spark"] = {
+                    ["color"] = {
+                        ["b"] = 0.98039215686275,
+                        ["g"] = 0.74901960784314,
+                    },
+                    ["enable"] = false,
+                    ["texture"] = "Solid",
+                    ["width"] = 2,
+                },
+                ["texture"] = "Solid",
+            },
+            ["deathIndicator"] = {
+                ["anchorPoint"] = "LEFT",
+                ["xOffset"] = -20,
+            },
+            ["highlight"] = false,
+            ["offlineIndicator"] = {
+                ["anchorPoint"] = "LEFT",
+                ["xOffset"] = -20,
+            },
+            ["power"] = {
+                ["enable"] = false,
+                ["full"] = false,
+            },
+            ["raidIcons"] = false,
+            ["roleIcons"] = {
+                ["roleIconStyle"] = "DEFAULT",
+            },
+            ["style"] = false,
+            ["swing"] = {
+                ["enable"] = true,
+                ["ocolor"] = {
+                    ["a"] = 1,
+                },
+                ["tcolor"] = {
+                    ["a"] = 1,
+                    ["b"] = 0.4156862745098,
+                    ["g"] = 0.98039215686275,
+                    ["r"] = 1,
+                },
+            },
+        },
+        ["version"] = "5.85",
+    },
+    ["nameplates"] = {
+        ["fadeIn"] = false,
+        ["font"] = "默认",
+        ["highlight"] = false,
+        ["statusbar"] = "Solid",
+        ["units"] = {
+            ["ENEMY_NPC"] = {
+                ["castbar"] = {
+                    ["enable"] = false,
+                },
+            },
+        },
+    },
+    ["tooltip"] = {
+        ["alwaysShowRealm"] = true,
+        ["colorAlpha"] = 0.75,
+        ["cursorAnchor"] = true,
+        ["cursorAnchorType"] = "ANCHOR_CURSOR_RIGHT",
+        ["font"] = "默认",
+        ["fontOutline"] = "OUTLINE",
+        ["fontSize"] = 18,
+        ["headerFont"] = "默认",
+        ["headerFontOutline"] = "OUTLINE",
+        ["headerFontSize"] = 21,
+        ["healthBar"] = {
+            ["font"] = "默认",
+            ["fontOutline"] = "OUTLINE",
+            ["fontSize"] = 16,
+        },
+        ["itemCount"] = {
+            ["bank"] = true,
+        },
+        ["showElvUIUsers"] = true,
+        ["smallTextFontSize"] = 19,
+        ["textFontSize"] = 19,
+        ["visibility"] = {
+            ["combatOverride"] = "CTRL",
+        },
+    },
+    ["unitframe"] = {
+        ["colors"] = {
+            ["castClassColor"] = true,
+            ["castColor"] = {
+                ["b"] = 0.60392156862745,
+                ["g"] = 0.98823529411765,
+                ["r"] = 1,
+            },
+            ["colorhealthbyvalue"] = false,
+            ["customhealthbackdrop"] = true,
+            ["debuffHighlight"] = {
+                ["Curse"] = {
+                    ["a"] = 1,
+                },
+                ["Disease"] = {
+                    ["a"] = 1,
+                },
+                ["Magic"] = {
+                    ["a"] = 1,
+                },
+                ["Poison"] = {
+                    ["a"] = 1,
+                },
+            },
+            ["frameGlow"] = {
+                ["mouseoverGlow"] = {
+                    ["color"] = {
+                        ["a"] = 0.21432745456696,
+                    },
+                },
+                ["targetGlow"] = {
+                    ["class"] = false,
+                },
+            },
+            ["happiness"] = {
+                [1] = {
+                    ["b"] = 0.15294117647059,
+                    ["g"] = 0.16470588235294,
+                    ["r"] = 0.7843137254902,
+                },
+                [2] = {
+                    ["b"] = 0.17647058823529,
+                    ["g"] = 0.50980392156863,
+                    ["r"] = 0.84313725490196,
+                },
+                [3] = {
+                    ["b"] = 0.30196078431373,
+                    ["g"] = 0.69019607843137,
+                    ["r"] = 0.29019607843137,
+                },
+            },
+            ["healPrediction"] = {
+                ["personal"] = {
+                    ["b"] = 0.50196078431373,
+                },
+            },
+            ["health"] = {
+                ["b"] = 0.46666666666667,
+                ["g"] = 0.46666666666667,
+                ["r"] = 0.46666666666667,
+            },
+            ["health_backdrop"] = {
+                ["b"] = 0.11372549019608,
+                ["g"] = 0.11372549019608,
+                ["r"] = 0.11372549019608,
+            },
+            ["healthclass"] = true,
+            ["power"] = {
+                ["ENERGY"] = {
+                    ["b"] = 0.53725490196078,
+                    ["g"] = 0.97254901960784,
+                },
+                ["FOCUS"] = {
+                    ["b"] = 0.38039215686275,
+                    ["g"] = 0.6,
+                },
+                ["MANA"] = {
+                    ["b"] = 1,
+                    ["g"] = 0.69803921568628,
+                    ["r"] = 0.55686274509804,
+                },
+                ["RAGE"] = {
+                    ["b"] = 0.31764705882353,
+                    ["g"] = 0.31764705882353,
+                    ["r"] = 0.9921568627451,
+                },
+            },
+            ["reaction"] = {
+                ["BAD"] = {
+                    ["b"] = 0.25098039215686,
+                    ["g"] = 0.25098039215686,
+                    ["r"] = 0.78039215686275,
+                },
+                ["GOOD"] = {
+                    ["b"] = 0.30196078431373,
+                    ["g"] = 0.69019607843137,
+                    ["r"] = 0.28627450980392,
+                },
+                ["NEUTRAL"] = {
+                    ["b"] = 0.36078431372549,
+                    ["g"] = 0.76470588235294,
+                    ["r"] = 0.85098039215686,
+                },
+            },
+        },
+        ["cooldown"] = {
+            ["checkSeconds"] = true,
+            ["fonts"] = {
+                ["enable"] = true,
+            },
+        },
+        ["debuffHighlighting"] = "GLOW",
+        ["font"] = "默认",
+        ["fontOutline"] = "OUTLINE",
+        ["fontSize"] = 13,
+        ["statusbar"] = "Solid",
+        ["units"] = {
+            ["arena"] = {
+                ["buffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["countFontSize"] = 11,
+                    ["countYOffset"] = -2,
+                    ["growthY"] = "DOWN",
+                    ["maxDuration"] = 0,
+                    ["perrow"] = 8,
+                    ["sizeOverride"] = 0,
+                    ["spacing"] = 0,
+                    ["yOffset"] = 1,
+                },
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontSize"] = 13,
+                    },
+                    ["displayTarget"] = true,
+                    ["format"] = "CURRENT",
+                    ["height"] = 19,
+                    ["width"] = 145,
+                    ["xOffsetText"] = 0,
+                },
+                ["customTexts"] = {
+                    ["名称"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 15,
+                        ["text_format"] = "[namecolor][name:medium]",
+                        ["xOffset"] = -1,
+                        ["yOffset"] = 22,
+                    },
+                    ["百分比"] = {
+                        ["attachTextTo"] = "Frame",
+                        ["enable"] = false,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 16,
+                        ["text_format"] = "[health:percent] ",
+                        ["xOffset"] = 58,
+                        ["yOffset"] = 0,
+                    },
+                    ["能量"] = {
+                        ["attachTextTo"] = "Power",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 13,
+                        ["text_format"] = "[namecolor][power:current][powercolor]",
+                        ["xOffset"] = -2,
+                        ["yOffset"] = 0,
+                    },
+                    ["血量"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 14,
+                        ["text_format"] = "[health:current-nostatus] || [health:percent]",
+                        ["xOffset"] = 2,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "RIGHT",
+                    ["countFont"] = "默认",
+                    ["desaturate"] = true,
+                    ["maxDuration"] = 0,
+                    ["perrow"] = 5,
+                    ["priority"] = "",
+                    ["spacing"] = 0,
+                    ["xOffset"] = 1,
+                    ["yOffset"] = 0,
+                },
+                ["fader"] = {
+                    ["enable"] = false,
+                    ["range"] = false,
+                },
+                ["health"] = {
+                    ["position"] = "BOTTOMRIGHT",
+                    ["text_format"] = "",
+                    ["yOffset"] = -3,
+                },
+                ["height"] = 31,
+                ["infoPanel"] = {
+                    ["height"] = 16,
+                },
+                ["middleClickFocus"] = true,
+                ["name"] = {
+                    ["position"] = "TOPLEFT",
+                    ["text_format"] = "",
+                },
+                ["orientation"] = "LEFT",
+                ["power"] = {
+                    ["height"] = 5,
+                    ["position"] = "BOTTOMLEFT",
+                    ["text_format"] = "",
+                    ["xOffset"] = 0,
+                },
+                ["pvpTrinket"] = {
+                    ["anchorPoint"] = "LEFT",
+                    ["enable"] = false,
+                    ["size"] = 30,
+                },
+                ["raidicon"] = {
+                    ["size"] = 12,
+                    ["yOffset"] = 15,
+                },
+                ["spacing"] = 42,
+                ["width"] = 145,
+            },
+            ["assist"] = {
+                ["enable"] = false,
+                ["middleClickFocus"] = true,
+            },
+            ["boss"] = {
+                ["buffIndicator"] = {
+                    ["size"] = 12,
+                },
+                ["buffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["countFontSize"] = 11,
+                    ["countYOffset"] = -2,
+                    ["growthY"] = "DOWN",
+                    ["perrow"] = 8,
+                    ["priority"] = "Blacklist,TurtleBuffs,PlayerBuffs,Dispellable",
+                    ["sizeOverride"] = 0,
+                    ["spacing"] = 0,
+                    ["yOffset"] = 1,
+                },
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontSize"] = 13,
+                    },
+                    ["displayTarget"] = true,
+                    ["format"] = "CURRENTMAX",
+                    ["height"] = 23,
+                    ["width"] = 170,
+                    ["xOffsetText"] = 0,
+                },
+                ["customTexts"] = {
+                    ["名称"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 15,
+                        ["text_format"] = "[namecolor][name:medium]",
+                        ["xOffset"] = -1,
+                        ["yOffset"] = 22,
+                    },
+                    ["百分比"] = {
+                        ["attachTextTo"] = "Frame",
+                        ["enable"] = false,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 16,
+                        ["text_format"] = "[health:percent] ",
+                        ["xOffset"] = 58,
+                        ["yOffset"] = 0,
+                    },
+                    ["能量"] = {
+                        ["attachTextTo"] = "Power",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 15,
+                        ["text_format"] = "[namecolor][power:current][powercolor]",
+                        ["xOffset"] = -2,
+                        ["yOffset"] = 0,
+                    },
+                    ["血量"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 15,
+                        ["text_format"] = "[health:current-nostatus] || [health:percent]",
+                        ["xOffset"] = 2,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["countFont"] = "默认",
+                    ["perrow"] = 4,
+                    ["priority"] = "",
+                    ["sizeOverride"] = 27,
+                    ["spacing"] = 0,
+                    ["xOffset"] = -1,
+                    ["yOffset"] = 0,
+                },
+                ["fader"] = {
+                    ["enable"] = false,
+                    ["range"] = false,
+                },
+                ["growthDirection"] = "UP",
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["position"] = "BOTTOMRIGHT",
+                    ["text_format"] = "",
+                    ["yOffset"] = -3,
+                },
+                ["height"] = 31,
+                ["middleClickFocus"] = true,
+                ["name"] = {
+                    ["position"] = "TOPLEFT",
+                    ["text_format"] = "",
+                },
+                ["power"] = {
+                    ["height"] = 5,
+                    ["position"] = "BOTTOMLEFT",
+                    ["text_format"] = "",
+                    ["xOffset"] = 0,
+                },
+                ["pvpSpecIcon"] = true,
+                ["pvpTrinket"] = {
+                    ["anchorPoint"] = "RIGHT",
+                    ["enable"] = true,
+                    ["position"] = "RIGHT",
+                    ["size"] = 30,
+                    ["xOffset"] = 1,
+                    ["yOffset"] = 0,
+                },
+                ["pvpclassificationindicator"] = {
+                    ["enable"] = true,
+                    ["position"] = "CENTER",
+                    ["size"] = 36,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                ["raidicon"] = {
+                    ["yOffset"] = 15,
+                },
+                ["spacing"] = 40,
+                ["width"] = 170,
+            },
+            ["focus"] = {
+                ["CombatIcon"] = {
+                    ["yOffset"] = -17,
+                },
+                ["aurabar"] = {
+                    ["detachedWidth"] = 270,
+                    ["maxBars"] = 6,
+                    ["maxDuration"] = 300,
+                },
+                ["buffs"] = {
+                    ["countFontSize"] = 14,
+                    ["countPosition"] = "TOP",
+                    ["countYOffset"] = 6,
+                    ["enable"] = true,
+                    ["growthY"] = "DOWN",
+                    ["maxDuration"] = 0,
+                    ["numrows"] = 2,
+                    ["perrow"] = 8,
+                    ["priority"] = "",
+                    ["sortMethod"] = "PLAYER",
+                },
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontSize"] = 20,
+                    },
+                    ["customTimeFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 20,
+                    },
+                    ["format"] = "CURRENTMAX",
+                    ["height"] = 35,
+                    ["iconAttached"] = false,
+                    ["iconAttachedTo"] = "Castbar",
+                    ["iconSize"] = 35,
+                    ["iconXOffset"] = -1,
+                    ["width"] = 500,
+                    ["xOffsetText"] = 10,
+                },
+                ["customTexts"] = {
+                    ["姓名版"] = {
+                        ["enable"] = true,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 16,
+                        ["text_format"] = "[namecolor][name] [difficultycolor][smartlevel][shortclassification]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 27,
+                    },
+                    ["生命值"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 15,
+                        ["text_format"] = "[health:current-nostatus] || [health:percent]",
+                        ["xOffset"] = 2,
+                        ["yOffset"] = 0,
+                    },
+                    ["能量值"] = {
+                        ["attachTextTo"] = "Power",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 15,
+                        ["text_format"] = "[power:current-percent]",
+                        ["xOffset"] = -2,
+                        ["yOffset"] = 2,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "TOPLEFT",
+                    ["countFontSize"] = 14,
+                    ["countPosition"] = "TOP",
+                    ["countYOffset"] = 6,
+                    ["growthX"] = "RIGHT",
+                    ["maxDuration"] = 0,
+                    ["perrow"] = 7,
+                    ["priority"] = "",
+                    ["sortMethod"] = "PLAYER",
+                    ["yOffset"] = 22,
+                },
+                ["disableTargetGlow"] = true,
+                ["fader"] = {
+                    ["enable"] = false,
+                    ["range"] = false,
+                },
+                ["height"] = 33,
+                ["infoPanel"] = {
+                    ["height"] = 20,
+                },
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["orientation"] = "RIGHT",
+                ["portrait"] = {
+                    ["camDistanceScale"] = 0.6,
+                    ["width"] = 40,
+                },
+                ["power"] = {
+                    ["height"] = 5,
+                    ["xOffset"] = 4,
+                },
+                ["width"] = 180,
+            },
+            ["focustarget"] = {
+                ["buffs"] = {
+                    ["priority"] = "Blacklist,Personal,PlayerBuffs,Dispellable",
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 14,
+                        ["text_format"] = "[namecolor][name:veryshort]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["attachTo"] = "BUFFS",
+                    ["priority"] = "Blacklist,Personal,Boss,RaidDebuffs,CCDebuffs,Dispellable,Whitelist",
+                },
+                ["disableTargetGlow"] = true,
+                ["enable"] = true,
+                ["healPrediction"] = {
+                    ["enable"] = false,
+                },
+                ["height"] = 20,
+                ["infoPanel"] = {
+                    ["height"] = 14,
+                },
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["power"] = {
+                    ["enable"] = false,
+                    ["height"] = 4,
+                },
+                ["raidicon"] = {
+                    ["size"] = 13,
+                },
+                ["width"] = 100,
+            },
+            ["party"] = {
+                ["DeathIndicator"] = {
+                    ["anchorPoint"] = "LEFT",
+                    ["xOffset"] = -20,
+                },
+                ["OfflineIndicator"] = {
+                    ["anchorPoint"] = "LEFT",
+                    ["xOffset"] = -20,
+                },
+                ["buffIndicator"] = {
+                    ["size"] = 15,
+                },
+                ["buffs"] = {
+                    ["anchorPoint"] = "TOPLEFT",
+                    ["clickThrough"] = true,
+                    ["countFontSize"] = 9,
+                    ["maxDuration"] = 0,
+                    ["perrow"] = 1,
+                    ["sizeOverride"] = 22,
+                    ["xOffset"] = 20,
+                    ["yOffset"] = -38,
+                },
+                ["classbar"] = {
+                    ["enable"] = false,
+                    ["height"] = 6,
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 16,
+                        ["text_format"] = "[classcolor][name:short][difficultycolor][smartlevel]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 4,
+                    },
+                    ["状态"] = {
+                        ["attachTextTo"] = "Frame",
+                        ["enable"] = true,
+                        ["font"] = "Rurutia",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 11,
+                        ["text_format"] = "[health:current:shortvalue]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = -12,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["attachTo"] = "HEALTH",
+                    ["clickThrough"] = true,
+                    ["countXOffset"] = 3,
+                    ["countYOffset"] = -3,
+                    ["maxDuration"] = 600,
+                    ["perrow"] = 3,
+                    ["priority"] = "",
+                    ["sizeOverride"] = 17,
+                    ["sortDirection"] = "ASCENDING",
+                    ["spacing"] = 0,
+                },
+                ["groupBy"] = "ROLE",
+                ["growthDirection"] = "DOWN_RIGHT",
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["position"] = "RIGHT",
+                    ["text_format"] = "",
+                    ["xOffset"] = -2,
+                },
+                ["height"] = 50,
+                ["horizontalSpacing"] = 1,
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["petsGroup"] = {
+                    ["buffIndicator"] = {
+                        ["size"] = 6,
+                    },
+                    ["disableFocusGlow"] = false,
+                    ["disableTargetGlow"] = false,
+                    ["enable"] = true,
+                    ["height"] = 27,
+                    ["name"] = {
+                        ["xOffset"] = 2,
+                    },
+                    ["width"] = 80,
+                    ["xOffset"] = 2,
+                    ["yOffset"] = 12,
+                },
+                ["phaseIndicator"] = {
+                    ["scale"] = 0.5,
+                },
+                ["power"] = {
+                    ["attachTextTo"] = "Power",
+                    ["height"] = 5,
+                    ["text_format"] = "",
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 1,
+                },
+                ["raidicon"] = {
+                    ["yOffset"] = 10,
+                },
+                ["rdebuffs"] = {
+                    ["font"] = "默认",
+                    ["fontSize"] = 12,
+                    ["size"] = 24,
+                    ["xOffset"] = 40,
+                    ["yOffset"] = 13,
+                },
+                ["resurrectIcon"] = {
+                    ["size"] = 20,
+                },
+                ["roleIcon"] = {
+                    ["damager"] = false,
+                    ["position"] = "LEFT",
+                    ["size"] = 14,
+                    ["xOffset"] = 1,
+                    ["yOffset"] = 0,
+                },
+                ["targetsGroup"] = {
+                    ["disableFocusGlow"] = false,
+                    ["disableTargetGlow"] = false,
+                },
+                ["verticalSpacing"] = 2,
+                ["visibility"] = "[@raid1,exists][nogroup] hide;show",
+                ["width"] = 150,
+            },
+            ["pet"] = {
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 15,
+                    },
+                    ["customTimeFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 15,
+                    },
+                    ["format"] = "CURRENTMAX",
+                    ["height"] = 25,
+                    ["width"] = 220,
+                },
+                ["height"] = 25,
+                ["power"] = {
+                    ["height"] = 4,
+                },
+                ["width"] = 120,
+            },
+            ["pettarget"] = {
+                ["buffs"] = {
+                    ["priority"] = "Blacklist,Personal,PlayerBuffs,Dispellable",
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 13,
+                        ["text_format"] = "[namecolor][name:medium]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["attachTo"] = "BUFFS",
+                    ["priority"] = "Blacklist,Personal,Boss,RaidDebuffs,CCDebuffs,Dispellable,Whitelist",
+                },
+                ["enable"] = true,
+                ["fader"] = {
+                    ["enable"] = false,
+                    ["range"] = false,
+                },
+                ["healPrediction"] = {
+                    ["enable"] = false,
+                },
+                ["height"] = 25,
+                ["infoPanel"] = {
+                    ["height"] = 14,
+                },
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["power"] = {
+                    ["enable"] = false,
+                    ["height"] = 4,
+                },
+                ["width"] = 99,
+            },
+            ["player"] = {
+                ["CombatIcon"] = {
+                    ["anchorPoint"] = "TOP",
+                    ["size"] = 28,
+                },
+                ["aurabar"] = {
+                    ["enable"] = false,
+                },
+                ["buffs"] = {
+                    ["attachTo"] = "FRAME",
+                    ["countFont"] = "默认",
+                    ["countFontSize"] = 9,
+                    ["maxDuration"] = 3500,
+                    ["perrow"] = 6,
+                    ["priority"] = "blockNoDuration,Blacklist,Personal,PlayerBuffs,Whitelist,nonPersonal",
+                    ["sizeOverride"] = 25,
+                    ["yOffset"] = 20,
+                },
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 16,
+                    },
+                    ["customTimeFont"] = {
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontSize"] = 16,
+                    },
+                    ["displayTarget"] = true,
+                    ["enable"] = false,
+                    ["format"] = "CURRENTMAX",
+                    ["height"] = 35,
+                    ["textColor"] = {
+                        ["b"] = 0.41,
+                        ["g"] = 0.96,
+                        ["r"] = 1,
+                    },
+                    ["width"] = 280,
+                },
+                ["classbar"] = {
+                    ["detachedWidth"] = 200,
+                    ["enable"] = false,
+                    ["height"] = 8,
+                },
+                ["customTexts"] = {
+                    ["姓名版"] = {
+                        ["attachTextTo"] = "Frame",
+                        ["enable"] = true,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 16,
+                        ["text_format"] = "[namecolor][name] [difficultycolor][smartlevel][shortclassification]",
+                        ["xOffset"] = 6,
+                        ["yOffset"] = 30,
+                    },
+                    ["生命"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 15,
+                        ["text_format"] = "[health:current-nostatus] || [health:percent]",
+                        ["xOffset"] = -3,
+                        ["yOffset"] = -1,
+                    },
+                    ["能量"] = {
+                        ["attachTextTo"] = "Power",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 14,
+                        ["text_format"] = "[classcolor][power:current]",
+                        ["xOffset"] = -3,
+                        ["yOffset"] = 1,
+                    },
+                },
+                ["debuffs"] = {
+                    ["attachTo"] = "BUFFS",
+                    ["countFontSize"] = 10,
+                    ["enable"] = false,
+                    ["yOffset"] = 2,
+                },
+                ["health"] = {
+                    ["position"] = "RIGHT",
+                    ["text_format"] = "",
+                    ["xOffset"] = -2,
+                },
+                ["height"] = 41,
+                ["portrait"] = {
+                    ["camDistanceScale"] = 0.6,
+                    ["overlayAlpha"] = 0.6,
+                    ["width"] = 40,
+                },
+                ["power"] = {
+                    ["height"] = 7,
+                    ["position"] = "LEFT",
+                    ["text_format"] = "",
+                    ["xOffset"] = 4,
+                },
+                ["width"] = 220,
+            },
+            ["raid1"] = {
+                ["buffIndicator"] = {
+                    ["size"] = 15,
+                },
+                ["buffs"] = {
+                    ["anchorPoint"] = "TOPLEFT",
+                    ["clickThrough"] = true,
+                    ["countFontSize"] = 9,
+                    ["maxDuration"] = 0,
+                    ["perrow"] = 1,
+                    ["sizeOverride"] = 22,
+                    ["xOffset"] = 20,
+                    ["yOffset"] = -38,
+                },
+                ["castbar"] = {
+                    ["customColor"] = {
+                        ["color"] = {
+                            ["b"] = 0.31,
+                            ["g"] = 0.31,
+                            ["r"] = 0.31,
+                        },
+                        ["colorBackdrop"] = {
+                            ["a"] = 1,
+                            ["b"] = 0.5,
+                            ["g"] = 0.5,
+                            ["r"] = 0.5,
+                        },
+                        ["colorInterrupted"] = {
+                            ["b"] = 0.3,
+                            ["g"] = 0.3,
+                            ["r"] = 0.3,
+                        },
+                        ["colorNoInterrupt"] = {
+                            ["b"] = 0.25,
+                            ["g"] = 0.25,
+                            ["r"] = 0.78,
+                        },
+                        ["enable"] = false,
+                        ["invertColors"] = false,
+                        ["transparent"] = false,
+                        ["useClassColor"] = false,
+                        ["useCustomBackdrop"] = false,
+                        ["useReactionColor"] = false,
+                    },
+                    ["customTextFont"] = {
+                        ["enable"] = false,
+                        ["font"] = "PT Sans Narrow",
+                        ["fontSize"] = 12,
+                        ["fontStyle"] = "OUTLINE",
+                    },
+                    ["customTimeFont"] = {
+                        ["enable"] = false,
+                        ["font"] = "PT Sans Narrow",
+                        ["fontSize"] = 12,
+                        ["fontStyle"] = "OUTLINE",
+                    },
+                    ["displayTarget"] = false,
+                    ["enable"] = false,
+                    ["format"] = "REMAINING",
+                    ["height"] = 18,
+                    ["hidetext"] = false,
+                    ["icon"] = true,
+                    ["iconAttached"] = true,
+                    ["iconAttachedTo"] = "Frame",
+                    ["iconPosition"] = "LEFT",
+                    ["iconSize"] = 42,
+                    ["iconXOffset"] = -10,
+                    ["iconYOffset"] = 0,
+                    ["insideInfoPanel"] = true,
+                    ["overlayOnFrame"] = "None",
+                    ["positionsGroup"] = {
+                        ["anchorPoint"] = "BOTTOM",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                    ["reverse"] = false,
+                    ["spark"] = true,
+                    ["strataAndLevel"] = {
+                        ["frameLevel"] = 1,
+                        ["frameStrata"] = "LOW",
+                        ["useCustomLevel"] = false,
+                        ["useCustomStrata"] = false,
+                    },
+                    ["textColor"] = {
+                        ["a"] = 1,
+                        ["b"] = 0.65,
+                        ["g"] = 0.75,
+                        ["r"] = 0.84,
+                    },
+                    ["tickColor"] = {
+                        ["a"] = 0.8,
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 0,
+                    },
+                    ["tickWidth"] = 1,
+                    ["ticks"] = true,
+                    ["timeToHold"] = 0,
+                    ["width"] = 256,
+                    ["xOffsetText"] = 4,
+                    ["xOffsetTime"] = -4,
+                    ["yOffsetText"] = 0,
+                    ["yOffsetTime"] = 0,
+                },
+                ["classbar"] = {
+                    ["height"] = 6,
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 15,
+                        ["text_format"] = "[classcolor][name:short][difficultycolor][smartlevel]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["attachTo"] = "HEALTH",
+                    ["clickThrough"] = true,
+                    ["countFontSize"] = 10,
+                    ["countYOffset"] = 0,
+                    ["enable"] = true,
+                    ["maxDuration"] = 600,
+                    ["priority"] = "",
+                    ["sizeOverride"] = 15,
+                    ["sortDirection"] = "ASCENDING",
+                    ["spacing"] = 0,
+                    ["xOffset"] = 1,
+                },
+                ["enable"] = false,
+                ["groupBy"] = "ROLE",
+                ["groupSpacing"] = 1,
+                ["growthDirection"] = "DOWN_RIGHT",
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["text_format"] = "[status]",
+                    ["xOffset"] = 0,
+                },
+                ["height"] = 50,
+                ["horizontalSpacing"] = 2,
+                ["infoPanel"] = {
+                    ["height"] = 15,
+                },
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["numGroups"] = 2,
+                ["orientation"] = "LEFT",
+                ["petsGroup"] = {
+                    ["anchorPoint"] = "RIGHT",
+                    ["buffIndicator"] = {
+                        ["countFontSize"] = 12,
+                        ["enable"] = false,
+                        ["profileSpecific"] = false,
+                        ["size"] = 6,
+                    },
+                    ["colorOverride"] = "USE_DEFAULT",
+                    ["disableFocusGlow"] = false,
+                    ["disableMouseoverGlow"] = false,
+                    ["disableTargetGlow"] = false,
+                    ["enable"] = true,
+                    ["healPrediction"] = {
+                        ["absorbStyle"] = "OVERFLOW",
+                        ["anchorPoint"] = "BOTTOM",
+                        ["enable"] = false,
+                        ["height"] = -1,
+                    },
+                    ["height"] = 27,
+                    ["name"] = {
+                        ["attachTextTo"] = "Health",
+                        ["position"] = "CENTER",
+                        ["text_format"] = "[classcolor][name:short]",
+                        ["xOffset"] = 2,
+                        ["yOffset"] = 0,
+                    },
+                    ["raidicon"] = {
+                        ["attachTo"] = "TOP",
+                        ["attachToObject"] = "Frame",
+                        ["enable"] = true,
+                        ["size"] = 18,
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 8,
+                    },
+                    ["threatStyle"] = "GLOW",
+                    ["width"] = 80,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 12,
+                },
+                ["phaseIndicator"] = {
+                    ["scale"] = 0.5,
+                },
+                ["power"] = {
+                    ["attachTextTo"] = "Power",
+                    ["height"] = 5,
+                    ["position"] = "RIGHT",
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 1,
+                },
+                ["rdebuffs"] = {
+                    ["font"] = "默认",
+                    ["fontSize"] = 12,
+                    ["size"] = 23,
+                    ["stack"] = {
+                        ["color"] = {
+                            ["b"] = 0.98823529411765,
+                            ["g"] = 0.98823529411765,
+                            ["r"] = 0.98823529411765,
+                        },
+                        ["xOffset"] = 3,
+                        ["yOffset"] = 0,
+                    },
+                    ["xOffset"] = 31,
+                    ["yOffset"] = 13,
+                },
+                ["resurrectIcon"] = {
+                    ["size"] = 20,
+                },
+                ["roleIcon"] = {
+                    ["damager"] = false,
+                    ["position"] = "LEFT",
+                    ["size"] = 11,
+                    ["xOffset"] = 1,
+                    ["yOffset"] = 0,
+                },
+                ["targetsGroup"] = {
+                    ["anchorPoint"] = "RIGHT",
+                    ["colorOverride"] = "USE_DEFAULT",
+                    ["disableFocusGlow"] = false,
+                    ["disableMouseoverGlow"] = false,
+                    ["disableTargetGlow"] = false,
+                    ["enable"] = false,
+                    ["height"] = 28,
+                    ["name"] = {
+                        ["attachTextTo"] = "Health",
+                        ["position"] = "CENTER",
+                        ["text_format"] = "[classcolor][name:medium] [difficultycolor][smartlevel]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                    ["raidicon"] = {
+                        ["attachTo"] = "TOP",
+                        ["attachToObject"] = "Frame",
+                        ["enable"] = true,
+                        ["size"] = 18,
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 8,
+                    },
+                    ["threatStyle"] = "GLOW",
+                    ["width"] = 120,
+                    ["xOffset"] = 1,
+                    ["yOffset"] = 0,
+                },
+                ["verticalSpacing"] = 1,
+                ["visibility"] = "[@raid1,noexists][@raid11,exists] hide;show",
+                ["width"] = 120,
+            },
+            ["raid2"] = {
+                ["buffIndicator"] = {
+                    ["countFontSize"] = 11,
+                    ["size"] = 14,
+                },
+                ["buffs"] = {
+                    ["anchorPoint"] = "RIGHT",
+                    ["priority"] = "",
+                    ["sizeOverride"] = 13,
+                    ["spacing"] = 0,
+                    ["yOffset"] = 13,
+                },
+                ["classbar"] = {
+                    ["enable"] = false,
+                    ["height"] = 8,
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 15,
+                        ["text_format"] = "[classcolor][name:veryshort][difficultycolor][smartlevel]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                    ["状态"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 13,
+                        ["text_format"] = "[status]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = -14,
+                    },
+                    ["血量"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = false,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 13,
+                        ["text_format"] = "[health:deficit]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = -15,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["attachTo"] = "HEALTH",
+                    ["clickThrough"] = true,
+                    ["countFontSize"] = 10,
+                    ["countYOffset"] = 0,
+                    ["enable"] = true,
+                    ["maxDuration"] = 1000,
+                    ["priority"] = "",
+                    ["sizeOverride"] = 14,
+                    ["sortDirection"] = "ASCENDING",
+                    ["spacing"] = 0,
+                },
+                ["groupBy"] = "INDEX",
+                ["growthDirection"] = "DOWN_RIGHT",
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["text_format"] = "",
+                    ["xOffset"] = 0,
+                },
+                ["height"] = 50,
+                ["horizontalSpacing"] = 1,
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["orientation"] = "LEFT",
+                ["phaseIndicator"] = {
+                    ["enable"] = false,
+                },
+                ["power"] = {
+                    ["enable"] = true,
+                    ["height"] = 4,
+                },
+                ["rdebuffs"] = {
+                    ["enable"] = true,
+                    ["font"] = "默认",
+                    ["size"] = 22,
+                    ["stack"] = {
+                        ["xOffset"] = 2,
+                        ["yOffset"] = 0,
+                    },
+                    ["xOffset"] = 18,
+                    ["yOffset"] = 15,
+                },
+                ["readycheckIcon"] = {
+                    ["size"] = 16,
+                },
+                ["resurrectIcon"] = {
+                    ["size"] = 22,
+                },
+                ["roleIcon"] = {
+                    ["damager"] = false,
+                    ["enable"] = true,
+                    ["position"] = "LEFT",
+                    ["size"] = 11,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                ["verticalSpacing"] = 0,
+                ["visibility"] = "[@raid1,noexists][@raid41,exists] hide;show",
+                ["width"] = 85,
+            },
+            ["raid3"] = {
+                ["buffIndicator"] = {
+                    ["countFontSize"] = 8,
+                    ["size"] = 11,
+                },
+                ["classbar"] = {
+                    ["enable"] = false,
+                },
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 14,
+                        ["text_format"] = "[classcolor][name:veryshort][difficultycolor][smartlevel]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                    ["状态"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 12,
+                        ["text_format"] = "[status]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = -7,
+                    },
+                },
+                ["debuffs"] = {
+                    ["clickThrough"] = true,
+                    ["maxDuration"] = 600,
+                    ["priority"] = "Whitelist,Blacklist,Boss,RaidDebuffs,CCDebuffs,Dispellable",
+                    ["sortDirection"] = "ASCENDING",
+                },
+                ["enable"] = false,
+                ["groupsPerRowCol"] = 2,
+                ["growthDirection"] = "DOWN_RIGHT",
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["text_format"] = "",
+                    ["xOffset"] = 0,
+                },
+                ["height"] = 28,
+                ["horizontalSpacing"] = 0,
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["orientation"] = "LEFT",
+                ["raidicon"] = {
+                    ["size"] = 14,
+                },
+                ["rdebuffs"] = {
+                    ["enable"] = true,
+                    ["font"] = "默认",
+                    ["size"] = 16,
+                    ["stack"] = {
+                        ["xOffset"] = 3,
+                        ["yOffset"] = -2,
+                    },
+                    ["xOffset"] = 19,
+                    ["yOffset"] = 6,
+                },
+                ["readycheckIcon"] = {
+                    ["size"] = 15,
+                },
+                ["roleIcon"] = {
+                    ["combatHide"] = true,
+                },
+                ["verticalSpacing"] = 0,
+                ["visibility"] = "[@raid1,noexists][@raid41,exists] hide;show",
+                ["width"] = 90,
+            },
+            ["raidpet"] = {
+                ["buffIndicator"] = {
+                    ["size"] = 10,
+                },
+                ["classbar"] = {
+                    ["enable"] = false,
+                },
+                ["enable"] = true,
+                ["groupsPerRowCol"] = 3,
+                ["healPrediction"] = {
+                    ["enable"] = true,
+                },
+                ["health"] = {
+                    ["text_format"] = "",
+                },
+                ["height"] = 24,
+                ["horizontalSpacing"] = 0,
+                ["name"] = {
+                    ["text_format"] = "[classcolor][name:veryshort]",
+                },
+                ["numGroups"] = 5,
+                ["orientation"] = "LEFT",
+                ["raidicon"] = {
+                    ["size"] = 11,
+                    ["yOffset"] = 4,
+                },
+                ["rdebuffs"] = {
+                    ["size"] = 13,
+                    ["stack"] = {
+                        ["color"] = {
+                            ["b"] = 0.98823529411765,
+                            ["g"] = 0.98823529411765,
+                            ["r"] = 0.98823529411765,
+                        },
+                        ["position"] = "TOP",
+                        ["yOffset"] = 3,
+                    },
+                    ["yOffset"] = 5,
+                },
+                ["verticalSpacing"] = 0,
+                ["visibility"] = "[@raid1,noexists][@raid26,exists] hide;show",
+                ["width"] = 74,
+            },
+            ["tank"] = {
+                ["enable"] = false,
+                ["middleClickFocus"] = true,
+            },
+            ["target"] = {
+                ["CombatIcon"] = {
+                    ["enable"] = false,
+                    ["yOffset"] = -17,
+                },
+                ["aurabar"] = {
+                    ["enable"] = false,
+                    ["maxDuration"] = 300,
+                },
+                ["auras"] = {
+                    ["enable"] = false,
+                },
+                ["buffs"] = {
+                    ["anchorPoint"] = "BOTTOMLEFT",
+                    ["countFont"] = "默认",
+                    ["countFontSize"] = 14,
+                    ["countPosition"] = "TOP",
+                    ["countYOffset"] = 4,
+                    ["growthX"] = "RIGHT",
+                    ["growthY"] = "DOWN",
+                    ["numrows"] = 3,
+                    ["priority"] = "",
+                    ["sortMethod"] = "PLAYER",
+                },
+                ["castbar"] = {
+                    ["customTextFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 16,
+                    },
+                    ["customTimeFont"] = {
+                        ["enable"] = true,
+                        ["fontSize"] = 16,
+                    },
+                    ["format"] = "CURRENTMAX",
+                    ["height"] = 28,
+                    ["iconAttached"] = false,
+                    ["iconAttachedTo"] = "Castbar",
+                    ["iconSize"] = 28,
+                    ["iconXOffset"] = 0,
+                    ["timeToHold"] = 0.5,
+                    ["width"] = 192,
+                },
+                ["customTexts"] = {
+                    ["姓名版"] = {
+                        ["attachTextTo"] = "Frame",
+                        ["enable"] = true,
+                        ["font"] = "EUI",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 16,
+                        ["text_format"] = "[namecolor][name:short] [difficultycolor][smartlevel][shortclassification]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 30,
+                    },
+                    ["生命"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "LEFT",
+                        ["size"] = 15,
+                        ["text_format"] = "[health:current-nostatus] || [health:percent]",
+                        ["xOffset"] = 5,
+                        ["yOffset"] = -1,
+                    },
+                    ["能量"] = {
+                        ["attachTextTo"] = "Power",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "RIGHT",
+                        ["size"] = 15,
+                        ["text_format"] = "[power:current-percent]",
+                        ["xOffset"] = -3,
+                        ["yOffset"] = 2,
+                    },
+                },
+                ["debuffs"] = {
+                    ["anchorPoint"] = "TOPLEFT",
+                    ["attachTo"] = "FRAME",
+                    ["countFont"] = "默认",
+                    ["countFontSize"] = 14,
+                    ["countPosition"] = "TOP",
+                    ["countYOffset"] = 6,
+                    ["growthX"] = "RIGHT",
+                    ["maxDuration"] = 0,
+                    ["priority"] = "",
+                    ["sortMethod"] = "PLAYER",
+                    ["yOffset"] = 20,
+                },
+                ["fader"] = {
+                    ["enable"] = false,
+                    ["range"] = false,
+                },
+                ["health"] = {
+                    ["position"] = "LEFT",
+                    ["text_format"] = "",
+                    ["xOffset"] = 4,
+                },
+                ["height"] = 41,
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["portrait"] = {
+                    ["camDistanceScale"] = 0.6,
+                    ["overlayAlpha"] = 0.6,
+                    ["width"] = 40,
+                },
+                ["power"] = {
+                    ["height"] = 7,
+                    ["position"] = "RIGHT",
+                    ["text_format"] = "",
+                    ["xOffset"] = -2,
+                },
+                ["raidRoleIcons"] = {
+                    ["enable"] = false,
+                },
+                ["width"] = 220,
+            },
+            ["targettarget"] = {
+                ["customTexts"] = {
+                    ["姓名"] = {
+                        ["attachTextTo"] = "Health",
+                        ["enable"] = true,
+                        ["font"] = "默认",
+                        ["fontOutline"] = "OUTLINE",
+                        ["justifyH"] = "CENTER",
+                        ["size"] = 14,
+                        ["text_format"] = "[namecolor][name:veryshort]",
+                        ["xOffset"] = 0,
+                        ["yOffset"] = 0,
+                    },
+                },
+                ["debuffs"] = {
+                    ["enable"] = false,
+                },
+                ["height"] = 20,
+                ["name"] = {
+                    ["text_format"] = "",
+                },
+                ["power"] = {
+                    ["enable"] = false,
+                    ["height"] = 4,
+                },
+                ["raidicon"] = {
+                    ["size"] = 13,
+                    ["yOffset"] = 7,
+                },
+                ["width"] = 100,
+            },
+        },
+    },
+}
+SunwellLuluElvGlobal = {
+    ["InfoFilter"] = {
+        ["blackList"] = {
+            ["G"] = false,
+            ["clubTicket:"] = false,
+            ["一赔"] = false,
+            ["交通站"] = true,
+            ["代刷"] = false,
+            ["代打"] = false,
+            ["代练"] = false,
+            ["元"] = false,
+            ["冲钻"] = false,
+            ["塞纳"] = false,
+            ["套餐"] = false,
+            ["好评"] = false,
+            ["工作室"] = false,
+            ["带刷"] = false,
+            ["平台交易"] = false,
+            ["店铺"] = false,
+            ["战点"] = false,
+            ["手工G"] = false,
+            ["手工带"] = false,
+            ["手工金"] = false,
+            ["担保"] = false,
+            ["消保"] = false,
+            ["淘宝"] = false,
+            ["游戏币"] = false,
+            ["纯手工"] = false,
+            ["老板"] = true,
+            ["评级"] = false,
+        },
+        ["blackName"] = {
+            ["加勒比小米丶-曼多基尔"] = true,
+            ["钛陽絾秘書-曼多基尔"] = true,
+        },
+        ["level"] = 1,
+        ["repeatTime"] = 20,
+    },
+    ["RLBox"] = {
+        ["DEFAULT_SPELLS"] = {
+            [12] = {
+                [3] = false,
+                [5] = 180,
+            },
+        },
+        ["MISC_SPELLS"] = {
+            [12] = {
+                [3] = true,
+            },
+            [14] = {
+                [5] = 300,
+            },
+            [16] = {
+                [3] = true,
+            },
+            [18] = {
+                [3] = true,
+                [5] = 120,
+                [6] = 105,
+            },
+            [27] = {
+                [3] = true,
+                [5] = 180,
+                [6] = 256,
+            },
+            [28] = {
+                [3] = true,
+                [5] = 180,
+                [6] = 257,
+            },
+            [31] = {
+                [1] = "HUNTER",
+                [2] = 172106,
+                [3] = true,
+                [4] = "NONE",
+                [5] = 180,
+                [6] = 0,
+            },
+            [32] = {
+                [1] = "DRUID",
+                [2] = 77764,
+                [3] = true,
+                [4] = "NONE",
+                [5] = 120,
+                [6] = 105,
+                [7] = 0,
+            },
+            [33] = {
+                [1] = "PALADIN",
+                [2] = 633,
+                [3] = true,
+                [4] = "NONE",
+                [5] = 600,
+            },
+            [7] = {
+                [3] = true,
+                [5] = 300,
+            },
+            [8] = {
+                [3] = true,
+                [5] = 120,
+            },
+        },
+    },
+    ["WT"] = {
+        ["item"] = {
+            ["contacts"] = {
+                ["alts"] = {
+                    ["燃烧之刃"] = {
+                        ["Horde"] = {
+                            ["愛雅法拉"] = "PALADIN",
+                            ["抹茶奶咖"] = "MONK",
+                            ["萌萌奶糖"] = "SHAMAN",
+                            ["萌萌的露露糖"] = "HUNTER",
+                            ["露露緹婭"] = "PRIEST",
+                        },
+                    },
+                    ["萨尔"] = {
+                        ["Horde"] = {
+                            ["俯瞰風景"] = "WARLOCK",
+                            ["墨清弦"] = "WARRIOR",
+                            ["樂正綾"] = "DEMONHUNTER",
+                            ["爱雅法拉"] = "PALADIN",
+                            ["甜甜奶糖"] = "DRUID",
+                            ["綾波麗"] = "MAGE",
+                            ["绫小露"] = "PALADIN",
+                            ["绫雅音"] = "ROGUE",
+                            ["萌喵露"] = "MONK",
+                            ["萌萌奶糖"] = "SHAMAN",
+                            ["露露缇娅"] = "PRIEST",
+                            ["魔雪露露糖"] = "HUNTER",
+                        },
+                    },
+                },
+            },
+        },
+        ["version"] = "2.51",
+    },
+    ["addonskins"] = {
+        ["DBMRadarTrans"] = true,
+        ["EmbedLeftWidth"] = 264,
+        ["EmbedSystemDual"] = true,
+        ["Skada"] = false,
+        ["SkadaBackdrop"] = false,
+        ["TransparentEmbed"] = true,
+    },
+    ["datatexts"] = {
+        ["customPanels"] = {
+            ["上方"] = {
+                ["backdrop"] = false,
+                ["fonts"] = {
+                    ["enable"] = true,
+                    ["font"] = "默认",
+                    ["fontSize"] = 15,
+                },
+                ["name"] = "上方",
+                ["numPoints"] = 6,
+                ["panelTransparency"] = true,
+                ["tooltipAnchor"] = "ANCHOR_CURSOR",
+                ["tooltipXOffset"] = 0,
+                ["tooltipYOffset"] = 0,
+                ["visibility"] = "show",
+                ["width"] = 580,
+            },
+            ["左上"] = {
+                ["backdrop"] = false,
+                ["border"] = false,
+                ["fonts"] = {
+                    ["enable"] = true,
+                    ["font"] = "EUI",
+                    ["fontSize"] = 16,
+                },
+                ["height"] = 25,
+                ["name"] = "左上",
+                ["numPoints"] = 1,
+                ["visibility"] = "show",
+                ["width"] = 100,
+            },
+            ["移动速度"] = {
+                ["backdrop"] = false,
+                ["fonts"] = {
+                    ["enable"] = true,
+                    ["fontSize"] = 16,
+                },
+                ["height"] = 25,
+                ["name"] = "移动速度",
+                ["numPoints"] = 1,
+                ["width"] = 199,
+            },
+            ["距离"] = {
+                ["backdrop"] = false,
+                ["fonts"] = {
+                    ["enable"] = true,
+                    ["font"] = "默认",
+                    ["fontSize"] = 15,
+                },
+                ["height"] = 12,
+                ["name"] = "距离",
+                ["numPoints"] = 1,
+                ["panelTransparency"] = true,
+                ["width"] = 150,
+            },
+            ["集合石"] = {
+                ["backdrop"] = false,
+                ["fonts"] = {
+                    ["enable"] = true,
+                    ["fontSize"] = 16,
+                },
+                ["height"] = 25,
+                ["name"] = "集合石",
+                ["numPoints"] = 1,
+                ["panelTransparency"] = true,
+                ["width"] = 180,
+            },
+        },
+        ["newPanelInfo"] = {
+            ["height"] = 12,
+        },
+        ["settings"] = {
+            ["Crit"] = {
+                ["Label"] = "暴击: ",
+            },
+            ["Currencies"] = {
+                ["tooltipData"] = {
+                    [1] = {
+                        [4] = true,
+                    },
+                    [14] = {
+                        [4] = true,
+                    },
+                    [18] = {
+                        [4] = true,
+                    },
+                    [22] = {
+                        [4] = true,
+                    },
+                    [24] = {
+                        [4] = true,
+                    },
+                    [29] = {
+                        [4] = true,
+                    },
+                    [3] = {
+                        [4] = true,
+                    },
+                    [38] = {
+                        [4] = true,
+                    },
+                    [44] = {
+                        [4] = true,
+                    },
+                    [50] = {
+                        [4] = true,
+                    },
+                    [6] = {
+                        [4] = true,
+                    },
+                    [9] = {
+                        [4] = true,
+                    },
+                },
+            },
+            ["Gold"] = {
+                ["goldCoins"] = false,
+                ["goldFormat"] = "SHORTINT",
+            },
+        },
+    },
+    ["general"] = {
+        ["AceGUI"] = {
+            ["height"] = 500,
+            ["width"] = 700,
+        },
+        ["UIScale"] = 0.7,
+        ["WorldMapCoordinates"] = {
+            ["enable"] = false,
+            ["position"] = "BOTTOMRIGHT",
+        },
+        ["allowDistributor"] = true,
+        ["autoScale"] = false,
+        ["mapAlphaWhenMoving"] = 0.9,
+        ["newFuncShown"] = false,
+        ["showMissingTalentAlert"] = true,
+    },
+    ["gtData"] = {
+        ["Snowmoon-萨尔"] = "斩首行动:2,医疗急救:89,刃月的秘密:479",
+        ["乐正绫-萨尔"] = "安乐死:88,碾压白鬼:43",
+        ["萌喵露-萨尔"] = "深入虎穴:479,风箱里的白鬼:59",
+        ["萌萌奶糖-萨尔"] = "安全距离:25,碾压白鬼:9,独眼魔泄密事件:9,滥砍滥伐:10,多头威胁:9,大迁徙:44",
+        ["露露缇娅-萨尔"] = "野蛮的近亲:54,扭曲虚空:114,裂蹄牛大骚乱:340,大迁徙:4,难受的元素:30,蓝焰毁灭者:423,铁齿铜牙:54",
+        ["魔雪露露糖-萨尔"] = "野蛮的近亲:68,刃牙虎人的伏击:116,刃月的秘密:356,有点冷:7,脚下的阴影:37,行动的号召:59,食人魔克星:97,铁齿铜牙:176,多头威胁:44",
+    },
+    ["gtTime"] = {
+        ["Snowmoon-萨尔"] = "2015/01/17 22:28:42",
+        ["乐正绫-萨尔"] = "2015/01/08 00:13:18",
+        ["萌喵露-萨尔"] = "2015/01/17 22:30:00",
+        ["萌萌奶糖-萨尔"] = "2015/01/08 00:08:11",
+        ["露露缇娅-萨尔"] = "2015/01/17 23:30:34",
+        ["魔雪露露糖-萨尔"] = "2015/01/17 23:21:20",
+    },
+    ["ignoreIncompatible"] = true,
+    ["luaError"] = {
+        [1] = "|cffffd200Message:|r|cffffffff Interface\\AddOns\\DBM-Core\\DBM-Core.lua:7175: script ran too long|r\
+|cffffd200Time:|r|cffffffff 10/30/14 21:34:23|r\
+|cffffd200Count:|r|cffffffff 1|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `CreateBar'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:7175: in function `Start'\
+...ace\\AddOns\\DBM-SiegeOfOrgrimmarV2\\GeneralNazgrim.lua:312: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+(tail call): ?\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [11] = "|cffffd200Message:|r|cffffffff ...Ons\\DBM-SiegeOfOrgrimmarV2\\SiegecrafterBlackfuse.lua:256: attempt to call method 'HideLTSpecialWarning' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 22:57:48|r\
+|cffffd200Count:|r|cffffffff 1|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `HideLTSpecialWarning'\
+...Ons\\DBM-SiegeOfOrgrimmarV2\\SiegecrafterBlackfuse.lua:256: in function `OnCombatEnd'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:4572: in function `EndCombat'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:3924: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [2] = "|cffffd200Message:|r|cffffffff Interface\\AddOns\\DBM-SiegeOfOrgrimmarV2\\Malkorok.lua:265: attempt to call method 'HideLTSpecialWarning' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 21:56:10|r\
+|cffffd200Count:|r|cffffffff 1|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `HideLTSpecialWarning'\
+Interface\\AddOns\\DBM-SiegeOfOrgrimmarV2\\Malkorok.lua:265: in function `OnCombatEnd'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:4572: in function `EndCombat'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:3924: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [3] = "|cffffd200Message:|r|cffffffff Interface\\AddOns\\DBM-SiegeOfOrgrimmarV2\\Malkorok.lua:265: attempt to call method 'HideLTSpecialWarning' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 22:03:06|r\
+|cffffd200Count:|r|cffffffff 1|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `HideLTSpecialWarning'\
+Interface\\AddOns\\DBM-SiegeOfOrgrimmarV2\\Malkorok.lua:265: in function `OnCombatEnd'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:4572: in function `EndCombat'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:4644: in function `OnMobKill'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:4753: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+(tail call): ?\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [4] = "|cffffd200Message:|r|cffffffff ...ce\\AddOns\\DBM-SiegeOfOrgrimmarV2\\SpoilsOfPandria.lua:468: attempt to call method 'Shake' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 22:30:24|r\
+|cffffd200Count:|r|cffffffff 1|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `Shake'\
+...ce\\AddOns\\DBM-SiegeOfOrgrimmarV2\\SpoilsOfPandria.lua:468: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [6] = "|cffffd200Message:|r|cffffffff Interface\\AddOns\\libs\\AceGUI-3.0\\AceGUI-3.0.lua:207: attempt to index local 'widget' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 21:02:11|r\
+|cffffd200Count:|r|cffffffff 15089|r\
+|cffffd200Stack:|r|cffffffff [C]: ?\
+Interface\\AddOns\\libs\\AceGUI-3.0\\AceGUI-3.0.lua:207: in function `Release'\
+Interface\\AddOns\\libs\\AceGUI-3.0\\AceGUI-3.0.lua:478: in function `ReleaseChildren'\
+...nfig-3.0\\AceConfigDialog-3.0\\AceConfigDialog-3.0.lua:1711: in function <...nfig-3.0\\AceConfigDialog-3.0\\AceConfigDialog-3.0.lua:1703>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [7] = "|cffffd200Message:|r|cffffffff ...ddOns\\DBM-SiegeOfOrgrimmarV2\\ThokTheBloodthirsty.lua:481: attempt to call global 'checkbossrange' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 22:43:22|r\
+|cffffd200Count:|r|cffffffff 3|r\
+|cffffd200Stack:|r|cffffffff [C]: in function `checkbossrange'\
+...ddOns\\DBM-SiegeOfOrgrimmarV2\\ThokTheBloodthirsty.lua:481: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+        [9] = "|cffffd200Message:|r|cffffffff ...Ons\\DBM-SiegeOfOrgrimmarV2\\SiegecrafterBlackfuse.lua:480: attempt to concatenate field 'weapon' (a nil value)|r\
+|cffffd200Time:|r|cffffffff 10/30/14 23:06:56|r\
+|cffffd200Count:|r|cffffffff 14|r\
+|cffffd200Stack:|r|cffffffff [C]: ?\
+...Ons\\DBM-SiegeOfOrgrimmarV2\\SiegecrafterBlackfuse.lua:480: in function `handler'\
+Interface\\AddOns\\DBM-Core\\DBM-Core.lua:567: in function <Interface\\AddOns\\DBM-Core\\DBM-Core.lua:554>\
+|r\
+|cffffd200Locals:|r|cffffffff |r",
+    },
+    ["mui"] = {
+        ["core"] = {
+            ["LoginMsg"] = false,
+        },
+        ["mail"] = {
+            ["contacts"] = {
+                ["alts"] = {
+                    ["Classic PTR Realm 1"] = {
+                        ["Horde"] = {
+                            ["萌萌的露小露"] = "PRIEST",
+                        },
+                    },
+                    ["曼多基尔"] = {
+                        ["Alliance"] = {
+                            ["伊芙莉特"] = "WARLOCK",
+                            ["墨清弦"] = "WARRIOR",
+                            ["爱雅法拉"] = "PALADIN",
+                            ["甜甜奶糖"] = "DRUID",
+                            ["萌萌奶糖"] = "HUNTER",
+                            ["萌萌的露露糖"] = "SHAMAN",
+                            ["露露缇娅"] = "PRIEST",
+                        },
+                    },
+                    ["维克尼拉斯"] = {
+                        ["Horde"] = {
+                            ["小绫子"] = "MAGE",
+                            ["爱雅法拉"] = "PALADIN",
+                            ["露露缇娅"] = "PRIEST",
+                        },
+                    },
+                    ["维希度斯"] = {
+                        ["Horde"] = {
+                            ["一颗露露糖"] = "WARLOCK",
+                            ["爱雅法拉"] = "PALADIN",
+                            ["萌萌奶糖"] = "SHAMAN",
+                            ["萌萌的露小露"] = "DEATHKNIGHT",
+                            ["萌萌的露露糖"] = "HUNTER",
+                            ["蒂琪爱尔"] = "MAGE",
+                            ["露露緹婭"] = "PRIEST",
+                        },
+                    },
+                    ["逐風者"] = {
+                        ["Alliance"] = {
+                            ["沙丨梨"] = "PRIEST",
+                        },
+                        ["Horde"] = {
+                            ["灬雪梨灬"] = "MAGE",
+                            ["萌萌的露小露"] = "HUNTER",
+                            ["萌萌的露露糖"] = "PRIEST",
+                        },
+                    },
+                    ["阿拉希盆地"] = {
+                        ["Horde"] = {
+                            ["奶德德一号"] = "DRUID",
+                            ["故里丶"] = "DRUID",
+                            ["萌萌的露小露"] = "PRIEST",
+                            ["蒂琪愛爾"] = "MAGE",
+                        },
+                    },
+                    ["魚人"] = {
+                        ["Horde"] = {
+                            ["露露緹婭"] = "PRIEST",
+                        },
+                    },
+                },
+            },
+        },
+        ["version"] = "5.85",
+    },
+    ["nameplates"] = {
+        ["filters"] = {
+            ["ElvUI_TankNonTarget"] = {
+            },
+            ["ElvUI_TankTarget"] = {
+            },
+        },
+    },
+    ["profileCopy"] = {
+        ["general"] = {
+            ["lootRoll"] = true,
+        },
+        ["selected"] = "露露-右布局25人",
+    },
+    ["uiScale"] = "0.75",
+    ["unitframe"] = {
+        ["AuraHighlightColors"] = {
+            [25771] = {
+                ["ownOnly"] = false,
+            },
+        },
+        ["ChannelTicks"] = {
+            ["狂乱"] = 3,
+            ["精神鞭笞"] = 3,
+            ["苦修"] = 3,
+        },
+        ["aurafilters"] = {
+            ["Blacklist"] = {
+                ["spells"] = {
+                    [58105] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [61248] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [61251] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69127] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                },
+            },
+            ["RaidDebuffs"] = {
+                ["spells"] = {
+                    [13737] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [13880] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [15502] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [15732] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [1604] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [16856] = {
+                        ["priority"] = 0,
+                    },
+                    [19365] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19366] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19367] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19369] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19372] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19393] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19408] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19428] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19450] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19635] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19659] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19702] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19703] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19713] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19716] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19717] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19730] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19776] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19777] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19780] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [19820] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20228] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20229] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20277] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20294] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20475] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [20604] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [27808] = {
+                        ["priority"] = 99,
+                    },
+                    [27819] = {
+                        ["priority"] = 0,
+                    },
+                    [27825] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28059] = {
+                        ["enable"] = false,
+                    },
+                    [28084] = {
+                        ["enable"] = false,
+                    },
+                    [28440] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28542] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28679] = {
+                        ["enable"] = false,
+                    },
+                    [28785] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28786] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28796] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28832] = {
+                        ["enable"] = false,
+                    },
+                    [28833] = {
+                        ["enable"] = false,
+                    },
+                    [28834] = {
+                        ["enable"] = false,
+                    },
+                    [28835] = {
+                        ["enable"] = false,
+                    },
+                    [28969] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [29204] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [29213] = {
+                        ["priority"] = 0,
+                    },
+                    [29998] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [32736] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [33121] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [33661] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [39647] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [47836] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [53803] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54021] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54708] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54709] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54769] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54772] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [54836] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55052] = {
+                        ["priority"] = 99,
+                    },
+                    [55318] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55334] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55360] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55593] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55601] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55665] = {
+                        ["priority"] = 99,
+                    },
+                    [55802] = {
+                        ["enable"] = false,
+                    },
+                    [55807] = {
+                        ["enable"] = false,
+                    },
+                    [56438] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [56538] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [56624] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [56674] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [57491] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [57759] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [57874] = {
+                        ["enable"] = false,
+                    },
+                    [58105] = {
+                        ["enable"] = false,
+                    },
+                    [58853] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [58947] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [58948] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [59899] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [60072] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [60899] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [60923] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [60936] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [61248] = {
+                        ["enable"] = false,
+                    },
+                    [62451] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [62589] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [62865] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [62997] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63025] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63042] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63050] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63477] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63490] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63494] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63568] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63615] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63673] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64126] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64233] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64234] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64533] = {
+                        ["enable"] = false,
+                    },
+                    [64649] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64663] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64698] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64705] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64706] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [64774] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65026] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65102] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65104] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65121] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65684] = {
+                        ["enable"] = false,
+                        ["priority"] = 1,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65686] = {
+                        ["enable"] = false,
+                        ["priority"] = 1,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65724] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65748] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65775] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 2,
+                    },
+                    [65950] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65954] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66001] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66013] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66069] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66075] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66197] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66199] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66237] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66317] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66320] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66331] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66407] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66683] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66689] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66770] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66823] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66830] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [66869] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [6713] = {
+                        ["priority"] = 0,
+                    },
+                    [67574] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69062] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69065] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69146] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69240] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69242] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69278] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69279] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69290] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69291] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69391] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69405] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69409] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69410] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69483] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69649] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69762] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69766] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 5,
+                    },
+                    [69789] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70106] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 5,
+                    },
+                    [70107] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70126] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70127] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 5,
+                    },
+                    [70157] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70337] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70338] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70352] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70353] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70410] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70423] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70432] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70435] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70447] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70451] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70536] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70541] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70633] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70645] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70659] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70672] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70740] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70744] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70751] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70766] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70838] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70873] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70877] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70879] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70911] = {
+                        ["enable"] = true,
+                        ["priority"] = 60,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70923] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70960] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70964] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71001] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71010] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71020] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71022] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71029] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71103] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71127] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71204] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71237] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71264] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71278] = {
+                        ["enable"] = true,
+                        ["priority"] = 50,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71289] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71327] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71340] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71350] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71623] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71807] = {
+                        ["enable"] = true,
+                        ["priority"] = 1,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71941] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [71943] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72004] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72034] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 2,
+                    },
+                    [72120] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72133] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72144] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72214] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72219] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72264] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72272] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72293] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72295] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72297] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72385] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72410] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72451] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72769] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72865] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72884] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72963] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72999] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 8,
+                    },
+                    [74367] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74384] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74453] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74456] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74502] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74505] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74509] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74531] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74562] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74567] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74630] = {
+                        ["enable"] = true,
+                        ["priority"] = 1,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74792] = {
+                        ["enable"] = true,
+                        ["priority"] = 99,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74795] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [74802] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [75417] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                },
+            },
+            ["TurtleBuffs"] = {
+                ["spells"] = {
+                    [1044] = {
+                        ["priority"] = 0,
+                    },
+                    [31884] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [324867] = {
+                        ["enable"] = false,
+                    },
+                },
+            },
+            ["Whitelist"] = {
+                ["spells"] = {
+                    [25771] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28059] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [28084] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [29232] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55593] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [55849] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [56438] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [57723] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [57724] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [58940] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [61071] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [63050] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65684] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [65686] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [69127] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [70953] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72144] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    [72145] = {
+                        ["enable"] = true,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                    ["虚弱灵魂"] = {
+                        ["enable"] = false,
+                        ["priority"] = 0,
+                        ["stackThreshold"] = 0,
+                    },
+                },
+            },
+        },
+        ["aurawatch"] = {
+            ["CHAR"] = {
+                [22812] = {
+                    ["sizeOffset"] = 0,
+                    ["style"] = "coloredIcon",
+                    ["xOffset"] = 0,
+                },
+            },
+            ["DRUID"] = {
+                [1126] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [29166] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [33763] = {
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -37,
+                },
+                [467] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [48438] = {
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 0.94117647058824,
+                        ["r"] = 0.32941176470588,
+                    },
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["style"] = "texturedIcon",
+                },
+                [70691] = {
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["cooldownAnchor"] = "CENTER",
+                    ["cooldownX"] = 1,
+                    ["cooldownY"] = 1,
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = true,
+                    ["enabled"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                },
+                [774] = {
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                },
+                [8936] = {
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -18,
+                },
+            },
+            ["HUNTER"] = {
+                [13159] = {
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [19506] = {
+                    ["enabled"] = false,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                },
+                [20043] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [20190] = {
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                },
+                [34477] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+            },
+            ["MAGE"] = {
+                [1008] = {
+                    ["point"] = "TOP",
+                    ["style"] = "texturedIcon",
+                },
+                [130] = {
+                    ["point"] = "BOTTOM",
+                    ["style"] = "texturedIcon",
+                },
+                [1459] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [54646] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                },
+                [604] = {
+                    ["point"] = "TOP",
+                    ["style"] = "texturedIcon",
+                },
+            },
+            ["MONK"] = {
+                [116849] = {
+                    ["style"] = "texturedIcon",
+                },
+                [119611] = {
+                    ["style"] = "texturedIcon",
+                },
+                [124081] = {
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                },
+                [124682] = {
+                    ["style"] = "texturedIcon",
+                },
+                [132120] = {
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                },
+                [191840] = {
+                    ["style"] = "texturedIcon",
+                },
+            },
+            ["PALADIN"] = {
+                [1022] = {
+                    ["anyUnit"] = false,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -20,
+                },
+                [1038] = {
+                    ["anyUnit"] = false,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [1044] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [19740] = {
+                    ["anyUnit"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [19742] = {
+                    ["anyUnit"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [19746] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [20217] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = true,
+                    ["enabled"] = true,
+                    ["id"] = 20217,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOPLEFT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [20911] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 20911,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOPLEFT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [25898] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 25898,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOPLEFT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [25899] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 25899,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOPLEFT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [32223] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [465] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [53563] = {
+                    ["anyUnit"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [53601] = {
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -18,
+                },
+                [58597] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["cooldownAnchor"] = "CENTER",
+                    ["cooldownX"] = 1,
+                    ["cooldownY"] = 1,
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 58597,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOP",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [64205] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = false,
+                    ["id"] = 64205,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOP",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [66922] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["cooldownAnchor"] = "CENTER",
+                    ["cooldownX"] = 1,
+                    ["cooldownY"] = 1,
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 66922,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "BOTTOMRIGHT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [6940] = {
+                    ["enabled"] = false,
+                    ["point"] = "TOP",
+                    ["style"] = "texturedIcon",
+                },
+                [70940] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 70940,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOP",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+            },
+            ["PRIEST"] = {
+                [10060] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["sizeOffset"] = 1,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [1243] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [139] = {
+                    ["displayText"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                    ["xOffset"] = -18,
+                },
+                [14752] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [17] = {
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["displayText"] = true,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [1706] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 1706,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOP",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = -16,
+                    ["yOffset"] = 0,
+                },
+                [21562] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [27681] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [27683] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [33206] = {
+                    ["displayText"] = true,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [41635] = {
+                    ["displayText"] = true,
+                    ["point"] = "BOTTOM",
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [47753] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = true,
+                    ["enabled"] = true,
+                    ["id"] = 47753,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "BOTTOMRIGHT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [47788] = {
+                    ["displayText"] = true,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [6788] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["displayText"] = true,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [976] = {
+                    ["displayText"] = true,
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+            },
+            ["SHAMAN"] = {
+                [10596] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [16177] = {
+                    ["point"] = "TOP",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -18,
+                },
+                [16191] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [51945] = {
+                    ["point"] = "BOTTOMRIGHT",
+                    ["style"] = "texturedIcon",
+                },
+                [5672] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [5677] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [61295] = {
+                    ["color"] = {
+                        ["b"] = 0.34509803921569,
+                        ["g"] = 1,
+                        ["r"] = 0,
+                    },
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["haveAnimation"] = false,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = 3,
+                },
+                [8072] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [8182] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [8185] = {
+                    ["enabled"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [974] = {
+                    ["anyUnit"] = false,
+                    ["countX"] = 4,
+                    ["countY"] = -3,
+                    ["point"] = "TOPLEFT",
+                    ["style"] = "texturedIcon",
+                },
+            },
+            ["WARLOCK"] = {
+                [47883] = {
+                    ["anyUnit"] = true,
+                    ["color"] = {
+                        ["b"] = 1,
+                        ["g"] = 1,
+                        ["r"] = 1,
+                    },
+                    ["countAnchor"] = "BOTTOMRIGHT",
+                    ["countX"] = 1,
+                    ["countY"] = 1,
+                    ["displayText"] = false,
+                    ["enabled"] = true,
+                    ["id"] = 47883,
+                    ["onlyShowMissing"] = false,
+                    ["point"] = "TOPRIGHT",
+                    ["sizeOffset"] = 0,
+                    ["style"] = "texturedIcon",
+                    ["textThreshold"] = -1,
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [5697] = {
+                    ["enabled"] = false,
+                },
+                [6512] = {
+                    ["enabled"] = false,
+                },
+            },
+            ["WARRIOR"] = {
+                [3411] = {
+                    ["style"] = "texturedIcon",
+                },
+                [469] = {
+                    ["anyUnit"] = false,
+                    ["style"] = "texturedIcon",
+                },
+                [6673] = {
+                    ["anyUnit"] = false,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                },
+            },
+        },
+        ["buffwatchBackup"] = {
+            ["ALL"] = {
+                [145629] = {
+                },
+                [15286] = {
+                },
+                [31821] = {
+                },
+                [64844] = {
+                },
+                [81782] = {
+                },
+                [88611] = {
+                },
+                [97463] = {
+                },
+                [98007] = {
+                },
+            },
+            ["CHAR"] = {
+                [102342] = {
+                },
+                [108271] = {
+                },
+                [114039] = {
+                },
+                [115176] = {
+                },
+                [115295] = {
+                },
+                [115308] = {
+                },
+                [118038] = {
+                },
+                [120954] = {
+                },
+                [12975] = {
+                },
+                [19263] = {
+                },
+                [22812] = {
+                },
+                [30823] = {
+                },
+                [31224] = {
+                },
+                [31850] = {
+                },
+                [33206] = {
+                },
+                [42650] = {
+                },
+                [47585] = {
+                },
+                [47788] = {
+                },
+                [48707] = {
+                },
+                [48792] = {
+                },
+                [498] = {
+                },
+                [51271] = {
+                },
+                [5277] = {
+                },
+                [61336] = {
+                },
+                [6940] = {
+                },
+                [74001] = {
+                },
+                [86657] = {
+                },
+                [871] = {
+                },
+                [97463] = {
+                },
+            },
+            ["DEATHKNIGHT"] = {
+                [49016] = {
+                },
+            },
+            ["DEMONHUNTER"] = {
+            },
+            ["DRUID"] = {
+                [102351] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = true,
+                    ["id"] = 102351,
+                    ["point"] = "TOPLEFT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = 15,
+                    ["yOffset"] = 0,
+                },
+                [102352] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = true,
+                    ["id"] = 102352,
+                    ["point"] = "TOPLEFT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = 15,
+                    ["yOffset"] = 0,
+                },
+                [155777] = {
+                },
+                [188550] = {
+                },
+                [207386] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["enabled"] = true,
+                    ["id"] = 207386,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = -15,
+                    ["yOffset"] = 0,
+                },
+                [33763] = {
+                },
+                [48438] = {
+                },
+                [774] = {
+                },
+                [8936] = {
+                },
+            },
+            ["HUNTER"] = {
+            },
+            ["MAGE"] = {
+                [111264] = {
+                },
+            },
+            ["MONK"] = {
+                [116849] = {
+                    ["style"] = "texturedIcon",
+                },
+                [119611] = {
+                    ["style"] = "texturedIcon",
+                },
+                [124081] = {
+                    ["style"] = "texturedIcon",
+                },
+                [124682] = {
+                },
+                [132120] = {
+                    ["style"] = "texturedIcon",
+                },
+                [191840] = {
+                },
+            },
+            ["PALADIN"] = {
+                [1022] = {
+                },
+                [1038] = {
+                },
+                [1044] = {
+                },
+                [114039] = {
+                },
+                [148039] = {
+                },
+                [156322] = {
+                },
+                [156910] = {
+                },
+                [157007] = {
+                },
+                [200025] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = true,
+                    ["id"] = 200025,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [53563] = {
+                },
+                [6940] = {
+                },
+            },
+            ["PET"] = {
+                [136] = {
+                },
+                [19615] = {
+                },
+            },
+            ["PRIEST"] = {
+                [10060] = {
+                    ["style"] = "texturedIcon",
+                },
+                [123258] = {
+                    ["style"] = "texturedIcon",
+                },
+                [139] = {
+                    ["style"] = "texturedIcon",
+                },
+                [152118] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0.37647058823529,
+                        ["g"] = 0.65882352941177,
+                        ["r"] = 1,
+                    },
+                    ["decimalThreshold"] = -1,
+                    ["enabled"] = true,
+                    ["id"] = 152118,
+                    ["point"] = "LEFT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = 12,
+                    ["yOffset"] = 0,
+                },
+                [17] = {
+                    ["style"] = "texturedIcon",
+                },
+                [194384] = {
+                    ["anyUnit"] = false,
+                    ["color"] = {
+                        ["b"] = 0,
+                        ["g"] = 0,
+                        ["r"] = 1,
+                    },
+                    ["enabled"] = true,
+                    ["id"] = 194384,
+                    ["point"] = "TOPRIGHT",
+                    ["style"] = "texturedIcon",
+                    ["xOffset"] = 0,
+                    ["yOffset"] = 0,
+                },
+                [33206] = {
+                    ["style"] = "texturedIcon",
+                },
+                [41635] = {
+                    ["style"] = "texturedIcon",
+                },
+                [47788] = {
+                    ["style"] = "texturedIcon",
+                },
+                [6788] = {
+                    ["style"] = "texturedIcon",
+                },
+            },
+            ["ROGUE"] = {
+                [57934] = {
+                },
+            },
+            ["SHAMAN"] = {
+                [185875] = {
+                    ["decimalThreshold"] = -1,
+                    ["style"] = "texturedIcon",
+                },
+                [51945] = {
+                },
+                [61295] = {
+                    ["decimalThreshold"] = -1,
+                    ["displayText"] = true,
+                    ["style"] = "texturedIcon",
+                },
+                [974] = {
+                },
+            },
+            ["WARRIOR"] = {
+                [114029] = {
+                    ["style"] = "texturedIcon",
+                },
+                [114030] = {
+                    ["style"] = "texturedIcon",
+                },
+                [3411] = {
+                    ["style"] = "texturedIcon",
+                },
+            },
+        },
+        ["rangeCheck"] = {
+            ["FRIENDLY"] = {
+                ["DRUID"] = {
+                    ["48378"] = true,
+                    ["48441"] = true,
+                    ["48443"] = true,
+                    ["5185"] = true,
+                    ["774"] = true,
+                },
+                ["PALADIN"] = {
+                    ["48782"] = true,
+                    ["635"] = true,
+                },
+                ["PRIEST"] = {
+                    ["2050"] = true,
+                    ["2053"] = true,
+                    ["48071"] = true,
+                },
+                ["SHAMAN"] = {
+                    ["331"] = true,
+                    ["49273"] = true,
+                    ["49276"] = true,
+                },
+            },
+            ["RESURRECT"] = {
+                ["DRUID"] = {
+                    ["50763"] = true,
+                },
+                ["PALADIN"] = {
+                    ["48950"] = true,
+                },
+                ["PRIEST"] = {
+                    ["48171"] = true,
+                },
+                ["SHAMAN"] = {
+                    ["49277"] = true,
+                },
+            },
+        },
+    },
+}

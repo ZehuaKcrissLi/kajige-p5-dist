@@ -1,0 +1,15 @@
+## Interface: 30300
+## Title: |cffff559a露露|r训练服统一配置
+## Notes: 按角色安全迁移露露 25 人 UI 与双层字体；不改动作槽、按键或玩法偏好。
+## Author: 咔鸡哥 P6 团本训练服
+## Version: 1.3.8
+## Dependencies: ElvUI
+## OptionalDeps: Details, DBM-Core, EpochCN, NotPlater, WeakAuras
+## LoadOnDemand: 0
+## SavedVariables: SunwellLuluProfileDB
+
+LuluElvProfile.lua
+LuluDetailsProfile.lua
+LuluWeakAuras.lua
+SunwellLuluProfile.lua
+KajigeTitanCompatibility.lua

@@ -1,0 +1,174 @@
+-- Load before ElvUI and the profile importers so any local copies they retain
+-- point at these guarded wrappers. The guard is deliberately short-lived:
+-- normal user-initiated reload/logout behavior is restored after world entry.
+local originalReloadUI = ReloadUI
+local originalLogout = Logout
+local guardActive = true
+local worldElapsed = nil
+local blocked = {}
+KajigeStartupGuardAudit = {
+    loaded = true,
+    blocked = blocked,
+    idleLogoutCancels = 0,
+}
+local luluRetryPending = false
+local luluRetryElapsed = 0
+local luluRetryAttempts = 0
+local LULU_RETRY_DELAY = 1
+local LULU_RETRY_LIMIT = 6
+
+local function EnsureLuluProfile(trigger)
+    local loaded = type(IsAddOnLoaded) == "function"
+        and IsAddOnLoaded("SunwellLuluProfile")
+    local loadReason = nil
+
+    if not loaded then
+        if type(EnableAddOn) == "function" then
+            pcall(EnableAddOn, "SunwellLuluProfile")
+        end
+        if type(LoadAddOn) == "function" then
+            local callOk, loadOk, reason = pcall(LoadAddOn, "SunwellLuluProfile")
+            loaded = callOk and loadOk and true or false
+            loadReason = reason
+            if not callOk then
+                loadReason = "LOAD_CALL_FAILED: " .. tostring(loadOk)
+            elseif not loadOk then
+                loadReason = "LOAD_FAILED: " .. tostring(reason)
+            end
+        end
+    end
+
+    local queued = false
+    if loaded and type(SunwellLuluProfile_QueueMigration) == "function" then
+        local queueOk, result = pcall(
+            SunwellLuluProfile_QueueMigration,
+            false,
+            trigger or "StartupGuard"
+        )
+        queued = queueOk and result and true or false
+        if not queueOk then
+            loadReason = "QUEUE_CALL_FAILED: " .. tostring(result)
+        elseif not result then
+            loadReason = "QUEUE_REJECTED"
+        end
+    elseif loaded then
+        loadReason = "QUEUE_FUNCTION_MISSING"
+    end
+    KajigeStartupGuardAudit.luluProfile = {
+        loaded = loaded and true or false,
+        queued = queued,
+        reason = loadReason,
+        attempts = luluRetryAttempts,
+        trigger = trigger,
+    }
+    return loaded and queued
+end
+
+-- Keep all four standard extra action bars visible.  Build 12340 may still
+-- emit one harmless FrameXML.log diagnostic for the Chinese realm/character
+-- SavedVariables path under Wine; these globals are UI state, not a workaround
+-- for that client-internal path diagnostic.
+SHOW_MULTI_ACTIONBAR_1 = 1
+SHOW_MULTI_ACTIONBAR_2 = 1
+SHOW_MULTI_ACTIONBAR_3 = 1
+SHOW_MULTI_ACTIONBAR_4 = 1
+
+local function Record(kind)
+    blocked[kind] = (blocked[kind] or 0) + 1
+    KajigeStartupGuardAudit.blocked = blocked
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage(
+            "|cffffd200启动保护：|r已阻止插件在登录阶段自动执行"
+                .. kind .. "；进入世界稳定后会恢复正常功能。"
+        )
+    end
+end
+
+if type(originalReloadUI) == "function" then
+    ReloadUI = function(...)
+        if guardActive then
+            Record("界面重载")
+            return
+        end
+        return originalReloadUI(...)
+    end
+end
+
+if type(originalLogout) == "function" then
+    Logout = function(...)
+        if guardActive then
+            Record("返回角色选择")
+            return
+        end
+        return originalLogout(...)
+    end
+end
+
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("PLAYER_CAMPING")
+frame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_LOGIN" then
+        self:UnregisterEvent("PLAYER_LOGIN")
+        -- LoadOnDemand addons can observe partially initialized character
+        -- state when loaded inside the PLAYER_LOGIN dispatch itself. Queue a
+        -- short retry loop instead of making that instant call a single point
+        -- of failure.
+        luluRetryPending = true
+        luluRetryElapsed = 0
+        luluRetryAttempts = 0
+        KajigeStartupGuardAudit.luluProfile = {
+            loaded = type(IsAddOnLoaded) == "function"
+                and IsAddOnLoaded("SunwellLuluProfile") and true or false,
+            queued = false,
+            reason = "DELAYED_AFTER_PLAYER_LOGIN",
+            attempts = 0,
+        }
+        return
+    end
+    if event == "PLAYER_ENTERING_WORLD" then
+        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+        worldElapsed = 0
+        return
+    end
+    -- Cancel only an actual logout countdown. Calling CancelLogout every
+    -- frame while no logout is pending sends invalid protocol traffic on
+    -- build 12340 and can bounce the client back to character selection.
+    if event == "PLAYER_CAMPING" and guardActive
+        and type(CancelLogout) == "function" then
+        pcall(CancelLogout)
+        KajigeStartupGuardAudit.idleLogoutCancels =
+            KajigeStartupGuardAudit.idleLogoutCancels + 1
+    end
+end)
+frame:SetScript("OnUpdate", function(self, elapsed)
+    if luluRetryPending then
+        luluRetryElapsed = luluRetryElapsed + elapsed
+        if luluRetryElapsed >= LULU_RETRY_DELAY then
+            luluRetryElapsed = 0
+            luluRetryAttempts = luluRetryAttempts + 1
+            local queued = EnsureLuluProfile("StartupGuardRetry")
+            if queued or luluRetryAttempts >= LULU_RETRY_LIMIT then
+                luluRetryPending = false
+            end
+        end
+    end
+
+    if not worldElapsed then return end
+    worldElapsed = worldElapsed + elapsed
+    if worldElapsed < 20 then return end
+
+    guardActive = false
+    self:UnregisterEvent("PLAYER_CAMPING")
+    if type(originalReloadUI) == "function" then ReloadUI = originalReloadUI end
+    if type(originalLogout) == "function" then Logout = originalLogout end
+    self:SetScript("OnUpdate", nil)
+
+    KajigeStartupGuardAudit.completed = true
+    if DEFAULT_CHAT_FRAME and next(blocked) then
+        DEFAULT_CHAT_FRAME:AddMessage(
+            "|cff00ff96启动保护完成：|r游戏已稳定，手动重载和退出功能已恢复。"
+        )
+    end
+end)

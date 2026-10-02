@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: |cff00ff96咔鸡哥团长控制台|r
+## Notes: 账号权限等级、团长/GM KJG 控制、P4/P5/P6 备战配装、真实团队 Buff 与机器人模拟
+## Author: 咔鸡哥 P6 团本训练服
+## Version: 2026.08.09.4
+## RequiredDeps: SunwellTrainer
+## SavedVariables: KajigeSWTDB
+
+TitanEquipmentData.lua
+P6NeutralDefaults.lua
+P6PreparationData.lua
+KajigeSWTControl.lua

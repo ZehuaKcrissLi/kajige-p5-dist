@@ -1,0 +1,88 @@
+if not NotPlater then return end
+
+-- The time-server setup uses Plater as the sole nameplate owner.  NotPlater
+-- is the 3.3.5-compatible replacement, so the legacy ElvUI nameplate module
+-- must stay disabled as well.  Running both modules makes ElvUI repeatedly
+-- queue regions already claimed by NotPlater.
+if type(ElvPrivateDB) == "table" then
+    ElvPrivateDB.profiles = ElvPrivateDB.profiles or {}
+    for _, profileName in pairs(ElvPrivateDB.profileKeys or {}) do
+        local profile = ElvPrivateDB.profiles[profileName] or {}
+        profile.nameplates = profile.nameplates or {}
+        profile.nameplates.enable = false
+        ElvPrivateDB.profiles[profileName] = profile
+    end
+end
+
+if type(ElvUI) == "table" then
+    local Elv = unpack(ElvUI)
+    if Elv and Elv.private then
+        Elv.private.nameplates = Elv.private.nameplates or {}
+        Elv.private.nameplates.enable = false
+    end
+end
+
+local function EnsureFont(text, config, scale)
+    if not text or not text.GetFont or not text.SetFont then return end
+    if text:GetFont() then return end
+
+    local general = config and config.general
+    local fontPath
+    if NotPlater.SML and general and general.name then
+        fontPath = NotPlater.SML:Fetch(NotPlater.SML.MediaType.FONT, general.name)
+    end
+
+    local fontSize = general and general.size or 12
+    if scale then fontSize = fontSize * scale end
+    local fontFlags = general and general.border or "THICKOUTLINE"
+    if fontFlags == "OUTLINE" then fontFlags = "THICKOUTLINE" end
+
+    if fontPath and text:SetFont(fontPath, fontSize, fontFlags) then return end
+    if GameFontNormal and GameFontNormal.GetFont then
+        local fallbackPath, fallbackSize, fallbackFlags = GameFontNormal:GetFont()
+        if fallbackPath and text:SetFont(
+            fallbackPath,
+            fontSize or fallbackSize or 12,
+            fontFlags or fallbackFlags or ""
+        ) then
+            return
+        end
+    end
+    text:SetFont("Fonts\\FRIZQT__.TTF", fontSize, fontFlags)
+end
+
+local originalSetupFontString = NotPlater.SetupFontString
+if originalSetupFontString then
+    function NotPlater:SetupFontString(text, config)
+        originalSetupFontString(self, text, config)
+        EnsureFont(text, config)
+    end
+end
+
+local originalScaleGeneralisedText = NotPlater.ScaleGeneralisedText
+if originalScaleGeneralisedText then
+    function NotPlater:ScaleGeneralisedText(text, scalingFactor, config, anchorFrame)
+        originalScaleGeneralisedText(
+            self,
+            text,
+            scalingFactor,
+            config,
+            anchorFrame
+        )
+        EnsureFont(text, config, scalingFactor)
+    end
+end
+
+local originalHealthOnValueChanged = NotPlater.HealthOnValueChanged
+if originalHealthOnValueChanged then
+    function NotPlater:HealthOnValueChanged(oldHealthBar, value)
+        local healthFrame = oldHealthBar and oldHealthBar.healthBar
+        if healthFrame and healthFrame.healthText then
+            EnsureFont(
+                healthFrame.healthText,
+                self.db.profile.healthBar.healthText
+            )
+        end
+        return originalHealthOnValueChanged(self, oldHealthBar, value)
+    end
+end

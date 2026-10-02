@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: |cff00ff96咔鸡哥团长体验模板|r
+## Notes: 将训练服团长的术士动作条、宏、快捷键和基础选项同步到时光服体验
+## Author: 咔鸡哥 P6 团本训练服
+## Version: 2026.07.29.2
+## SavedVariables: KajigeLeaderExperienceDB
+
+KajigeLeaderExperience.lua
