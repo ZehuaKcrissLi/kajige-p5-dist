@@ -1,0 +1,1186 @@
+-- This folder loads before the ordinary alphabetic add-on set. Select zhCN
+-- before Details/ElvUI/AceLocale evaluate their locale files; changing it
+-- afterwards leaves hundreds of dormant enUS FontStrings behind.
+if type(SunwellTrainerOriginalGetLocale) ~= "function" then
+    SunwellTrainerOriginalGetLocale = GetLocale
+end
+function GetLocale()
+    return "zhCN"
+end
+GAME_LOCALE = "zhCN"
+-- Some legacy XML templates snapshot these globals before ordinary locale
+-- files are evaluated.  Seed the functional confirmation label early so an
+-- immutable FontString never reaches the later SetText fallback as "Yes".
+YES = "是"
+YES_TEXT = "是"
+
+local DB
+local AUDIT_VERSION = 2026073020
+
+-- On the 3.3.5 client SavedVariables are not guaranteed to be available while
+-- the add-on's top-level chunk is executing.  Capturing the temporary table
+-- here would let the later SavedVariables load replace the global and make
+-- every audit update disappear on logout.  Bind the local only after this
+-- add-on's ADDON_LOADED event, when the persisted table is authoritative.
+local function InitializeAuditDB()
+    KajigeUntranslatedAuditDB = KajigeUntranslatedAuditDB or {}
+    DB = KajigeUntranslatedAuditDB
+    if DB.version ~= AUDIT_VERSION then
+        DB.entries = {}
+        DB.total = 0
+        DB.dropped = 0
+    end
+    DB.entries = DB.entries or {}
+    DB.total = DB.total or 0
+    DB.version = AUDIT_VERSION
+end
+
+local MAX_ENTRIES = 2000
+local botCommands = {
+    ["logout"] = "机器人正在安全退出。",
+    ["follow"] = "机器人开始跟随团长。",
+    ["stay"] = "机器人已在当前位置待命。",
+    ["attack my target"] = "机器人开始攻击团长的目标。",
+    ["pull my target"] = "机器人开始拉取团长的目标。",
+    ["autogear"] = "机器人正在自动配置训练装备。",
+    ["RTS control enabled."] = "机器人站位控制已启用。",
+    ["Aedm (Awesome energetic do move) spell trained."] =
+        "机器人站位控制技能已就绪。",
+    ["RTS control spell removed."] = "机器人站位控制技能已移除。",
+}
+
+local exact = {
+    ["You are not in a party."] = "你当前不在队伍中。",
+    ["You are not in a raid group."] = "你当前不在团队中。",
+    ["You are not the party leader."] = "你不是队长。",
+    ["You are not the raid leader."] = "你不是团长。",
+    ["Target not found."] = "没有找到目标。",
+    ["Player not found."] = "没有找到该玩家。",
+    ["Invalid target."] = "目标无效。",
+    ["You are already in a group."] = "你已经在队伍中。",
+    ["You are now Away: Away"] = "你现在处于离开状态。",
+    ["You are no longer Away."] = "你已取消离开状态。",
+    ["There is nothing to attack."] = "当前没有可攻击的目标。",
+    ["Your target is dead"] = "你的目标已经死亡。",
+    ["Your equipped items suffer a 10% durability loss."] =
+        "你装备的物品损失了 10% 耐久度。",
+    ["You can't do that yet"] = "你还不能这样做。",
+    ["Ability is not ready yet."] = "技能还没有准备好。",
+    ["Out of range."] = "目标距离太远。",
+    ["Not enough mana"] = "法力值不足。",
+    ["Interrupted"] = "施法被打断。",
+    ["Inventory is full."] = "背包已满。",
+    ["Item is not ready yet."] = "物品还没有准备好。",
+    ["You are mounted."] = "你已经在坐骑上。",
+    ["You have joined a raid group."] = "你加入了团队。",
+    ["You leave the group."] = "你离开了队伍。",
+    ["Instance reset."] = "副本已重置。",
+    ["All instances have been reset."] = "所有副本均已重置。",
+    ["Add class failed, no available characters!"] =
+        "添加职业机器人失败：没有可用角色。",
+    ["Hello!"] = "你好！",
+    ["Hello there!"] = "你好！",
+    ["Hi!"] = "你好！",
+    ["Welcome to an AzerothCore server."] = "欢迎来到咔鸡哥 P6 团本训练服。",
+    ["This server runs on AzerothCore www.azerothcore.org"] = "当前服务器由咔鸡哥 P6 团本训练服内核驱动。",
+    ["This server runs with mod-playerbots https://github.com/mod-playerbots/mod-playerbots"] = "当前服务器已启用智能团本机器人系统。",
+    ["You learned all spells for class."] = "已学会当前职业的全部技能。",
+    ["You learned all talents for class."] = "已学会当前职业的全部天赋技能。",
+    ["Your spells have been reset."] = "你的技能已重置。",
+    ["Your talents have been reset."] = "你的天赋已重置。",
+}
+
+local classChinese = {
+    warrior = "战士",
+    paladin = "圣骑士",
+    priest = "牧师",
+    shaman = "萨满祭司",
+    druid = "德鲁伊",
+    hunter = "猎人",
+    mage = "法师",
+    warlock = "术士",
+    rogue = "潜行者",
+    dk = "死亡骑士",
+}
+
+local uiExact = {
+    ["Accept"] = "接受",
+    ["Okay"] = "确定",
+    ["Cancel"] = "取消",
+    ["Release Spirit"] = "释放灵魂",
+    ["Parhelion Plaza"] = "日珥广场",
+    ["Isle of Quel'Danas"] = "奎尔丹纳斯岛",
+    ["Zul'Aman"] = "祖阿曼",
+    ["Kalecgos"] = "卡雷苟斯",
+    ["Electrical Storm冷却"] = "电能风暴冷却",
+    ["CANHAZDUMMYTEXT"] = "占位文本",
+    ["Mana # / #"] = "法力值 # / #",
+    ["Lua错误"] = "脚本错误",
+    ["按下Tab键"] = "按下制表键",
+    ["按住CTRL并左键点击额外的物品可以预览该物品的装备效果"] =
+        "按住控制键并左键点击额外的物品可以预览该物品的装备效果",
+    ["鼠标指向任何动作条或者技能书快捷键来绑定它. 按Esc键来清除当前动作条按钮的按键绑定."] =
+        "鼠标指向动作条或技能书按钮即可绑定；按退出键可清除当前绑定。",
+    ["A macro script has been blocked from an action only available to the Blizzard UI."] =
+        "某个宏脚本尝试执行仅限暴雪界面的受保护操作，已被阻止。",
+    ["Sunwell Plateau"] = "太阳之井高地",
+    ["The Sunwell"] = "太阳之井",
+    ["Apex Point"] = "巅峰平台",
+    ["Shadow Grave"] = "暗影墓穴",
+    ["you can disable this at /details > Raid Tools"] =
+        "可在 /details > 团队工具 中关闭此功能",
+    ["Close"] = "关闭",
+    ["Continue"] = "继续",
+    ["Back"] = "返回",
+    ["Next"] = "下一步",
+    ["Finish"] = "完成",
+    ["Delete"] = "删除",
+    ["Create Character"] = "创建角色",
+    ["Enter World"] = "进入世界",
+    ["Change Realm"] = "选择服务器",
+    ["AddOns"] = "插件",
+    ["Remember Account Name"] = "记住账号",
+    ["Login"] = "登录",
+    ["Password"] = "密码",
+    ["Account Name"] = "账号",
+    ["Options"] = "选项",
+    ["Video"] = "图像",
+    ["Sound"] = "声音",
+    ["Controls"] = "控制",
+    ["Language"] = "语言",
+    ["Help"] = "帮助",
+    ["Logout"] = "返回角色选择",
+    ["Exit Game"] = "退出游戏",
+    ["Return to Game"] = "返回游戏",
+    ["Key Bindings"] = "按键设置",
+    ["Macros"] = "宏命令",
+    ["Interface"] = "界面",
+    ["Game Menu"] = "游戏菜单",
+    ["Character Info"] = "角色信息",
+    ["Spellbook & Abilities"] = "法术书和技能",
+    ["Talents"] = "天赋",
+    ["Achievements"] = "成就",
+    ["Quest Log"] = "任务日志",
+    ["Social"] = "社交",
+    ["World Map"] = "世界地图",
+    ["Raid"] = "团队",
+    ["Dungeons & Raids"] = "地下城和团队副本",
+    ["Reputation"] = "声望",
+    ["Currency"] = "货币",
+    ["Pet"] = "宠物",
+    ["Companion"] = "伙伴",
+    ["General"] = "综合",
+    ["Combat"] = "战斗",
+    ["Display"] = "显示",
+    ["Resolution"] = "分辨率",
+    ["Healthstone"] = "治疗石",
+    ["Minor Healthstone"] = "初级治疗石",
+    ["Lesser Healthstone"] = "次级治疗石",
+    ["Greater Healthstone"] = "强效治疗石",
+    ["Major Healthstone"] = "特效治疗石",
+    ["Master Healthstone"] = "极效治疗石",
+    ["Demonic Healthstone"] = "恶魔治疗石",
+    ["Fel Healthstone"] = "邪能治疗石",
+    ["初级 Healthstone"] = "初级治疗石",
+    ["次级 Healthstone"] = "次级治疗石",
+    ["强效 Healthstone"] = "强效治疗石",
+    ["特效 Healthstone"] = "特效治疗石",
+    ["极效 Healthstone"] = "极效治疗石",
+    ["恶魔 Healthstone"] = "恶魔治疗石",
+    ["邪能 Healthstone"] = "邪能治疗石",
+    ["Windowed Mode"] = "窗口模式",
+    ["Full Screen"] = "全屏",
+    ["Apply"] = "应用",
+    ["Defaults"] = "默认",
+    ["Enabled"] = "启用",
+    ["Disabled"] = "禁用",
+    ["Yes"] = "是",
+    ["No"] = "否",
+    ["First"] = "第一条",
+    ["Last"] = "最后一条",
+    ["Message"] = "错误信息",
+    ["Time"] = "时间",
+    ["Count"] = "次数",
+    ["Stack"] = "调用栈",
+    ["Locals"] = "局部变量",
+    ["Affliction"] = "痛苦",
+    ["Demonology"] = "恶魔学识",
+    ["Destruction"] = "毁灭",
+    ["Battlegrounds"] = "战场",
+    ["Average:"] = "平均值：",
+    ["Critical:"] = "爆击：",
+    ["FPS:"] = "帧数：",
+    ["Required Money:"] = "所需金币：",
+    ["Total Casts:"] = "施法总次数：",
+    ["Total Hits:"] = "命中总次数：",
+    ["Uptime:"] = "覆盖时间：",
+    ["Your spells have been reset."] = "你的技能已重置。",
+    ["Your talents have been reset."] = "你的天赋已重置。",
+    ["this is a alpha version of Details you can help us sending bug reports use the blue button."] =
+        "当前为 Details 测试版本；可使用蓝色按钮提交问题报告。",
+    ["Search"] = "搜索",
+    ["Reset"] = "重置",
+    ["Save"] = "保存",
+    ["Load"] = "载入",
+    ["Copy"] = "复制",
+    ["Paste"] = "粘贴",
+    ["Import"] = "导入",
+    ["Export"] = "导出",
+    ["Profiles"] = "配置文件",
+    ["New Profile"] = "新建配置",
+    ["Delete Profile"] = "删除配置",
+    ["Enable"] = "启用",
+    ["Disable"] = "禁用",
+    ["Lock"] = "锁定",
+    ["Unlock"] = "解锁",
+    ["Move"] = "移动",
+    ["Scale"] = "缩放",
+    ["Width"] = "宽度",
+    ["Height"] = "高度",
+    ["Opacity"] = "透明度",
+    ["Font"] = "字体",
+    ["Size"] = "大小",
+    ["Position"] = "位置",
+    ["Anchor"] = "锚点",
+    ["Horizontal"] = "水平",
+    ["Vertical"] = "垂直",
+    ["Left"] = "左",
+    ["Right"] = "右",
+    ["Top"] = "上",
+    ["Bottom"] = "下",
+    ["Center"] = "中央",
+    ["Name"] = "名称",
+    ["Description"] = "说明",
+    ["Warning"] = "警报",
+    ["Timer"] = "计时条",
+    ["Range"] = "距离",
+    ["Test"] = "测试",
+    ["Start"] = "开始",
+    ["Stop"] = "停止",
+    ["Ready Check"] = "就位确认",
+    ["Raid Warning"] = "团队警报",
+    ["Random Lich King Dungeon"] = "随机巫妖王地下城",
+    ["Random Lich King Heroic"] = "随机巫妖王英雄地下城",
+    ["Random Lich King"] = "随机巫妖王地下城",
+    ["P2：BOSS下潜+A小怪"] = "P2：首领下潜并清理小怪",
+    ["Emblem of Frost"] = "寒冰纹章",
+    ["Emblem 之冰霜"] = "寒冰纹章",
+    ["Emblem 之 冰霜"] = "寒冰纹章",
+    ["Emblem of 冰霜"] = "寒冰纹章",
+    ["Darkspear Trolls"] = "暗矛巨魔",
+    ["Full Absorbs:"] = "完全吸收：",
+    ["Partially Absorbed:"] = "部分吸收：",
+    ["Your Role"] = "你的职责",
+    ["Companions"] = "伙伴",
+    ["Item Name"] = "物品名称",
+    ["Player Name"] = "玩家名称",
+    ["Create Aura"] = "创建光环",
+    ["spell name:"] = "技能名称：",
+    ["healer name:"] = "治疗者名称：",
+    ["info"] = "信息",
+    ["Revered"] = "崇敬",
+    ["Dead"] = "死亡",
+    ["C.O.D."] = "付款取信",
+    ["Extended"] = "已延长",
+    ["Per Second:"] = "每秒：",
+    ["Prev"] = "上一页",
+    ["Honorable Kills"] = "荣誉击杀",
+    ["Win - Loss"] = "胜场 - 负场",
+    ["no options"] = "没有可用选项",
+    ["Damage"] = "伤害",
+    ["Cost:"] = "费用：",
+    ["Friends"] = "好友",
+    ["Add Friend"] = "添加好友",
+    ["Priest"] = "牧师",
+    ["Paladin"] = "圣骑士",
+    ["Warrior"] = "战士",
+    ["Warlock"] = "术士",
+    ["Purchase"] = "购买",
+    ["Misses"] = "未命中",
+    ["Games"] = "场次",
+    ["Played"] = "已进行",
+    ["Team Rating"] = "战队等级",
+    ["Rewards"] = "奖励",
+    ["Hunter"] = "猎人",
+    ["Mage"] = "法师",
+    ["Rogue"] = "潜行者",
+    ["Class"] = "职业",
+    ["Druid"] = "德鲁伊",
+    ["Death Knight"] = "死亡骑士",
+    ["Honor"] = "荣誉",
+    ["This Week"] = "本周",
+    ["Join Battle"] = "加入战斗",
+    ["Color"] = "颜色",
+    ["Spells"] = "法术",
+    ["Neutral"] = "中立",
+    ["Unknown"] = "未知",
+    ["Enemy Units"] = "敌方单位",
+    ["Player #"] = "玩家 #",
+    ["Mana # / #"] = "法力值 # / #",
+    ["Enemy Players"] = "敌方玩家",
+    ["Real ID"] = "实名好友",
+    ["Leave Queue"] = "离开队列",
+    ["Class Colors"] = "职业颜色",
+    ["World of Warcraft"] = "魔兽世界",
+    ["Melee"] = "近战",
+    ["Auras"] = "光环",
+    ["Rating"] = "等级",
+    ["Color-by-School"] = "按法术系着色",
+    ["Border"] = "边框",
+    ["Unit Names"] = "单位名称",
+    ["Segment:"] = "片段：",
+    ["Damage Done"] = "造成伤害",
+    ["Emote"] = "表情",
+    ["Raid Browser"] = "团队查找器",
+    ["Heals"] = "治疗",
+    ["Spell Names"] = "法术名称",
+    ["Goodbye"] = "再见",
+    ["Icon Color"] = "图标颜色",
+    ["Random Battleground"] = "随机战场",
+    ["Will not be traded"] = "不会被交易",
+    ["Border Color"] = "边框颜色",
+    ["Encounter Breakdown"] = "首领战明细",
+    ["Whisper"] = "密语",
+    ["Yell"] = "喊话",
+    ["Deaths"] = "死亡",
+    ["Inbox"] = "收件箱",
+    ["Kills"] = "击杀",
+    ["Filler Text"] = "示例文字",
+    ["Send Mail"] = "发送邮件",
+    ["Healing Done"] = "造成治疗",
+    ["report"] = "报告",
+    ["Show Class Color"] = "显示职业颜色",
+    ["Example Text:"] = "示例文字：",
+    ["Other"] = "其他",
+    ["Loss"] = "负场",
+    ["Background"] = "背景",
+    ["Reply"] = "回复",
+    ["Icon"] = "图标",
+    ["Invite"] = "邀请",
+    ["Guild Chat"] = "公会聊天",
+    ["Today"] = "今天",
+    ["Lifetime"] = "生涯",
+    ["Ignore"] = "屏蔽",
+    ["Experience:"] = "经验值：",
+    ["Rank"] = "等级",
+    ["Yesterday"] = "昨天",
+    ["Send Message"] = "发送消息",
+    ["Chat"] = "聊天",
+    ["Refresh"] = "刷新",
+    ["Group Invite"] = "队伍邀请",
+    ["Pending"] = "等待中",
+    ["Standing"] = "排名",
+    ["Dishonorable Kills"] = "非荣誉击杀",
+    ["Guild Information"] = "公会信息",
+    ["Join as Group"] = "以小队加入",
+    ["Title Text"] = "标题文字",
+    ["Team"] = "战队",
+    ["Success"] = "成功",
+    ["Colors"] = "颜色",
+    ["System Messages"] = "系统消息",
+    ["Power Gains"] = "能量获取",
+    ["Dispells"] = "驱散",
+    ["Dispels"] = "驱散",
+    ["Repairs"] = "修理",
+    ["Money Loot"] = "金币拾取",
+    ["Color Picker"] = "颜色选择器",
+    ["Custom Displays"] = "自定义显示",
+    ["Global Channels"] = "全局频道",
+    ["Message Types"] = "消息类型",
+    ["Browse"] = "浏览",
+    ["Stables"] = "兽栏",
+    ["Plugins"] = "插件",
+    ["Horde"] = "部落",
+    ["Ranged"] = "远程",
+    ["Party"] = "小队",
+    ["Hostile"] = "敌对",
+    ["Compress..."] = "压缩……",
+    ["Repair"] = "修理",
+    ["Item Names"] = "物品名称",
+    ["Page"] = "页面",
+    ["Entire Line"] = "整行",
+    ["Trade"] = "交易",
+    ["Interrupts"] = "打断",
+    ["Quest Title"] = "任务标题",
+    ["Killing Blows"] = "致命一击",
+    ["Available Quests"] = "可接任务",
+    ["Secondary Skills"] = "辅助技能",
+    ["EpochCN 汉化组"] = "世界内容中文整合汉化组",
+    ["An addon byTerciob"] = "插件作者：Terciob",
+    ["Armor:"] = "护甲：",
+    ["ARTICLE_COUNT"] = "文章数量",
+    ["Auto Run Code"] = "自动运行代码",
+    ["BLAH!"] = "示例文字！",
+    ["Block:"] = "格挡：",
+    ["Buff Name"] = "增益名称",
+    ["Charts"] = "图表",
+    ["close window"] = "关闭窗口",
+    ["Create Big Timer Announcer (BW):"] = "创建 BigWigs 大型计时播报：",
+    ["Create Big Timer Announcer (DBM):"] = "创建 DBM 大型计时播报：",
+    ["Damage Blocked:"] = "被格挡的伤害：",
+    ["damage taken"] = "承受伤害",
+    ["Damage Taken by Spell"] = "按技能统计承受伤害",
+    ["Damage Taken per Player"] = "按玩家统计承受伤害",
+    ["Damage:"] = "伤害：",
+    ["Death Log"] = "死亡记录",
+    ["Debuff Name"] = "减益名称",
+    ["Details"] = "伤害统计",
+    ["Details! API"] = "伤害统计接口",
+    ["Details! Custom Line Text Editor"] = "伤害统计自定义行文字编辑器",
+    ["Details! Damage Meter | Use '/details stats' for statistics"] =
+        "伤害统计 | 输入 /details stats 查看统计信息",
+    ["Details! Encounter Breakdown"] = "伤害统计首领战明细",
+    ["Details! Run Code"] = "伤害统计运行代码",
+    ["Details! Useful Macros"] = "伤害统计实用宏命令",
+    ["Discord:"] = "Discord 社区：",
+    ["Dodge:"] = "躲闪：",
+    ["Emotes"] = "表情",
+    ["Enemy Damage Taken"] = "敌方承受伤害",
+    ["Enemy Unit:"] = "敌方单位：",
+    ["Folder..."] = "文件夹……",
+    ["Gamma"] = "伽马",
+    ["Gutterspeak"] = "亡灵语",
+    ["interrupts / casts"] = "打断 / 施法",
+    ["Key Binds"] = "按键绑定",
+    ["Left Click: Report Line"] = "左键：报告此行",
+    ["macro"] = "宏命令",
+    ["Merchant Name"] = "商人名称",
+    ["No Absorption:"] = "未吸收：",
+    ["NpcID:"] = "非玩家角色编号：",
+    ["Page #"] = "第 # 页",
+    ["Parry:"] = "招架：",
+    ["Paste & Copy"] = "粘贴与复制",
+    ["paste on your web browser address bar"] = "粘贴到网页浏览器地址栏",
+    ["Percent values are comparisons with the previous try."] =
+        "百分比数值与上一次尝试进行比较。",
+    ["Phases"] = "阶段",
+    ["Player # %"] = "玩家 # %",
+    ["Player Endurance"] = "玩家生存能力",
+    ["Power:"] = "能量：",
+    ["Quest title"] = "任务标题",
+    ["Recipient Name"] = "收件人名称",
+    ["Report Results"] = "报告结果",
+    ["right click to close"] = "右键关闭",
+    ["Scale:"] = "缩放：",
+    ["Search:"] = "搜索：",
+    ["Select Phase:"] = "选择阶段：",
+    ["Self Healing:"] = "自我治疗：",
+    ["Show Season Stats"] = "显示赛季统计",
+    ["Spell Bonus:"] = "法术加成：",
+    ["There's no more players to compare (with the same class/spec)"] =
+        "没有更多同职业同专精玩家可供比较。",
+    ["time of death"] = "死亡时间",
+    ["Time Spent on Each Phase"] = "各阶段耗时",
+    ["title of the player"] = "玩家头衔",
+    ["Tools"] = "工具",
+    ["Total Absorbs:"] = "总吸收量：",
+    ["Total Damage Taken:"] = "承受总伤害：",
+    ["total dispels"] = "驱散总数",
+    ["Unknown Encounter"] = "未知首领战",
+    ["Unknown Raid"] = "未知团队副本",
+    ["Uptime"] = "覆盖时间",
+    ["使用桌面Gamma"] = "使用桌面伽马",
+    ["创建一个wa监视"] = "创建一个弱点监控",
+    ["链接 Details!"] = "链接伤害统计",
+    ["拾取/提醒框 [Grow Down]"] = "拾取 / 提醒框（向下增长）",
+    ["英语（US）"] = "英语（美国）",
+    ["Level level race class"] = "等级、种族和职业",
+    ["显示Lua错误"] = "显示脚本错误",
+    ["文字对齐 X"] = "文字横向对齐",
+    ["文字对齐 Y"] = "文字纵向对齐",
+}
+
+local auditedEvents = {
+    CHAT_MSG_SYSTEM = true,
+    CHAT_MSG_MONSTER_SAY = true,
+    CHAT_MSG_MONSTER_YELL = true,
+    CHAT_MSG_MONSTER_WHISPER = true,
+    CHAT_MSG_MONSTER_EMOTE = true,
+    CHAT_MSG_RAID_BOSS_EMOTE = true,
+    CHAT_MSG_RAID_BOSS_WHISPER = true,
+    CHAT_MSG_ACHIEVEMENT = true,
+    CHAT_MSG_GUILD_ACHIEVEMENT = true,
+}
+
+local function VisibleText(message)
+    if type(message) ~= "string" then return "" end
+    local text = string.gsub(message, "|H.-|h(.-)|h", "%1")
+    text = string.gsub(text, "|T.-|t", "")
+    text = string.gsub(text, "|c%x%x%x%x%x%x%x%x", "")
+    text = string.gsub(text, "|r", "")
+    return text
+end
+
+local function Normalize(message)
+    local text = VisibleText(message)
+    text = string.gsub(text, "%d+", "#")
+    text = string.gsub(text, "%s+", " ")
+    text = string.gsub(text, "^%s+", "")
+    text = string.gsub(text, "%s+$", "")
+    if string.len(text) > 240 then text = string.sub(text, 1, 240) end
+    return text
+end
+
+local function HasUnapprovedEnglish(message)
+    local normalized = Normalize(message)
+    -- Remove complete URLs before slash-command handling.  Removing /support
+    -- first mutilated an otherwise ignorable Chinese help URL and left
+    -- fragments such as "http" and "locale" to be counted as untranslated.
+    local englishProbe = string.gsub(normalized, "https?://[^%s，。]+", "")
+    -- Slash/dot command names and their ASCII arguments are protocol tokens,
+    -- not untranslated prose.  Strip the complete command fragment so text
+    -- such as "输入 /kjgtitan apply。" does not leave a false-positive
+    -- trailing "apply".
+    englishProbe = string.gsub(
+        englishProbe,
+        "/[A-Za-z][A-Za-z%d_]*[%sA-Za-z%d_%.%-]*",
+        ""
+    )
+    englishProbe = string.gsub(
+        englishProbe,
+        "%.[A-Za-z][A-Za-z%d_]*[%sA-Za-z%d_%.%-]*",
+        ""
+    )
+    englishProbe = string.gsub(
+        englishProbe,
+        "%f[%a]kjg%s+[%w%s]+",
+        ""
+    )
+    englishProbe = string.gsub(englishProbe, "%f[%a]news%f[%A]", "")
+    for _, approved in ipairs({
+        "KJG", "DPS", "TPS", "UI", "WA", "DBM", "FPS", "GM", "ID",
+        "API", "ElvUI", "WeakAuras", "Details", "Discord", "iTunes",
+        "Mac", "PvP", "NPC", "CF", "ALT", "SHIFT", "BigWigs", "stats",
+        "Terciob",
+    }) do
+        englishProbe = string.gsub(
+            englishProbe,
+            "%f[%a]" .. approved .. "%f[%A]",
+            ""
+        )
+    end
+    englishProbe = string.gsub(englishProbe, "%f[%a]P%d%f[%A]", "")
+    englishProbe = string.gsub(englishProbe, "%f[%a]T%d%f[%A]", "")
+    englishProbe = string.gsub(englishProbe, "%f[%a][A-Za-z]%f[%A]", "")
+    return normalized, string.find(englishProbe, "[A-Za-z]") ~= nil
+end
+
+local function Audit(source, message)
+    local normalized = Normalize(message)
+    local _, hasEnglish = HasUnapprovedEnglish(normalized)
+    if normalized == "" or not hasEnglish then return false end
+    local key = source .. ":" .. normalized
+    local entry = DB.entries[key]
+    if entry then
+        entry.count = entry.count + 1
+        entry.lastSeen = date("%Y-%m-%d %H:%M:%S")
+        return true
+    end
+    local count = 0
+    for _ in pairs(DB.entries) do count = count + 1 end
+    if count >= MAX_ENTRIES then
+        DB.dropped = (DB.dropped or 0) + 1
+        return true
+    end
+    DB.entries[key] = {
+        source = source,
+        text = normalized,
+        count = 1,
+        zone = GetRealZoneText and GetRealZoneText() or "",
+        firstSeen = date("%Y-%m-%d %H:%M:%S"),
+        lastSeen = date("%Y-%m-%d %H:%M:%S"),
+    }
+    DB.total = DB.total + 1
+    return true
+end
+
+local function SpellChineseName(english)
+    local known = {
+        ["Spiritual Attunement"] = "精神协调",
+        ["Holy Light"] = "圣光术",
+        ["Devotion Aura"] = "虔诚光环",
+        ["Greater Blessing of Might"] = "强效力量祝福",
+        ["Greater Blessing of Wisdom"] = "强效智慧祝福",
+        ["Greater Blessing of Kings"] = "强效王者祝福",
+        ["Arcane Brilliance"] = "奥术光辉",
+        ["Prayer of Spirit"] = "精神祷言",
+        ["Gift of the Wild"] = "野性赐福",
+        ["Prayer of Fortitude"] = "坚韧祷言",
+        ["Prayer of Shadow Protection"] = "暗影防护祷言",
+        ["Mana Spring"] = "法力之泉",
+        ["Mana Spring Totem"] = "法力之泉图腾",
+        ["Wrath of Air Totem"] = "空气之怒图腾",
+        ["Strength of Earth Totem"] = "大地之力图腾",
+        ["Totem of Wrath"] = "天怒图腾",
+        ["Electrical Storm"] = "电能风暴",
+        ["Static Disruption"] = "静电崩解",
+        ["Call Lightning"] = "召唤闪电",
+        ["Wild Magic"] = "野性魔法",
+        ["Arcane Buffet"] = "奥术打击",
+        ["Curse of Exhaustion"] = "疲劳诅咒",
+        ["Ritual of Summoning"] = "召唤仪式",
+        ["Summon Felhunter"] = "召唤地狱猎犬",
+        ["Summon Succubus"] = "召唤魅魔",
+        ["Summon Voidwalker"] = "召唤虚空行者",
+        ["Charger"] = "军马",
+        ["Dreadsteed"] = "恐惧战马",
+        ["Felsteed"] = "地狱战马",
+        ["Warhorse"] = "战马",
+    }
+    if known[english] then return known[english] end
+    if not EpochCN or not EpochCN.GetSpellDataByName then return english end
+    local data = EpochCN:GetSpellDataByName(english)
+    if type(data) == "table" and type(data[1]) == "string" and data[1] ~= "" then
+        return data[1]
+    end
+    return english
+end
+
+local suffixChinese = {
+    ["Racial"] = "种族特长",
+    ["Passive"] = "被动",
+    ["Racial Passive"] = "种族被动",
+    ["Demon"] = "恶魔",
+    ["Summon"] = "召唤",
+    ["Grand Master"] = "宗师级",
+}
+
+local function LocalizeAbilityName(english)
+    if type(english) ~= "string" then return english end
+    local base, rank = string.match(english, "^(.-)%s*%([Rr]ank%s+(%d+)%)$")
+    if base and rank then
+        return SpellChineseName(base) .. "（等级" .. rank .. "）"
+    end
+    local suffix
+    base, suffix = string.match(english, "^(.-)%s*%(([^%)]+)%)$")
+    if base and suffix then
+        return SpellChineseName(base) .. "（" .. (suffixChinese[suffix] or suffix) .. "）"
+    end
+    return SpellChineseName(english)
+end
+
+local embeddedSpellPatterns = {
+    "(的)([A-Za-z][A-Za-z' :%-]+)(获得了)",
+    "(的)([A-Za-z][A-Za-z' :%-]+)(为)",
+    "(的)([A-Za-z][A-Za-z' :%-]+)(从)",
+    "(的)([A-Za-z][A-Za-z' :%-]+)(在)",
+    "(的)([A-Za-z][A-Za-z' :%-]+)(的影响)",
+    "(获得了.-的)([A-Za-z][A-Za-z' :%-]+)(。)",
+}
+
+local function LocalizeEmbeddedSpellNames(message)
+    if type(message) ~= "string" then return message end
+    for _, pattern in ipairs(embeddedSpellPatterns) do
+        message = string.gsub(message, pattern, function(prefix, spell, suffix)
+            return prefix .. LocalizeAbilityName(spell) .. suffix
+        end)
+    end
+    return message
+end
+
+local function ItemChineseName(english)
+    if type(english) ~= "string" then return english end
+    if EpochCN_ItemNameMap and EpochCN_ItemNameMap[english]
+        and EpochCN_ItemNameMap[english] ~= "" then
+        return EpochCN_ItemNameMap[english]
+    end
+    local spellName = SpellChineseName(english)
+    return spellName ~= english and spellName or english
+end
+
+local function Translate(message)
+    local visible = VisibleText(message)
+    visible = string.gsub(visible, "^\\132", "")
+    if exact[visible] then return exact[visible] end
+
+    local className = string.match(visible, "^Add class ([A-Za-z]+)$")
+    if className then
+        return "正在加入职业机器人：" .. (classChinese[string.lower(className)] or className) .. "。"
+    end
+
+    local name = string.match(visible, "^You have learned a new spell: (.-)%.$")
+    if name then return "你学会了新技能：" .. LocalizeAbilityName(name) .. "。" end
+    name = string.match(visible, "^你学会新的法术：(.+)$")
+        or string.match(visible, "^你学会新的技能：(.+)$")
+    if name then
+        return "你学会了新技能：" .. LocalizeAbilityName(name) .. "。"
+    end
+
+    name = string.match(visible, "^你忘却了技能：(.+)。$")
+        or string.match(visible, "^你忘却了(.+)$")
+    if name then
+        name = string.gsub(name, "^技能：", "")
+        name = string.gsub(name, "。$", "")
+        return "你忘却了技能：" .. LocalizeAbilityName(name) .. "。"
+    end
+
+    name = string.match(visible, "^你的收藏中新增一种宠物：(.+)。$")
+    if name then
+        return "你的收藏中新增一种宠物："
+            .. LocalizeAbilityName(name) .. "。"
+    end
+
+    name = string.match(visible, "^你已经学会了制作新物品：(.+)$")
+    if name then
+        return "你已经学会了制作新物品：" .. ItemChineseName(name) .. "。"
+    end
+
+    local botCount = string.match(visible,
+        "^Playerbots: The server is configured with (%d+) bots%.$")
+    if botCount then
+        return "智能团本机器人：服务器已配置 " .. botCount .. " 名机器人。"
+    end
+
+    name = string.match(visible, "^(.-) has come online%.$")
+    if name then return name .. " 上线了。" end
+    name = string.match(visible, "^(.-) has gone offline%.$")
+    if name then return name .. " 下线了。" end
+    name = string.match(visible, "^(.-) joins the party%.$")
+    if name then return name .. " 加入了队伍。" end
+    name = string.match(visible, "^(.-) joins the raid group%.$")
+    if name then return name .. " 加入了团队。" end
+    name = string.match(visible, "^(.-) leaves the party%.$")
+    if name then return name .. " 离开了队伍。" end
+    name = string.match(visible, "^(.-) leaves the raid group%.$")
+    if name then return name .. " 离开了团队。" end
+
+    local amount = string.match(visible, "^You receive item: .-x(%d+)%.$")
+    if amount then return string.gsub(message, "^You receive item:", "你获得了物品：") end
+    if string.find(visible, "^You receive item:") then
+        return string.gsub(message, "^You receive item:", "你获得了物品：")
+    end
+    if string.find(visible, "^You receive loot:") then
+        return string.gsub(message, "^You receive loot:", "你获得了战利品：")
+    end
+    if string.find(visible, "^You gain ") then
+        local value, reputation = string.match(visible, "^You gain (%d+) reputation with (.-)%.$")
+        if value and reputation then
+            return "你在" .. reputation .. "中的声望提高了 " .. value .. " 点。"
+        end
+    end
+end
+
+local channelNames
+
+local function FunctionalChineseText(visible)
+    if type(visible) ~= "string" or visible == "" then return end
+    if uiExact[visible] then return uiExact[visible] end
+    local playerNumber, playerPercent = string.match(
+        visible,
+        "^Player%s+(%d+)%s*(%%?)$"
+    )
+    if playerNumber then
+        return "玩家 " .. playerNumber
+            .. (playerPercent == "%" and " %" or "")
+    end
+    local channel, channelName = string.match(
+        visible,
+        "^([%d#]+)%.%s*([A-Za-z]+)$"
+    )
+    if channel and channelNames and channelNames[channelName] then
+        return channel .. ". " .. channelNames[channelName]
+    end
+    -- Audit normalization collapses whitespace and dynamic numbers to '#'.
+    -- Use the same representation as a second lookup so templated/hidden
+    -- FontStrings such as "Player 17" and "#. General" do not survive merely
+    -- because their raw formatting differs from the display table.
+    local normalized = Normalize(visible)
+    if uiExact[normalized] then return uiExact[normalized] end
+    channel, channelName = string.match(
+        normalized,
+        "^(#)%.%s*([A-Za-z]+)$"
+    )
+    if channel and channelNames and channelNames[channelName] then
+        return channel .. ". " .. channelNames[channelName]
+    end
+    local page = string.match(visible, "^Page%s+(%d+)$")
+    if page then return "第 " .. page .. " 页" end
+    local health = string.match(visible, "^Health%s+([%d%.]+%%)$")
+    if health then return "生命值 " .. health end
+    local battlegroundLore = string.match(visible, "^BATTLEGROUND_LORETEXT_(%d+)$")
+    if battlegroundLore then return "战场说明 " .. battlegroundLore end
+    local bobbyLevel = string.match(
+        visible,
+        "^Bobby The Fleshripper %(Level (%d+) Raptor%)$"
+    )
+    if bobbyLevel then
+        return "撕裂者博比（" .. bobbyLevel .. "级迅猛龙）"
+    end
+    if visible == "HONOR_THISWEEK" then return "本周荣誉" end
+    if EpochCN then
+        local localized = EpochCN.localizedTextByRaw
+            and EpochCN.localizedTextByRaw[visible]
+        if type(localized) == "string" and localized ~= visible then
+            return localized
+        end
+        if EpochCN.NormalizeDisplayText and EpochCN.localizedTextByRaw then
+            local normalized = EpochCN:NormalizeDisplayText(visible)
+            localized = EpochCN.localizedTextByRaw[normalized]
+            if type(localized) == "string" and localized ~= visible then
+                return localized
+            end
+        end
+    end
+    local glossary = EpochCN_Glossary and EpochCN_Glossary.text
+    if glossary and glossary[visible] then return glossary[visible] end
+    local map = EpochCN_Overrides and EpochCN_Overrides.maps
+    if map and map[visible] then return map[visible] end
+    local translated = Translate(visible)
+    if translated then return translated end
+    translated = ItemChineseName(visible)
+    if translated ~= visible then return translated end
+end
+
+-- Channel notices are assembled by the enUS client after the server has
+-- already supplied a localized zone.  Add-ons such as Details can also write
+-- directly to ChatFrame:AddMessage and bypass every Blizzard event filter.
+-- Keep the slash commands intact, but translate the visible channel labels
+-- and status prefix at the final chat-frame boundary.
+channelNames = {
+    ["General"] = "综合",
+    ["LocalDefense"] = "本地防务",
+    ["Trade"] = "交易",
+    ["LookingForGroup"] = "寻求组队",
+    ["GuildRecruitment"] = "公会招募",
+}
+
+local chatPhrases = {
+    ["Sunwell Plateau"] = "太阳之井高地",
+    ["The Sunwell"] = "太阳之井",
+    ["Zul'Aman"] = "祖阿曼",
+    ["Kalecgos"] = "卡雷苟斯",
+    ["Ardent Defender"] = "炽热防御者",
+    ["K'iru's Song of Victory"] = "基鲁的胜利之歌",
+    ["Explore Isle of Quel'Danas"] = "探索奎尔丹纳斯岛",
+    ["Prayer of Spirit"] = "精神祷言",
+    ["Prayer of Fortitude"] = "坚韧祷言",
+    ["Prayer of Shadow Protection"] = "暗影防护祷言",
+    ["Greater Blessing of Kings"] = "强效王者祝福",
+    ["Greater Blessing of Might"] = "强效力量祝福",
+    ["Greater Blessing of Wisdom"] = "强效智慧祝福",
+    ["Arcane Brilliance"] = "奥术光辉",
+    ["Gift of the Wild"] = "野性赐福",
+    ["Devotion Aura"] = "虔诚光环",
+    ["Electrical Storm"] = "电能风暴",
+    ["Static Disruption"] = "静电崩解",
+    ["Call Lightning"] = "召唤闪电",
+}
+
+-- Wine can leave the visible escape "\32" or a control byte at the
+-- front of pasted chat input. Clean only that prefix; keep WoW color/link
+-- escapes and the rest of the message intact.
+local function CleanChatInputPrefix(message)
+    if type(message) ~= "string" then return message end
+    message = string.gsub(message, "^[%z\1-\8\11\12\14-\31]+", "")
+    message = string.gsub(message, "^\\32%s*", "")
+    message = string.gsub(message, "^(|c%x%x%x%x%x%x%x%x)\\32%s*", "%1")
+    return message
+end
+
+local originalSendChatMessage = SendChatMessage
+if type(originalSendChatMessage) == "function" then
+    SendChatMessage = function(message, ...)
+        return originalSendChatMessage(CleanChatInputPrefix(message), ...)
+    end
+end
+
+local function LocalizeChatLine(message)
+    if type(message) ~= "string" then return message end
+    message = CleanChatInputPrefix(message)
+    message = LocalizeEmbeddedSpellNames(message)
+    local visible = VisibleText(message)
+    if uiExact[visible] then return uiExact[visible] end
+    message = string.gsub(
+        message,
+        "控制台已加载；输入 /swt 可随时开关。",
+        "KJG 控制台已加载；输入 /kjg 可随时开关。"
+    )
+    message = string.gsub(
+        message,
+        "已应用统一界面、字体、宏、动作条与按键。输入 /swt 开始训练。",
+        "已应用时光服等价界面、字体、宏、动作条与按键。输入 /kjg 开始训练。"
+    )
+    for english, chinese in pairs(channelNames) do
+        message = string.gsub(
+            message,
+            english .. " %- ([^%]|]+)",
+            function(zone)
+                local localizedZone = EpochCN_Overrides
+                    and EpochCN_Overrides.maps
+                    and EpochCN_Overrides.maps[zone]
+                    or zone
+                return chinese .. " - " .. localizedZone
+            end
+        )
+    end
+    for english, chinese in pairs(chatPhrases) do
+        message = string.gsub(message, english, chinese)
+    end
+    message = string.gsub(message, "Details!:%s*", "伤害统计：")
+    message = string.gsub(
+        message,
+        "this is a alpha version of Details you can help us sending bug reports use the blue button%.",
+        "当前为伤害统计测试版本；可使用蓝色按钮提交问题报告。"
+    )
+    return message
+end
+
+local function ChatFilter(_, event, message, ...)
+    message = LocalizeChatLine(message)
+    local visible = VisibleText(message)
+    if botCommands[visible] then
+        return false, botCommands[visible], ...
+    end
+    if string.find(visible, "^talents spec ") then
+        return false, "正在为目标机器人切换 PVE 天赋模板。", ...
+    end
+    local translated = Translate(message)
+    if translated then return false, translated, ... end
+    if auditedEvents[event] then Audit(event, message) end
+    return false, message, ...
+end
+
+local function BelongsToChatFrame(widget)
+    local current = widget
+    local depth = 0
+    while current and depth < 10 do
+        if current == DEFAULT_CHAT_FRAME then return true end
+        if current.GetObjectType
+            and current:GetObjectType() == "ScrollingMessageFrame" then
+            return true
+        end
+        if current.GetName then
+            local name = current:GetName()
+            if type(name) == "string"
+                and string.find(name, "^ChatFrame%d*") then
+                return true
+            end
+        end
+        current = current.GetParent and current:GetParent() or nil
+        depth = depth + 1
+    end
+    return false
+end
+
+local filteredEvents = {
+    "CHAT_MSG_SYSTEM",
+    "CHAT_MSG_SAY",
+    "CHAT_MSG_YELL",
+    "CHAT_MSG_WHISPER_INFORM",
+    "CHAT_MSG_WHISPER",
+    "CHAT_MSG_PARTY",
+    "CHAT_MSG_PARTY_LEADER",
+    "CHAT_MSG_RAID",
+    "CHAT_MSG_RAID_LEADER",
+    "CHAT_MSG_RAID_WARNING",
+    "CHAT_MSG_MONSTER_SAY",
+    "CHAT_MSG_MONSTER_YELL",
+    "CHAT_MSG_MONSTER_WHISPER",
+    "CHAT_MSG_MONSTER_EMOTE",
+    "CHAT_MSG_RAID_BOSS_EMOTE",
+    "CHAT_MSG_RAID_BOSS_WHISPER",
+    "CHAT_MSG_ACHIEVEMENT",
+    "CHAT_MSG_GUILD_ACHIEVEMENT",
+    "CHAT_MSG_CHANNEL_NOTICE",
+    "CHAT_MSG_CHANNEL_NOTICE_USER",
+}
+
+for _, event in ipairs(filteredEvents) do
+    ChatFrame_AddMessageEventFilter(event, ChatFilter)
+end
+
+local function InstallMessageFrameLocalization(messageFrame)
+    if not messageFrame or messageFrame.KajigeChineseAddMessage then return end
+    local originalAddMessage = messageFrame.AddMessage
+    if type(originalAddMessage) ~= "function" then return end
+    messageFrame.KajigeChineseAddMessage = true
+    messageFrame.AddMessage = function(self, message, ...)
+        local localized = LocalizeChatLine(message)
+        local translated = Translate(localized)
+        if translated then localized = translated end
+        if type(localized) == "string"
+            and string.find(VisibleText(localized), "[A-Za-z]") then
+            Audit("MESSAGE_FRAME", localized)
+        end
+        return originalAddMessage(self, localized, ...)
+    end
+end
+
+for chatIndex = 1, (NUM_CHAT_WINDOWS or 10) do
+    InstallMessageFrameLocalization(getglobal("ChatFrame" .. chatIndex))
+end
+InstallMessageFrameLocalization(UIErrorsFrame)
+
+local function TranslateVisibleUI()
+    if not EnumerateFrames then return 0, 0 end
+    -- FolderPickerButton01 owns an immutable child FontString in build 12340.
+    -- Localize through the button API before enumerating its regions.
+    local folderPickerConfirm = getglobal
+        and getglobal("FolderPickerButton01")
+        or nil
+    if folderPickerConfirm and folderPickerConfirm.SetText then
+        pcall(folderPickerConfirm.SetText, folderPickerConfirm, "是")
+    end
+    local frame
+    local translated = 0
+    local missing = 0
+    while true do
+        frame = EnumerateFrames(frame)
+        if not frame then break end
+        if not BelongsToChatFrame(frame) and frame.GetRegions then
+            local regions = {frame:GetRegions()}
+            for _, region in ipairs(regions) do
+                if region and region.GetObjectType and region:GetObjectType() == "FontString"
+                    and region.GetText and region.SetText
+                    and not BelongsToChatFrame(region) then
+                    local text = region:GetText()
+                    local visible = VisibleText(text)
+                    visible = string.gsub(visible, "^%s+", "")
+                    visible = string.gsub(visible, "%s+$", "")
+                    local replacement = FunctionalChineseText(visible)
+                    if replacement and replacement ~= visible then
+                        local ok = pcall(region.SetText, region, replacement)
+                        if ok then
+                            translated = translated + 1
+                        else
+                            local frameName = frame.GetName
+                                and frame:GetName()
+                                or "<anonymous-frame>"
+                            local parent = region.GetParent
+                                and region:GetParent()
+                                or nil
+                            local parentName = parent and parent.GetName
+                                and parent:GetName()
+                                or "<anonymous-parent>"
+                            Audit(
+                                "UNWRITABLE_UI[" .. tostring(frameName)
+                                    .. "/" .. tostring(parentName) .. "]",
+                                text
+                            )
+                        end
+                    elseif type(text) == "string"
+                        and string.len(text) >= 4
+                        and string.find(text, "[A-Za-z]")
+                        and not string.find(text, "^%d")
+                        and not string.find(text, "^#?[%d%.]+[KkMm]?$")
+                        and not string.find(text, "^Details! v")
+                        and not string.find(text, "^|H") then
+                            local audited = Audit(
+                                frame.IsVisible and frame:IsVisible()
+                                    and "VISIBLE_UI"
+                                    or "INSTANTIATED_UI",
+                                text
+                            )
+                            if audited then missing = missing + 1 end
+                    end
+                end
+            end
+        end
+    end
+    DB.lastUIScan = {
+        translated = translated,
+        missing = missing,
+        at = date("%Y-%m-%d %H:%M:%S"),
+    }
+    return translated, missing
+end
+
+local delayed = CreateFrame("Frame")
+delayed:RegisterEvent("PLAYER_ENTERING_WORLD")
+delayed:SetScript("OnEvent", function(self)
+    local elapsed = 0
+    self:SetScript("OnUpdate", function(scanFrame, delta)
+        elapsed = elapsed + delta
+        if elapsed < 8 then return end
+        scanFrame:SetScript("OnUpdate", nil)
+        TranslateVisibleUI()
+    end)
+end)
+
+local initialization = CreateFrame("Frame")
+initialization:RegisterEvent("ADDON_LOADED")
+initialization:SetScript("OnEvent", function(self, event, addonName)
+    if addonName ~= "!KajigeChineseGuard" then return end
+    InitializeAuditDB()
+    self:UnregisterEvent("ADDON_LOADED")
+end)
+
+-- Batch E2E evidence: retain a bounded 120-second FPS window plus the current
+-- real raid/party size and player buffs. This replaces repeated screenshots
+-- with machine-readable SavedVariables and contains no credentials.
+local performanceProbe = CreateFrame("Frame")
+local performanceElapsed = 0
+performanceProbe:SetScript("OnUpdate", function(_, delta)
+    performanceElapsed = performanceElapsed + delta
+    if performanceElapsed < 1 or not DB then return end
+    performanceElapsed = performanceElapsed - 1
+
+    DB.performance = DB.performance or {}
+    local performance = DB.performance
+    performance.samples = performance.samples or {}
+    local fps = GetFramerate and GetFramerate() or 0
+    if type(fps) ~= "number" then fps = 0 end
+    table.insert(performance.samples, fps)
+    while #performance.samples > 120 do
+        table.remove(performance.samples, 1)
+    end
+
+    local sum
+    local minimum
+    sum = 0
+    for _, sample in ipairs(performance.samples) do
+        sum = sum + sample
+        if not minimum or sample < minimum then minimum = sample end
+    end
+    performance.average = #performance.samples > 0
+        and sum / #performance.samples
+        or 0
+    performance.minimum = minimum or 0
+    performance.count = #performance.samples
+    performance.raidMembers = GetNumRaidMembers
+        and GetNumRaidMembers()
+        or 0
+    performance.partyMembers = GetNumPartyMembers
+        and GetNumPartyMembers()
+        or 0
+    performance.groupKind = performance.raidMembers > 0
+        and "raid"
+        or (performance.partyMembers > 0 and "party" or "solo")
+    local rawZone = GetRealZoneText and GetRealZoneText() or ""
+    performance.zone = FunctionalChineseText(rawZone) or rawZone
+    performance.sampledAt = date("%Y-%m-%d %H:%M:%S")
+
+    local buffs = {}
+    if UnitBuff then
+        for index = 1, 40 do
+            local name, _, _, _, _, _, _, _, _, _, spellID =
+                UnitBuff("player", index)
+            if not name then break end
+            buffs[#buffs + 1] = {
+                name = LocalizeAbilityName(name),
+                spellID = spellID,
+            }
+        end
+    end
+    performance.playerBuffs = buffs
+end)
+
+SLASH_KAJIGEUNTRANSLATED1 = "/kjaudit"
+SlashCmdList.KAJIGEUNTRANSLATED = function(message)
+    message = string.lower(message or "")
+    if message == "scan" then
+        local translated, missing = TranslateVisibleUI()
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96中文审校：|r本次替换 "
+            .. translated .. " 处，记录 " .. missing .. " 处未汉化界面文本。")
+    elseif message == "clear" then
+        DB.entries = {}
+        DB.total = 0
+        DB.dropped = 0
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96中文审校记录已清空。|r")
+    else
+        local count = 0
+        for _ in pairs(DB.entries) do count = count + 1 end
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96中文审校：|r当前有 "
+            .. count .. " 类未汉化功能文本；输入 /kjaudit scan 扫描当前界面。")
+    end
+end

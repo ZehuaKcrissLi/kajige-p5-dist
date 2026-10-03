@@ -12,12 +12,12 @@
 
 | 系统 | 线路一 | 线路二 | 线路三 |
 | --- | --- | --- | --- |
-| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Windows-v1.4.15.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Windows-v1.4.15.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Windows-v1.4.15.zip) |
-| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Mac-v1.4.15.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Mac-v1.4.15.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.15-p6-20261002/Kajige-P6-Raid-Trainer-Mac-v1.4.15.dmg) |
+| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) |
+| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) |
 
 三条线路给的是同一个文件，哪条能打开就用哪条。Windows 约 14 MB，Mac 约 30 MB。
 还有两条备用：`https://cdn.gh-proxy.com/` 和 `https://ghproxy.net/`，用法是把它们
-接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.15-p6-20261002) 里的下载地址前面。
+接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.17-p6-20261003) 里的下载地址前面。
 
 Mac 也可以在“终端”里直接敲一行，脚本会自己挑可用线路、校验并打开安装器：
 
@@ -30,8 +30,7 @@ curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/ZehuaKcrissLi/
 ### 第 0 步 · 先确认两件事
 
 - 硬盘至少留出 **40 GB** 空闲空间。游戏本体约 17 GB，解压过程还要额外空间。
-- 向咔鸡哥要一个**账号和密码**。训练服没有网页注册，账号只能由管理员创建；
-  没有账号的话，装好了也只能停在登录界面。
+- 向咔鸡哥要一个**邀请码**，到[注册页面](https://mac-mini.tail4182c5.ts.net/register.html)创建账号；邀请码决定GM权限等级。
 
 ### 第 1 步 · 下载安装器
 
@@ -61,7 +60,7 @@ Parallels 序列号，安装器会自动配好免费的 Wine x87 运行时。
 
 ### 第 5 步 · 登录
 
-用管理员给的账号密码登录。服务器地址不用手动填，安装器已经配好。
+用邀请码注册时创建的账号密码登录。服务器地址不用手动填，安装器已经配好。
 
 **玩的过程中不要关掉启动器。** 它在本机提供两个中继端口，关掉游戏会直接掉线。
 
