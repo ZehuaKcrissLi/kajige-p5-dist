@@ -12,12 +12,12 @@
 
 | 系统 | 线路一 | 线路二 | 线路三 |
 | --- | --- | --- | --- |
-| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) |
-| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) |
+| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) |
+| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) |
 
 三条线路给的是同一个文件，哪条能打开就用哪条。Windows 约 14 MB，Mac 约 30 MB。
 还有两条备用：`https://cdn.gh-proxy.com/` 和 `https://ghproxy.net/`，用法是把它们
-接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.17-p6-20261003) 里的下载地址前面。
+接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.17-p6-r2-20261003) 里的下载地址前面。
 
 Mac 也可以在“终端”里直接敲一行，脚本会自己挑可用线路、校验并打开安装器：
 
