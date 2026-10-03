@@ -1,0 +1,3408 @@
+local LEADER_NAME = "笼子里咔鸡"
+local frame = CreateFrame("Frame")
+local panel
+local launcherButton
+local panelPages = {}
+local panelNavButtons = {}
+local panelBreadcrumb
+local controlPanelStack = {}
+local rosterPanel
+local rosterStatus
+local buffPanel
+local teleportPanel
+local soloPanel
+local teleportScope = "group"
+local teleportScopeLabel
+local gearPanel
+local gearTargetLabel
+local gearTargetName
+local gearCatalogSpecKey
+local gearCatalogPanel
+local gearCatalogTitle
+local gearCatalogPageLabel
+local gearCatalogButtons = {}
+local gearCatalogPage = 1
+local gearCatalogSlot
+local gearPhase = "P6"
+local gearSelectedSpecKey
+local gearDraft = {}
+local gearSlotButtons = {}
+local gearSpecButtons = {}
+local gearPhaseLabel
+local gearBuildLabel
+local gearApplyButton
+local gearPreviewModel
+local ShowGearCatalog
+local ToggleGearPanel
+local permissionPanel
+local permissionMenuButton
+local permissionBadgeText
+local permissionSummaryText
+local buffStatusLabels = {}
+local buffStatusElapsed = 0
+local queue = {}
+local queueElapsed = 0
+local queueInterval = 2.25
+local fillState
+local singleAddState
+local UpdateRosterStatus
+local UpdateBuffStatuses
+
+KajigeSWTDB = KajigeSWTDB or {}
+local DB = KajigeSWTDB
+local activePanelPage = DB.controlPanelPage or "overview"
+
+local permissionState = {
+    tag = DB.permissionTag or "尚未验证",
+    security = tonumber(DB.permissionSecurity) or 0,
+    mask = tonumber(DB.permissionMask) or 0,
+    verified = DB.permissionVerified == true,
+}
+
+local permissionTiers = {
+    {
+        tag = "PLAYER",
+        title = "普通玩家",
+        detail = "基础游戏、查询与帮助命令，加 300% 快速奔跑和 310% 飞行坐骑；没有 KJG 自助或 GM 管理。",
+    },
+    {
+        tag = "TRAINER",
+        title = "训练员",
+        detail = "自传送、自用无敌/固定 DPS、自用 P4/P5/P6 备战配装；不能控制他人或机器人。",
+    },
+    {
+        tag = "GM-1",
+        title = "协管员",
+        detail = "累计 121 项：封禁、禁言、踢人、公告、玩家信息与工单处理。",
+    },
+    {
+        tag = "GM-2",
+        title = "游戏管理员",
+        detail = "累计 420 项：传送复活、角色团队、物品技能、NPC/任务及完整 KJG。",
+    },
+    {
+        tag = "GM-3",
+        title = "系统管理员",
+        detail = "累计 645 项：GM-2 全部能力，加账号/RBAC、重载、重启与系统维护。",
+    },
+}
+
+local function IsLeader()
+    return UnitName("player") == LEADER_NAME
+end
+
+local function IsLeaderOrGM()
+    return IsLeader() or (IsGMClient and IsGMClient())
+end
+
+function KajigeSWT_IsLeader()
+    return IsLeader()
+end
+
+local function Print(message, isError)
+    local color = isError and "|cffff5555" or "|cff33ff99"
+    DEFAULT_CHAT_FRAME:AddMessage(color .. "咔鸡哥训练服：|r " .. message)
+end
+
+local function QueueCommand(command)
+    table.insert(queue, command)
+end
+
+frame:SetScript("OnUpdate", function(_, elapsed)
+    if buffPanel and buffPanel:IsShown() and UpdateBuffStatuses then
+        buffStatusElapsed = buffStatusElapsed + elapsed
+        if buffStatusElapsed >= 0.75 then
+            buffStatusElapsed = 0
+            UpdateBuffStatuses()
+        end
+    end
+    if #queue == 0 then return end
+    queueElapsed = queueElapsed + elapsed
+    if queueElapsed < queueInterval then return end
+    queueElapsed = 0
+    local action = table.remove(queue, 1)
+    if type(action) == "function" then
+        action()
+    else
+        SendChatMessage(action, "SAY")
+    end
+end)
+
+local function Send(command)
+    SendChatMessage(command, "SAY")
+end
+
+local addonCommandCounter = 0
+local function SendCommandWhileDead(command)
+    addonCommandCounter = (addonCommandCounter + 1) % 10000
+    local sequence = string.format("%04d", addonCommandCounter)
+    local commandBody = string.gsub(command or "", "^[.!]", "")
+    local playerName = UnitName("player")
+    if type(SendAddonMessage) == "function" and playerName and playerName ~= "" then
+        -- AzerothCore's authenticated addon-command channel is accepted while
+        -- dead, unlike SAY. The server still applies the normal RBAC checks.
+        SendAddonMessage(
+            "AzerothCore",
+            "h" .. sequence .. commandBody,
+            "WHISPER",
+            playerName
+        )
+    else
+        Send(command)
+    end
+end
+
+local function PermissionHas(mask, flag)
+    return math.floor((tonumber(mask) or 0) / flag) % 2 >= 1
+end
+
+local function PermissionFeatureSummary()
+    local features = {}
+    if PermissionHas(permissionState.mask, 1) then
+        table.insert(features, "自传送")
+    end
+    if PermissionHas(permissionState.mask, 2) then
+        table.insert(features, "个人无敌/DPS")
+    end
+    if PermissionHas(permissionState.mask, 4) then
+        table.insert(features, "个人配装")
+    end
+    if PermissionHas(permissionState.mask, 8) then
+        table.insert(features, "完整 KJG")
+    end
+    if PermissionHas(permissionState.mask, 16) then
+        table.insert(features, "玩家管理")
+    end
+    if PermissionHas(permissionState.mask, 32) then
+        table.insert(features, "世界管理")
+    end
+    if PermissionHas(permissionState.mask, 64) then
+        table.insert(features, "系统管理")
+    end
+    if PermissionHas(permissionState.mask, 128) then
+        table.insert(features, "快速奔跑与飞行坐骑")
+    end
+    if #features == 0 then
+        return "基础玩家功能"
+    end
+    return table.concat(features, " · ")
+end
+
+local function UpdatePermissionUI()
+    local tag = permissionState.tag or "尚未验证"
+    if permissionMenuButton then
+        permissionMenuButton:SetText("权限 " .. tag .. " · 查看")
+    end
+    if permissionBadgeText then
+        permissionBadgeText:SetText(tag)
+    end
+    if permissionSummaryText then
+        local prefix = permissionState.verified and "服务器实时验证" or "等待服务器验证"
+        permissionSummaryText:SetText(prefix .. " · " .. PermissionFeatureSummary())
+    end
+end
+
+local function ApplyPermissionState(tag, security, mask)
+    permissionState.tag = tag or "PLAYER"
+    permissionState.security = tonumber(security) or 0
+    permissionState.mask = tonumber(mask) or 0
+    permissionState.verified = true
+    DB.permissionTag = permissionState.tag
+    DB.permissionSecurity = permissionState.security
+    DB.permissionMask = permissionState.mask
+    DB.permissionVerified = true
+    if type(RegisterCVar) == "function" then
+        pcall(RegisterCVar, "KajigePermissionTag", "尚未验证")
+    end
+    if type(SetCVar) == "function" then
+        pcall(SetCVar, "KajigePermissionTag", permissionState.tag)
+    end
+    UpdatePermissionUI()
+end
+
+local function HandlePermissionMessage(message)
+    local tag, security, mask = string.match(
+        message or "",
+        "^KJG_PERMISSION:([A-Z0-9%-]+):(%d+):(%d+)$"
+    )
+    if not tag then return false end
+    ApplyPermissionState(tag, security, mask)
+    return true
+end
+
+local function IsPermissionProtocolMessage(message)
+    return string.find(message or "", "^KJG_PERMISSION:") ~= nil
+        or string.find(message or "", "^KJG权限") ~= nil
+end
+
+-- The server reports the fast-run switch so it can be restored after the
+-- next login; the protocol line itself stays out of chat.
+local function HandleFastRunMessage(message)
+    local state = string.match(message or "", "^KJG_FASTRUN:(%a+)$")
+    if not state then return false end
+    DB.fastRun = state == "on"
+    return true
+end
+
+local function PermissionChatFilter(_, _, message)
+    if HandleFastRunMessage(message) then
+        return true
+    end
+    if HandlePermissionMessage(message) then
+        return true
+    end
+    -- Older servers used raw pipe separators. WoW 3.3.5 interprets |G and
+    -- |3 as layout control sequences, corrupting the payload before Lua sees
+    -- it. Hide those unusable legacy replies instead of leaking them to chat.
+    return IsPermissionProtocolMessage(message)
+end
+
+StaticPopupDialogs["KAJIGE_SUMMON_PLAYER"] = {
+    text = "输入要召集的在线真人角色名",
+    button1 = "发送召集",
+    button2 = "取消",
+    hasEditBox = 1,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    OnAccept = function(self)
+        local playerName = self.editBox:GetText()
+        if playerName and playerName ~= "" then
+            Send(".kjg summon player " .. playerName)
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        self:GetParent().button1:Click()
+    end,
+}
+
+StaticPopupDialogs["KAJIGE_SUMMON_CONFIRM"] = {
+    text = "%s",
+    button1 = "接受召集",
+    button2 = "拒绝",
+    timeout = 60,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnAccept = function()
+        Send(".kjg summon accept")
+    end,
+    OnCancel = function()
+        Send(".kjg summon decline")
+    end,
+}
+
+local function Trim(value)
+    return string.gsub(
+        string.gsub(value or "", "^%s+", ""),
+        "%s+$",
+        ""
+    )
+end
+
+StaticPopupDialogs["KAJIGE_GEAR_ITEM"] = {
+    text = "输入装备 ID，可追加装备槽 0-17\n普通账号仅允许 P4/BiS 装备池候选；例如：264761 1",
+    button1 = "立即装备",
+    button2 = "取消",
+    hasEditBox = 1,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    OnAccept = function(self)
+        local value = Trim(self.editBox:GetText())
+        if not string.match(value, "^%d+%s*%d*$") then
+            Print("请输入“装备ID”或“装备ID 装备槽0-17”。", true)
+            return
+        end
+        if gearTargetName then
+            Send(
+                ".kjg gear item player " .. gearTargetName
+                .. " " .. value
+            )
+        else
+            Send(".kjg gear item self " .. value)
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        self:GetParent().button1:Click()
+    end,
+}
+
+StaticPopupDialogs["KAJIGE_GEAR_TARGET"] = {
+    text = "输入任意在线玩家或机器人的角色名",
+    button1 = "设为配装目标",
+    button2 = "取消",
+    hasEditBox = 1,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnShow = function(self)
+        self.editBox:SetText(gearTargetName or "")
+        self.editBox:SetFocus()
+    end,
+    OnAccept = function(self)
+        local value = Trim(self.editBox:GetText())
+        if value == "" or string.find(value, "%s") then
+            Print("请输入不含空格的在线角色名。", true)
+            return
+        end
+        gearTargetName = value
+        if gearTargetLabel then
+            gearTargetLabel:SetText(
+                "当前配装目标：|cff33ff99" .. gearTargetName .. "|r"
+            )
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        self:GetParent().button1:Click()
+    end,
+}
+
+StaticPopupDialogs["KAJIGE_GEAR_CATALOG"] = {
+    text = "输入部位 1-18，可追加页码\n例如：16 2（主手第2页）",
+    button1 = "列出装备池",
+    button2 = "取消",
+    hasEditBox = 1,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    OnAccept = function(self)
+        local value = Trim(self.editBox:GetText())
+        if not gearCatalogSpecKey
+            or not string.match(value, "^%d+%s*%d*$") then
+            Print("请输入“部位1-18”或“部位1-18 页码”。", true)
+            return
+        end
+        Send(
+            ".kjg gear catalog " .. gearPhase .. " " .. gearCatalogSpecKey
+            .. " " .. value
+        )
+        local slot, page = string.match(value, "^(%d+)%s*(%d*)$")
+        ShowGearCatalog(
+            gearCatalogSpecKey,
+            tonumber(slot),
+            tonumber(page) or 1
+        )
+    end,
+    EditBoxOnEnterPressed = function(self)
+        self:GetParent().button1:Click()
+    end,
+}
+
+local function PromptSummonPlayer()
+    StaticPopup_Show("KAJIGE_SUMMON_PLAYER")
+end
+
+local function PromptGearItem()
+    StaticPopup_Show("KAJIGE_GEAR_ITEM")
+end
+
+local function PromptGearTarget()
+    StaticPopup_Show("KAJIGE_GEAR_TARGET")
+end
+
+local function PromptGearCatalog(specKey)
+    gearCatalogSpecKey = specKey
+    StaticPopup_Show("KAJIGE_GEAR_CATALOG")
+end
+
+local function GroupChannel()
+    if GetNumRaidMembers() > 0 then return "RAID" end
+    if GetNumPartyMembers() > 0 then return "PARTY" end
+end
+
+local function Bot(command)
+    local channel = GroupChannel()
+    if not channel then
+        Print("当前训练编组中没有机器人。", true)
+        return
+    end
+    SendChatMessage(command, channel)
+end
+
+local roster = {
+    "warrior", "paladin", "priest", "shaman", "druid", "warrior",
+    "paladin", "priest", "shaman", "hunter", "warrior", "priest",
+    "shaman", "druid", "mage", "paladin", "hunter", "mage",
+    "warlock", "rogue", "dk", "warlock", "rogue", "dk",
+}
+
+local function CurrentGroupSize()
+    local raidCount = GetNumRaidMembers() or 0
+    if raidCount > 0 then return raidCount end
+    return (GetNumPartyMembers() or 0) + 1
+end
+
+local function CurrentOnlineGroupSize()
+    local raidCount = GetNumRaidMembers() or 0
+    if raidCount > 0 then
+        local online = 0
+        for index = 1, raidCount do
+            local connected = select(8, GetRaidRosterInfo(index))
+            if connected then online = online + 1 end
+        end
+        return online
+    end
+    local online = UnitIsConnected("player") and 1 or 0
+    for index = 1, (GetNumPartyMembers() or 0) do
+        if UnitIsConnected("party" .. index) then
+            online = online + 1
+        end
+    end
+    return online
+end
+
+local function RestoreOfflineBots()
+    local current = CurrentGroupSize()
+    local online = CurrentOnlineGroupSize()
+    if current <= online then
+        Print("当前编制中的成员都已在线，无需恢复。")
+        return false
+    end
+    if fillState or singleAddState then
+        Print("已有机器人编组任务正在运行，请等待完成后再恢复。", true)
+        return false
+    end
+    QueueCommand(".kjg bot restoreoffline")
+    Print(
+        "正在并发恢复离线训练机器人；当前在线 "
+        .. online .. "/" .. current
+        .. "，原角色、装备、职责与团队槽位都会保留。"
+    )
+    return true
+end
+
+local function CurrentGroupMemberNames()
+    local names = {}
+    local raidCount = GetNumRaidMembers() or 0
+    if raidCount > 0 then
+        for index = 1, raidCount do
+            local name = UnitName("raid" .. index)
+            if name then names[name] = true end
+        end
+        return names
+    end
+    local playerName = UnitName("player")
+    if playerName then names[playerName] = true end
+    for index = 1, (GetNumPartyMembers() or 0) do
+        local name = UnitName("party" .. index)
+        if name then names[name] = true end
+    end
+    return names
+end
+
+local function FindNewGroupMemberName(beforeNames)
+    for name in pairs(CurrentGroupMemberNames()) do
+        if not beforeNames[name] then return name end
+    end
+end
+
+local function ContinueFillRoster()
+    if not fillState then return end
+    local current = CurrentGroupSize()
+    local online = CurrentOnlineGroupSize()
+    if fillState.stage == "restoreOffline" then
+        if current > online then
+            fillState.restoreWaits = fillState.restoreWaits + 1
+            if fillState.restoreWaits % 12 == 0 then
+                Send(".kjg bot restoreoffline")
+            end
+            if fillState.restoreWaits <= 24 then
+                QueueCommand(ContinueFillRoster)
+                return
+            end
+            -- A genuine relog keeps the same slots and normally finishes in
+            -- seconds. Only after a full 54-second Playerbots login window do
+            -- we prune Bot-only stale slots and fall back to normal filling.
+            fillState.stage = "pruneOffline"
+            fillState.pruneWaits = 0
+            Send(".kjg bot pruneoffline")
+            QueueCommand(ContinueFillRoster)
+            return
+        end
+        fillState.stage = "fill"
+    end
+    if fillState.stage == "pruneOffline" then
+        if current > online then
+            fillState.pruneWaits = fillState.pruneWaits + 1
+            if fillState.pruneWaits % 10 == 0 then
+                Send(".kjg bot pruneoffline")
+            end
+            QueueCommand(ContinueFillRoster)
+            return
+        end
+        fillState.stage = "fill"
+    end
+    if current > fillState.targetSize or online > fillState.targetSize then
+        fillState.stablePasses = 0
+        Send(".kjg bot trim " .. fillState.targetSize)
+        QueueCommand(ContinueFillRoster)
+        return
+    end
+    if current >= fillState.targetSize
+        and online >= fillState.targetSize then
+        fillState.stablePasses = fillState.stablePasses + 1
+        if fillState.stablePasses < 5 then
+            QueueCommand(ContinueFillRoster)
+            return
+        end
+        local onComplete = fillState.onComplete
+        Print(
+            "团队已经实际在线 " .. online
+            .. "/" .. current .. " 人（真人与机器人合计）。"
+        )
+        fillState = nil
+        if UpdateRosterStatus then UpdateRosterStatus() end
+        if onComplete then QueueCommand(onComplete) end
+        return
+    end
+    fillState.stablePasses = 0
+    if current >= fillState.targetSize and online < current then
+        fillState.stage = "pruneOffline"
+        fillState.pruneWaits = 0
+        Send(".kjg bot pruneoffline")
+        QueueCommand(ContinueFillRoster)
+        return
+    end
+    fillState.attempts = fillState.attempts + 1
+    if fillState.attempts > 96 then
+        Print(
+            "补员未能达到 " .. fillState.targetSize
+            .. " 人；当前 " .. current
+            .. " 人，请检查机器人候选池。",
+            true
+        )
+        fillState = nil
+        return
+    end
+
+    -- addclass logs the bot in asynchronously. Do not submit another add
+    -- while the previous request has not yet increased the real group size;
+    -- otherwise the final two requests can race and create a 26-player raid.
+    if fillState.pendingSize then
+        if current > fillState.pendingSize then
+            fillState.pendingSize = nil
+            fillState.pendingWaits = 0
+        else
+            fillState.pendingWaits = fillState.pendingWaits + 1
+            if fillState.pendingWaits <= 24 then
+                QueueCommand(ContinueFillRoster)
+                return
+            end
+            -- A candidate can occasionally fail to log in.  Give the
+            -- asynchronous Playerbots login a full 54 seconds before trying
+            -- another candidate; the former 18-second window could queue a
+            -- replacement while the first bot was still loading.
+            fillState.pendingSize = nil
+            fillState.pendingWaits = 0
+        end
+    end
+
+    if current > 1 and GetNumRaidMembers() == 0 then
+        Send(".swp raid")
+        QueueCommand(ContinueFillRoster)
+        return
+    end
+
+    local className = roster[fillState.rosterIndex]
+    fillState.rosterIndex = (fillState.rosterIndex % #roster) + 1
+    Send(".playerbots bot addclass " .. className)
+    fillState.pendingSize = current
+    fillState.pendingWaits = 0
+    QueueCommand(ContinueFillRoster)
+end
+
+local function FillRoster(targetSize, onComplete)
+    targetSize = math.min(targetSize, 25)
+    local current = CurrentGroupSize()
+    if fillState then
+        Print("补员任务已经在运行；当前团队 " .. current .. " 人。", true)
+        return false
+    end
+    if singleAddState then
+        Print("正在添加单个机器人，请完成后再执行一键补员。", true)
+        return false
+    end
+    fillState = {
+        targetSize = targetSize,
+        rosterIndex = 1,
+        attempts = 0,
+        pendingSize = nil,
+        pendingWaits = 0,
+        restoreWaits = 0,
+        pruneWaits = 0,
+        stablePasses = 0,
+        onComplete = onComplete,
+        stage = "restoreOffline",
+    }
+    QueueCommand(".kjg bot restoreoffline")
+    QueueCommand(ContinueFillRoster)
+    Print(
+        "正在优先让原有离线机器人并发上线，并按真人与机器人总人数把团队补到 "
+        .. targetSize .. " 人。"
+    )
+    return true
+end
+
+local function FinishSingleBotAdd()
+    if not singleAddState then return end
+    local displayName = singleAddState.displayName
+    local equipped = singleAddState.specKey and "，并已套用对应 P4 毕业装与 PvE 天赋" or ""
+    singleAddState = nil
+    if UpdateRosterStatus then UpdateRosterStatus() end
+    Print("已添加 1 名" .. displayName .. "陪练" .. equipped .. "；真人玩家未被替换。")
+end
+
+local function ContinueSingleBotAdd()
+    if not singleAddState then return end
+    singleAddState.attempts = singleAddState.attempts + 1
+    if singleAddState.attempts > 24 then
+        local displayName = singleAddState.displayName
+        singleAddState = nil
+        Print("添加" .. displayName .. "陪练超时，请执行 /kjg audit 检查机器人池。", true)
+        return
+    end
+
+    if singleAddState.stage == "pruneOffline" then
+        local current = CurrentGroupSize()
+        if current >= 25 then
+            singleAddState = nil
+            Print("当前在线团队已经有 25 人，请先移除一个成员。", true)
+            return
+        end
+        singleAddState.startingSize = current
+        -- pruneoffline can remove persisted offline members that addclass
+        -- later reuses.  Snapshot names only after pruning; otherwise a
+        -- reused bot name is mistaken for an old member and never receives
+        -- its requested P4 template.
+        singleAddState.beforeNames = CurrentGroupMemberNames()
+        if current > 1 and GetNumRaidMembers() == 0 then
+            Send(".swp raid")
+            singleAddState.stage = "prepareRaid"
+        else
+            Send(".playerbots bot addclass " .. singleAddState.className)
+            singleAddState.stage = "waitBot"
+        end
+        QueueCommand(ContinueSingleBotAdd)
+        return
+    end
+
+    if singleAddState.stage == "prepareRaid" then
+        if GetNumRaidMembers() > 0 then
+            singleAddState.startingSize = CurrentGroupSize()
+            Send(".playerbots bot addclass " .. singleAddState.className)
+            singleAddState.stage = "waitBot"
+        end
+        QueueCommand(ContinueSingleBotAdd)
+        return
+    end
+
+    if singleAddState.stage == "waitBot" then
+        if CurrentGroupSize() > singleAddState.startingSize then
+            if singleAddState.specKey and not singleAddState.gearApplied then
+                local botName = FindNewGroupMemberName(singleAddState.beforeNames)
+                if not botName then
+                    QueueCommand(ContinueSingleBotAdd)
+                    return
+                end
+                Send(
+                    ".kjg gear player " .. botName
+                    .. " " .. singleAddState.specKey
+                )
+                singleAddState.gearApplied = true
+            end
+            if GetNumRaidMembers() > 0 then
+                FinishSingleBotAdd()
+                return
+            end
+            Send(".swp raid")
+            singleAddState.stage = "waitRaid"
+        end
+        QueueCommand(ContinueSingleBotAdd)
+        return
+    end
+
+    if singleAddState.stage == "waitRaid" then
+        if GetNumRaidMembers() > 0 then
+            FinishSingleBotAdd()
+            return
+        end
+        QueueCommand(ContinueSingleBotAdd)
+    end
+end
+
+local function AddBotClass(className, displayName, specKey)
+    if fillState or singleAddState then
+        Print("已有机器人补员任务正在运行，请等待完成或停止命令队列。", true)
+        return
+    end
+
+    singleAddState = {
+        className = className,
+        displayName = displayName,
+        specKey = specKey,
+        beforeNames = CurrentGroupMemberNames(),
+        gearApplied = false,
+        startingSize = nil,
+        attempts = 0,
+        stage = "pruneOffline",
+    }
+    QueueCommand(".kjg bot pruneoffline")
+    QueueCommand(ContinueSingleBotAdd)
+    Print(
+        "正在恢复离线机器人槽位并添加 1 名" .. displayName
+        .. "陪练；真人玩家不会被替换。"
+    )
+end
+
+function KajigeSWT_AddP4Bot(specKey)
+    if not IsLeaderOrGM() then
+        Print("只有团长或 GM 可以添加 P4 毕业 BOT。", true)
+        return false
+    end
+    if not KajigeTitanP4Data or not KajigeTitanP4Data.specs then
+        Print("P4 配装数据尚未加载。", true)
+        return false
+    end
+    for _, spec in ipairs(KajigeTitanP4Data.specs) do
+        if spec.key == specKey then
+            AddBotClass(
+                spec.botClass,
+                spec.name .. " P4",
+                spec.key
+            )
+            return true
+        end
+    end
+    Print("未知 P4 专精键：" .. tostring(specKey), true)
+    return false
+end
+
+local function PanelButton(parent, text, x, y, width, action)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetWidth(width or 118)
+    button:SetHeight(24)
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    button:SetText(text)
+    button:SetScript("OnClick", action)
+    return button
+end
+
+local function CommandButton(parent, text, x, y, width, command)
+    return PanelButton(parent, text, x, y, width, function() Send(command) end)
+end
+
+local function Label(parent, text, y)
+    local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", parent, "TOPLEFT", 20, y)
+    label:SetText(text)
+    return label
+end
+
+local function CloseControlSubPanel(childPanel)
+    if childPanel then childPanel:Hide() end
+    local returnPanel = table.remove(controlPanelStack)
+    if returnPanel then returnPanel:Show() end
+end
+
+local function OpenControlSubPanel(toggleFunction, sourcePanel)
+    if sourcePanel and sourcePanel:IsShown() then
+        table.insert(controlPanelStack, sourcePanel)
+        sourcePanel:Hide()
+    end
+    toggleFunction()
+end
+
+local teleportRaids = {
+    {
+        name = "太阳之井 80 级训练",
+        buttons = {
+            {"太阳井门口", "sw_entrance"},
+            {"卡雷苟斯", "sw_kalecgos"},
+            {"布鲁塔卢斯", "sw_brutallus"},
+            {"菲米丝", "sw_felmyst"},
+            {"艾瑞达双子", "sw_twins"},
+            {"穆鲁", "sw_muru"},
+            {"基尔加丹", "sw_kiljaeden"},
+        },
+    },
+    {
+        name = "祖阿曼 80 级训练",
+        buttons = {
+            {"祖阿曼门口", "za_entrance"},
+            {"埃基尔松", "za_akilzon"},
+            {"纳洛拉克", "za_nalorakk"},
+            {"加亚莱", "za_janalai"},
+            {"哈尔拉兹", "za_halazzi"},
+            {"玛拉卡斯", "za_malacrass"},
+            {"祖尔金", "za_zuljin"},
+        },
+    },
+    {
+        name = "十字军试炼（原生 80 级）",
+        buttons = {
+            {"十字军试炼门口", "toc_entrance"},
+            {"诺森德猛兽", "toc_beasts"},
+            {"加拉克苏斯", "toc_jaraxxus"},
+            {"阵营冠军", "toc_champions"},
+            {"瓦格里双子", "toc_valkyr"},
+            {"阿努巴拉克", "toc_anubarak"},
+        },
+    },
+    {
+        name = "奥杜尔 P6 · 攻城区",
+        buttons = {
+            {"奥杜尔门口", "uld_entrance"},
+            {"烈焰巨兽", "uld_leviathan"},
+            {"伊格尼斯", "uld_ignis"},
+            {"锋鳞", "uld_razorscale"},
+            {"XT-002", "uld_xt002"},
+        },
+    },
+    {
+        name = "奥杜尔 P6 · 前厅与守护者",
+        buttons = {
+            {"钢铁议会", "uld_assembly"},
+            {"科隆加恩", "uld_kologarn"},
+            {"欧尔莉亚", "uld_auriaya"},
+            {"霍迪尔", "uld_hodir"},
+            {"托里姆", "uld_thorim"},
+        },
+    },
+    {
+        name = "奥杜尔 P6 · 深层与观星室",
+        buttons = {
+            {"弗蕾亚", "uld_freya"},
+            {"米米尔隆", "uld_mimiron"},
+            {"维扎克斯", "uld_vezax"},
+            {"尤格萨隆", "uld_yogg"},
+            {"奥尔加隆", "uld_algalon"},
+        },
+    },
+}
+
+local function UpdateTeleportScopeLabel()
+    if not teleportScopeLabel then return end
+    if not IsLeaderOrGM() then
+        teleportScopeLabel:SetText(
+            "当前范围：|cff33ff99仅传送自己（普通账号权限）|r"
+        )
+        return
+    end
+    teleportScopeLabel:SetText(
+        teleportScope == "self"
+        and "当前范围：|cff33ff99仅控制台使用者自己|r"
+        or "当前范围：|cff33ff99当前训练团全部在线成员（真人和 BOT）|r"
+    )
+end
+
+local function SetTeleportScope(scope)
+    if not IsLeaderOrGM() and scope ~= "self" then
+        teleportScope = "self"
+        UpdateTeleportScopeLabel()
+        Print("普通账号只能传送自己；全团传送需要团长或 GM。", true)
+        return
+    end
+    teleportScope = scope
+    UpdateTeleportScopeLabel()
+end
+
+local function SendRaidTeleport(destinationKey)
+    local scope = IsLeaderOrGM() and teleportScope or "self"
+    Send(".kjg teleport " .. scope .. " " .. destinationKey)
+end
+
+local function ToggleTeleportPanel()
+    if not IsLeaderOrGM() then
+        teleportScope = "self"
+    end
+    if not teleportPanel then
+        teleportPanel = CreateFrame(
+            "Frame",
+            "KajigeSWTTeleportPanel",
+            UIParent
+        )
+        teleportPanel:SetWidth(825)
+        teleportPanel:SetHeight(565)
+        teleportPanel:SetPoint("CENTER", UIParent, "CENTER", 90, 0)
+        teleportPanel:SetMovable(true)
+        teleportPanel:EnableMouse(true)
+        teleportPanel:RegisterForDrag("LeftButton")
+        teleportPanel:SetScript("OnDragStart", teleportPanel.StartMoving)
+        teleportPanel:SetScript(
+            "OnDragStop",
+            teleportPanel.StopMovingOrSizing
+        )
+        teleportPanel:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = {left = 11, right = 12, top = 12, bottom = 11},
+        })
+
+        local title = teleportPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormalLarge"
+        )
+        title:SetPoint("TOPLEFT", teleportPanel, "TOPLEFT", 22, -18)
+        title:SetText("KJG 团本传送")
+        local subtitle = teleportPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+        subtitle:SetText(
+            "门口为副本外入口；Boss 按钮为副本内安全点。"
+            .. "GM 可单人进入奥杜尔；困难模式仍由场景交互触发。"
+        )
+
+        local close = CreateFrame(
+            "Button",
+            nil,
+            teleportPanel,
+            "UIPanelCloseButton"
+        )
+        close:SetPoint("TOPRIGHT", teleportPanel, "TOPRIGHT", -5, -5)
+        close:SetScript("OnClick", function()
+            CloseControlSubPanel(teleportPanel)
+        end)
+
+        teleportScopeLabel = teleportPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormal"
+        )
+        teleportScopeLabel:SetPoint(
+            "TOPLEFT",
+            teleportPanel,
+            "TOPLEFT",
+            22,
+            -69
+        )
+        PanelButton(
+            teleportPanel,
+            "仅传送自己",
+            22,
+            -91,
+            190,
+            function() SetTeleportScope("self") end
+        )
+        PanelButton(
+            teleportPanel,
+            "传送全团所有玩家",
+            224,
+            -91,
+            220,
+            function() SetTeleportScope("group") end
+        )
+
+        for raidIndex, raid in ipairs(teleportRaids) do
+            local sectionY = -128 - (raidIndex - 1) * 66
+            Label(teleportPanel, raid.name, sectionY)
+            local count = #raid.buttons
+            local availableWidth = 781
+            local gap = 6
+            local buttonWidth = math.floor(
+                (availableWidth - gap * (count - 1)) / count
+            )
+            for buttonIndex, definition in ipairs(raid.buttons) do
+                local buttonDefinition = definition
+                local button = PanelButton(
+                    teleportPanel,
+                    buttonDefinition[1],
+                    22 + (buttonIndex - 1) * (buttonWidth + gap),
+                    sectionY - 20,
+                    buttonWidth,
+                    function() SendRaidTeleport(buttonDefinition[2]) end
+                )
+                button.teleportKey = buttonDefinition[2]
+            end
+        end
+
+        PanelButton(
+            teleportPanel,
+            "GM 召唤奥尔加隆训练目标",
+            22,
+            -510,
+            240,
+            function()
+                if permissionState.verified and permissionState.security >= 1 then
+                    Send(".kjg ulduar algalon")
+                else
+                    Print("请先用 GM 角色进入奥杜尔观星室。", true)
+                end
+            end
+        )
+
+        local footer = teleportPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        footer:SetPoint(
+            "BOTTOMLEFT",
+            teleportPanel,
+            "BOTTOMLEFT",
+            22,
+            17
+        )
+        footer:SetText(
+            "普通账号只允许传送自己；全团传送只限团长或 GM。个人训练功能已移至独立面板。"
+        )
+        teleportPanel:Hide()
+    end
+
+    UpdateTeleportScopeLabel()
+    if teleportPanel:IsShown() then
+        CloseControlSubPanel(teleportPanel)
+    else
+        teleportPanel:Show()
+    end
+end
+
+local function EnableUltraCamera()
+    local ok = pcall(SetCVar, "cameraDistanceMaxFactor", "2.6")
+    if CameraZoomOut then pcall(CameraZoomOut, 50) end
+    if ok then
+        Print("超远视角上限已开启并拉到最远；滚轮仍可自由缩放。")
+    else
+        Print("当前客户端未能写入超远视角选项。", true)
+    end
+end
+
+local function ResetBossAndCoach()
+    if type(KajigeRaidCoach_Reset) == "function" then
+        pcall(KajigeRaidCoach_Reset)
+    end
+    if IsLeaderOrGM() or (permissionState.verified and permissionState.security >= 1) then
+        Send(".swp reset")
+        Print("已清空机制提示文本，并请求服务端重置当前首领。")
+    else
+        Print("已清空本机机制提示文本；重置首领实体需要团长或 GM。")
+    end
+end
+
+local function OpenP6Coach()
+    -- A readable guide owns the screen while open. The control panel can
+    -- always be reopened via /kjg; do not keep an overlapping parent alive.
+    if panel then panel:Hide() end
+    if soloPanel then soloPanel:Hide() end
+    if teleportPanel then teleportPanel:Hide() end
+    if gearPanel then gearPanel:Hide() end
+    if gearCatalogPanel then gearCatalogPanel:Hide() end
+    if rosterPanel then rosterPanel:Hide() end
+    if buffPanel then buffPanel:Hide() end
+    controlPanelStack = {}
+    if type(KajigeRaidCoach_ShowGuide) == "function" then
+        KajigeRaidCoach_ShowGuide(33113)
+    elseif SlashCmdList and SlashCmdList.KAJIGERAIDCOACH then
+        SlashCmdList.KAJIGERAIDCOACH("")
+    else
+        Print("机制教练没有加载，请启用咔鸡哥团本机制教练插件。", true)
+    end
+end
+
+local function StartP6SoloTraining()
+    if not (permissionState.verified and permissionState.security >= 1) then
+        Send(".kjg permission")
+        Print("GM 单刷需要已验证的 GM1 或更高权限；验证后请再次点击。", true)
+        return
+    end
+    -- 不开启固定 DPS：先保留正常机制与首领存活时间，再由玩家选输出档。
+    Send(".kjg self god on")
+    QueueCommand(".kjg teleport self uld_leviathan")
+    OpenP6Coach()
+    Print("已开启个人无敌，正在进入 25 人奥杜尔烈焰巨兽训练点；可从首领页切换遭遇。")
+end
+
+local function ToggleSoloPanel()
+    if not soloPanel then
+        soloPanel = CreateFrame(
+            "Frame",
+            "KajigeSWTSoloPanel",
+            UIParent
+        )
+        soloPanel:SetWidth(620)
+        soloPanel:SetHeight(440)
+        soloPanel:SetPoint("CENTER", UIParent, "CENTER", 130, -20)
+        soloPanel:SetMovable(true)
+        soloPanel:EnableMouse(true)
+        soloPanel:RegisterForDrag("LeftButton")
+        soloPanel:SetScript("OnDragStart", soloPanel.StartMoving)
+        soloPanel:SetScript("OnDragStop", soloPanel.StopMovingOrSizing)
+        soloPanel:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = {left = 11, right = 12, top = 12, bottom = 11},
+        })
+
+        local title = soloPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormalLarge"
+        )
+        title:SetPoint("TOPLEFT", soloPanel, "TOPLEFT", 22, -18)
+        title:SetText("KJG P6 个人训练")
+        local subtitle = soloPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+        subtitle:SetText(
+            "固定 DPS 会以本职业基础技能每秒造成真实首领伤害，Details 可按技能准确统计。"
+        )
+
+        local close = CreateFrame(
+            "Button",
+            nil,
+            soloPanel,
+            "UIPanelCloseButton"
+        )
+        close:SetPoint("TOPRIGHT", soloPanel, "TOPRIGHT", -5, -5)
+        close:SetScript("OnClick", function()
+            CloseControlSubPanel(soloPanel)
+        end)
+
+        Label(soloPanel, "生存与伤害", -74)
+        CommandButton(soloPanel, "无敌开启", 22, -94, 130, ".kjg self god on")
+        CommandButton(soloPanel, "无敌关闭", 160, -94, 130, ".kjg self god off")
+        CommandButton(soloPanel, "DPS 1万", 298, -94, 92, ".kjg self dps 10000")
+        CommandButton(soloPanel, "DPS 10万", 398, -94, 92, ".kjg self dps 100000")
+        CommandButton(soloPanel, "DPS 100万", 498, -94, 100, ".kjg self dps 1000000")
+        CommandButton(soloPanel, "关闭固定 DPS", 22, -126, 180, ".kjg self dps off")
+        PanelButton(soloPanel, "原地复活", 210, -126, 180, function()
+            SendCommandWhileDead(".kjg self revive")
+        end)
+        PanelButton(soloPanel, "开启并拉到超远视角", 398, -126, 200, EnableUltraCamera)
+
+        Label(soloPanel, "相关功能", -172)
+        PanelButton(soloPanel, "团本传送…", 22, -192, 180, function()
+            OpenControlSubPanel(ToggleTeleportPanel, soloPanel)
+        end)
+        PanelButton(soloPanel, "P4/P5/P6 配装…", 210, -192, 180, function()
+            OpenControlSubPanel(ToggleGearPanel, soloPanel)
+        end)
+        PanelButton(soloPanel, "重置首领与提示", 398, -192, 200, ResetBossAndCoach)
+
+        Label(soloPanel, "P6 奥杜尔", -238)
+        PanelButton(soloPanel, "GM 单刷奥杜尔", 22, -258, 180, StartP6SoloTraining)
+        PanelButton(soloPanel, "奥杜尔机制教练", 210, -258, 180, OpenP6Coach)
+
+        Label(soloPanel, "移动与坐骑（所有账号可用）", -304)
+        CommandButton(soloPanel, "快速奔跑 300%", 22, -324, 180, ".kjg self speed on")
+        CommandButton(soloPanel, "关闭快速奔跑", 210, -324, 180, ".kjg self speed off")
+        CommandButton(soloPanel, "凤凰 310%", 22, -356, 140, ".kjg self mount phoenix")
+        CommandButton(soloPanel, "米米尔隆的头部", 166, -356, 140, ".kjg self mount mimiron")
+        CommandButton(soloPanel, "无敌", 310, -356, 140, ".kjg self mount invincible")
+        CommandButton(soloPanel, "星骓", 454, -356, 144, ".kjg self mount celestial")
+
+        local footer = soloPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        footer:SetPoint("BOTTOMLEFT", soloPanel, "BOTTOMLEFT", 22, 18)
+        footer:SetText(
+            "快速奔跑在战斗中自动暂停；凤凰和米米尔隆的头部只能在可飞行区域召唤，无敌和星骓在副本里也能骑。"
+        )
+        soloPanel:Hide()
+    end
+
+    if soloPanel:IsShown() then
+        CloseControlSubPanel(soloPanel)
+    else
+        soloPanel:Show()
+    end
+end
+
+local raidBuffs = {
+    {
+        key = "gift", name = "野性赐福", spell = 48470,
+        provider = "德鲁伊", effect = "+37全属性、+750护甲、+54全抗",
+        auras = {1126, 5232, 5234, 6756, 8907, 9884, 9885, 26990,
+            48469, 21849, 21850, 26991, 48470},
+    },
+    {
+        key = "intellect", name = "奥术光辉", spell = 43002,
+        provider = "法师", effect = "+60智力",
+        auras = {1459, 1460, 1461, 10156, 10157, 27126, 42995, 61024,
+            61316, 23028, 27127, 43002},
+    },
+    {
+        key = "fortitude", name = "坚韧祷言", spell = 48162,
+        provider = "牧师", effect = "+165耐力",
+        auras = {1243, 1244, 1245, 2791, 10937, 10938, 25389, 48161,
+            21562, 21564, 25392, 48162},
+    },
+    {
+        key = "spirit", name = "精神祷言", spell = 48074,
+        provider = "牧师", effect = "+80精神",
+        auras = {14752, 14818, 14819, 27841, 25312, 48073,
+            27681, 32999, 48074},
+    },
+    {
+        key = "shadow", name = "暗影防护祷言", spell = 48170,
+        provider = "牧师", effect = "+130暗影抗性",
+        auras = {976, 10957, 10958, 25433, 48169, 27683, 39374, 48170},
+    },
+    {
+        key = "battle", name = "战斗怒吼", spell = 47436,
+        provider = "战士", effect = "+548攻强（力量祝福替代）",
+        auras = {6673, 5242, 6192, 11549, 11550, 11551, 25289, 2048, 47436},
+    },
+    {
+        key = "kings", name = "强效王者祝福", spell = 25898,
+        provider = "圣骑士", effect = "+10%全属性",
+        auras = {20217, 25898, 69378},
+    },
+    {
+        key = "might", name = "强效力量祝福", spell = 48934,
+        provider = "圣骑士", effect = "+550攻击强度",
+        auras = {19740, 19834, 19835, 19836, 19837, 19838, 25291, 27140,
+            48931, 48932, 25782, 25916, 27141, 48933, 48934},
+    },
+    {
+        key = "wisdom", name = "强效智慧祝福", spell = 48938,
+        provider = "圣骑士", effect = "每5秒恢复92法力",
+        auras = {19742, 19850, 19852, 19853, 19854, 25290, 27142, 48935,
+            48936, 25894, 25918, 27143, 48937, 48938},
+    },
+    {
+        key = "sanctuary", name = "强效庇护祝福", spell = 25899,
+        provider = "圣骑士", effect = "+10%力量/耐力、-3%承伤",
+        auras = {20911, 25899},
+    },
+    {
+        key = "devotion", name = "虔诚光环", spell = 48942,
+        provider = "圣骑士", effect = "+1205护甲",
+        auras = {465, 10290, 643, 10291, 1032, 10292, 10293, 27149,
+            48941, 48942},
+    },
+    {
+        key = "horn", name = "寒冬号角", spell = 57623,
+        provider = "死亡骑士", effect = "+155力量/敏捷（图腾替代）",
+        auras = {57330, 57623},
+    },
+    {
+        key = "wrath", name = "天怒图腾", spell = 57722,
+        provider = "萨满祭司", effect = "+280法强、目标法术受暴+3%",
+        -- 57663 是 Rank IV 对友方团队的 +280 法强光环。30708 是图腾
+        -- 对敌方目标施加的受法术暴击率减益，不能用 UnitBuff 当作团队
+        -- Buff 覆盖率统计。
+        auras = {57658, 57660, 57662, 57663},
+    },
+    {
+        key = "strength", name = "大地之力图腾", spell = 58643,
+        provider = "萨满祭司", effect = "+155力量/敏捷",
+        auras = {8076, 8162, 8163, 10441, 25362, 25527, 57623, 58646},
+    },
+    {
+        key = "mana", name = "法力之泉图腾", spell = 58774,
+        provider = "萨满祭司", effect = "每5秒恢复91法力",
+        auras = {5677, 10491, 10493, 10494, 25569, 58775, 58776, 58777},
+    },
+    {
+        key = "air", name = "空气之怒图腾", spell = 3738,
+        provider = "萨满祭司", effect = "+5%法术急速",
+        auras = {68933, 2895},
+    },
+}
+
+local function ForEachGroupUnit(callback)
+    local raidCount = GetNumRaidMembers() or 0
+    if raidCount > 0 then
+        for index = 1, raidCount do callback("raid" .. index) end
+        return raidCount
+    end
+    callback("player")
+    local partyCount = GetNumPartyMembers() or 0
+    for index = 1, partyCount do callback("party" .. index) end
+    return partyCount + 1
+end
+
+local function UnitHasManagedAura(unit, auraIDs)
+    for _, spellID in ipairs(auraIDs) do
+        local spellName = GetSpellInfo and GetSpellInfo(spellID)
+        if spellName and UnitBuff and UnitBuff(unit, spellName) then
+            return true
+        end
+    end
+    return false
+end
+
+UpdateBuffStatuses = function()
+    local total = CurrentGroupSize()
+    for _, definition in ipairs(raidBuffs) do
+        local covered = 0
+        ForEachGroupUnit(function(unit)
+            if UnitHasManagedAura(unit, definition.auras) then
+                covered = covered + 1
+            end
+        end)
+        local label = buffStatusLabels[definition.key]
+        if label then
+            local color = covered == total and "|cff33ff99" or "|cffffcc33"
+            label:SetText(color .. covered .. "/" .. total .. "|r")
+        end
+    end
+end
+
+local function ToggleBuffPanel()
+    if not buffPanel then
+        buffPanel = CreateFrame(
+            "Frame",
+            "KajigeSWTRaidBuffPanel",
+            UIParent
+        )
+        buffPanel:SetWidth(750)
+        buffPanel:SetHeight(590)
+        buffPanel:SetPoint("CENTER", UIParent, "CENTER", 70, 0)
+        buffPanel:SetMovable(true)
+        buffPanel:EnableMouse(true)
+        buffPanel:RegisterForDrag("LeftButton")
+        buffPanel:SetScript("OnDragStart", buffPanel.StartMoving)
+        buffPanel:SetScript("OnDragStop", buffPanel.StopMovingOrSizing)
+        buffPanel:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = {left = 11, right = 12, top = 12, bottom = 11},
+        })
+
+        local title = buffPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormalLarge"
+        )
+        title:SetPoint("TOPLEFT", buffPanel, "TOPLEFT", 22, -18)
+        title:SetText("KJG 团队增益配置")
+        local subtitle = buffPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+        subtitle:SetText(
+            "时光服 3.80.2 巫妖王最高级技能 · 真人/机器人真实施法，"
+            .. "保留声音、人物动作与技能特效；施放前自动集合训练机器人，"
+            .. "不会传送真人"
+        )
+
+        local close = CreateFrame(
+            "Button",
+            nil,
+            buffPanel,
+            "UIPanelCloseButton"
+        )
+        close:SetPoint("TOPRIGHT", buffPanel, "TOPRIGHT", -5, -5)
+        close:SetScript("OnClick", function()
+            CloseControlSubPanel(buffPanel)
+        end)
+
+        CommandButton(
+            buffPanel,
+            "时光服标准全套",
+            22,
+            -66,
+            220,
+            ".kjg buff standard"
+        )
+        CommandButton(
+            buffPanel,
+            "清空全部 KJG 团队增益",
+            264,
+            -66,
+            220,
+            ".kjg buff clear"
+        )
+        CommandButton(
+            buffPanel,
+            "审计全团覆盖",
+            506,
+            -66,
+            220,
+            ".kjg buff status"
+        )
+
+        for index, definition in ipairs(raidBuffs) do
+            local column = (index - 1) % 2
+            local row = math.floor((index - 1) / 2)
+            local card = CreateFrame("Frame", nil, buffPanel)
+            card:SetWidth(346)
+            card:SetHeight(51)
+            card:SetPoint(
+                "TOPLEFT",
+                buffPanel,
+                "TOPLEFT",
+                22 + column * 360,
+                -105 - row * 57
+            )
+            card:SetBackdrop({
+                bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                tile = true,
+                tileSize = 16,
+                edgeSize = 12,
+                insets = {left = 3, right = 3, top = 3, bottom = 3},
+            })
+
+            local icon = card:CreateTexture(nil, "ARTWORK")
+            icon:SetWidth(34)
+            icon:SetHeight(34)
+            icon:SetPoint("LEFT", card, "LEFT", 8, 0)
+            local _, _, texture = GetSpellInfo(definition.spell)
+            icon:SetTexture(texture or "Interface\\Icons\\INV_Misc_QuestionMark")
+
+            local name = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            name:SetPoint("TOPLEFT", card, "TOPLEFT", 49, -7)
+            name:SetText(definition.name .. " · " .. definition.provider)
+            local detail = card:CreateFontString(
+                nil,
+                "OVERLAY",
+                "GameFontHighlightSmall"
+            )
+            detail:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -3)
+            detail:SetText(definition.effect)
+
+            buffStatusLabels[definition.key] = card:CreateFontString(
+                nil,
+                "OVERLAY",
+                "GameFontHighlightSmall"
+            )
+            buffStatusLabels[definition.key]:SetPoint(
+                "TOPRIGHT",
+                card,
+                "TOPRIGHT",
+                -9,
+                -8
+            )
+
+            PanelButton(card, "施放", 218, -24, 55, function()
+                Send(".kjg buff apply " .. definition.key)
+            end)
+            PanelButton(card, "移除", 279, -24, 55, function()
+                Send(".kjg buff remove " .. definition.key)
+            end)
+        end
+
+        local footer = buffPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        footer:SetPoint("BOTTOMLEFT", buffPanel, "BOTTOMLEFT", 22, 17)
+        footer:SetText(
+            "标准全套采用力量祝福替代战斗怒吼、大地之力替代寒冬号角；"
+            .. "单项仍可任意切换。"
+        )
+        buffPanel:Hide()
+    end
+
+    UpdateBuffStatuses()
+    if buffPanel:IsShown() then
+        CloseControlSubPanel(buffPanel)
+    else
+        buffPanel:Show()
+    end
+end
+
+local gearSlotNames = {
+    [1] = "头部",
+    [2] = "颈部",
+    [3] = "肩部",
+    [5] = "胸部",
+    [6] = "腰部",
+    [7] = "腿部",
+    [8] = "脚部",
+    [9] = "手腕",
+    [10] = "手部",
+    [11] = "戒指一",
+    [12] = "戒指二",
+    [13] = "饰品一",
+    [14] = "饰品二",
+    [15] = "背部",
+    [16] = "主手",
+    [17] = "副手",
+    [18] = "远程/圣物",
+}
+
+local gearSlots = {1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
+
+local function GearData()
+    return KajigeTitanGearData or KajigeTitanP4Data
+end
+
+local function GearSpec(specKey)
+    local data = GearData()
+    for _, spec in ipairs(data and data.specs or {}) do
+        if spec.key == specKey then return spec end
+    end
+end
+
+local function GearTemplate(specKey)
+    local data = GearData()
+    local phase = data and data.templates and data.templates[gearPhase]
+    return phase and phase[specKey]
+end
+
+local function CopyGearChoice(choice)
+    if not choice then return nil end
+    local result = {
+        id = choice.id,
+        enchant = choice.enchant or 0,
+        gems = {},
+        source = choice.source,
+        rank = choice.rank,
+    }
+    for index, gem in ipairs(choice.gems or {}) do
+        result.gems[index] = gem
+    end
+    return result
+end
+
+local function ResetGearDraft()
+    gearDraft = {}
+    local template = GearTemplate(gearSelectedSpecKey)
+    for slot, choice in pairs(template and template.gear or {}) do
+        gearDraft[slot] = CopyGearChoice(choice)
+    end
+end
+
+local function SameGearChoice(left, right)
+    if not left or not right then return left == right end
+    if left.id ~= right.id or (left.enchant or 0) ~= (right.enchant or 0) then
+        return false
+    end
+    for index = 1, 3 do
+        if (left.gems and left.gems[index] or 0)
+            ~= (right.gems and right.gems[index] or 0) then
+            return false
+        end
+    end
+    return true
+end
+
+local function ShortText(value, limit)
+    value = tostring(value or "")
+    local byteIndex = 1
+    local characters = 0
+    while byteIndex <= string.len(value) and characters < limit do
+        local first = string.byte(value, byteIndex)
+        local width = first >= 240 and 4 or (first >= 224 and 3 or (first >= 192 and 2 or 1))
+        byteIndex = byteIndex + width
+        characters = characters + 1
+    end
+    if byteIndex > string.len(value) then return value end
+    return string.sub(value, 1, byteIndex - 1) .. "..."
+end
+
+local function QualityColor(quality)
+    local color = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+    local hex = color and color.hex
+    if not hex then return "|cffffffff" end
+    if string.sub(hex, 1, 2) ~= "|c" then return "|c" .. hex end
+    return hex
+end
+
+local gearUI = {
+    background = {0.055, 0.065, 0.09, 0.98},
+    panel = {0.09, 0.105, 0.14, 0.96},
+    card = {0.12, 0.135, 0.18, 0.94},
+    cardHover = {0.19, 0.17, 0.10, 0.98},
+    border = {0.31, 0.34, 0.43, 1},
+    gold = {0.95, 0.72, 0.22, 1},
+}
+
+local function ApplyGearBackdrop(frame, color, border, edgeSize)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = edgeSize or 9,
+        insets = {left = 3, right = 3, top = 3, bottom = 3},
+    })
+    color = color or gearUI.panel
+    border = border or gearUI.border
+    if frame.SetBackdropColor then
+        frame:SetBackdropColor(color[1], color[2], color[3], color[4])
+    end
+    if frame.SetBackdropBorderColor then
+        frame:SetBackdropBorderColor(border[1], border[2], border[3], border[4])
+    end
+end
+
+local function SetGearBackdropColors(frame, color, border)
+    color = color or gearUI.card
+    border = border or gearUI.border
+    if frame.SetBackdropColor then
+        frame:SetBackdropColor(color[1], color[2], color[3], color[4])
+    end
+    if frame.SetBackdropBorderColor then
+        frame:SetBackdropBorderColor(border[1], border[2], border[3], border[4])
+    end
+end
+
+local function GearQualityRGB(quality)
+    local color = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+    return color and color.r or 0.65,
+        color and color.g or 0.65,
+        color and color.b or 0.65
+end
+
+local function ResolveGearItemIcon(itemID, item)
+    local icon
+    if GetItemIcon then
+        local ok, result = pcall(GetItemIcon, itemID)
+        if ok and type(result) == "string" and result ~= "" then
+            icon = result
+        end
+    end
+    if not icon and GetItemInfo then
+        local values = {pcall(GetItemInfo, itemID)}
+        local result = values[11]
+        if values[1] and type(result) == "string" and result ~= "" then
+            icon = result
+        end
+    end
+    if not icon and item and type(item.icon) == "string" then
+        icon = item.icon
+    end
+    return icon or "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+local function CreateGearActionButton(parent, text, x, y, width, action)
+    local button = CreateFrame("Button", nil, parent)
+    button:SetWidth(width)
+    button:SetHeight(24)
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    ApplyGearBackdrop(button, gearUI.card, gearUI.border, 7)
+    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    button.label:SetPoint("LEFT", button, "LEFT", 6, 0)
+    button.label:SetPoint("RIGHT", button, "RIGHT", -6, 0)
+    button.label:SetJustifyH("CENTER")
+    if button.SetFontString then button:SetFontString(button.label) end
+    button:SetText(text)
+    button.label:SetText(text)
+    button:SetScript("OnEnter", function(self)
+        SetGearBackdropColors(self, gearUI.cardHover, gearUI.gold)
+    end)
+    button:SetScript("OnLeave", function(self)
+        SetGearBackdropColors(self, gearUI.card, gearUI.border)
+    end)
+    button:SetScript("OnClick", action)
+    button:SetScript("OnDisable", function(self)
+        if self.SetAlpha then self:SetAlpha(0.45) end
+    end)
+    button:SetScript("OnEnable", function(self)
+        if self.SetAlpha then self:SetAlpha(1) end
+    end)
+    return button
+end
+
+local function CreateGearSection(parent, title, x, y, width, height)
+    local section = CreateFrame("Frame", nil, parent)
+    section:SetWidth(width)
+    section:SetHeight(height)
+    section:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    ApplyGearBackdrop(section, gearUI.panel, gearUI.border, 9)
+    local label = section:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", section, "TOPLEFT", 10, -9)
+    label:SetText(title)
+    section.title = label
+    return section
+end
+
+local function GearEnhancementText(choice)
+    local data = GearData()
+    local details = {}
+    if choice and choice.enchant and choice.enchant > 0 then
+        local enchant = data.enchants and data.enchants[choice.enchant]
+        local label = enchant and enchant.name or ("附魔 " .. choice.enchant)
+        if enchant and enchant.stats and enchant.stats ~= "" then
+            label = label .. "（" .. enchant.stats .. "）"
+        end
+        table.insert(details, label)
+    end
+    for _, gemID in ipairs(choice and choice.gems or {}) do
+        local gem = data.gems and data.gems[gemID]
+        local label = gem and gem.name or ("宝石 " .. gemID)
+        if gem and gem.stats and gem.stats ~= "" then
+            label = label .. "（" .. gem.stats .. "）"
+        end
+        table.insert(details, label)
+    end
+    return table.concat(details, " / ")
+end
+
+local function GearEnhancementSummary(choice)
+    local labels = {}
+    if choice and choice.enchant and choice.enchant > 0 then
+        table.insert(labels, "附魔")
+    end
+    local gemCount = 0
+    for _, gemID in ipairs(choice and choice.gems or {}) do
+        if gemID and gemID > 0 then gemCount = gemCount + 1 end
+    end
+    if gemCount > 0 then
+        table.insert(labels, gemCount .. "颗宝石")
+    end
+    return #labels > 0 and table.concat(labels, " + ") or "无强化"
+end
+
+local function ShowGearChoiceTooltip(owner, choice, slot, actionText)
+    local data = GearData()
+    local item = choice and data and data.items and data.items[choice.id]
+    if not owner or not item then return end
+
+    local centerX = owner:GetCenter()
+    local anchor = centerX and centerX > UIParent:GetWidth() / 2
+        and "ANCHOR_LEFT" or "ANCHOR_RIGHT"
+    GameTooltip:SetOwner(owner, anchor)
+    GameTooltip:ClearLines()
+    local ok = pcall(
+        GameTooltip.SetHyperlink,
+        GameTooltip,
+        "item:" .. choice.id
+    )
+    if not ok then
+        GameTooltip:AddLine(item.name or ("物品 " .. choice.id), 1, 1, 1)
+    end
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("KJG 配装预览", 1, 0.82, 0)
+    GameTooltip:AddDoubleLine(
+        gearSlotNames[slot or gearCatalogSlot or 0] or "装备",
+        "装等 " .. tostring(item.itemLevel or 0) .. " · ID " .. choice.id,
+        0.2, 1, 0.6,
+        0.8, 0.8, 0.8
+    )
+    if item.stats and item.stats ~= "" then
+        GameTooltip:AddLine("数据属性：" .. item.stats, 0.95, 0.95, 0.95, true)
+    end
+    local enhancement = GearEnhancementText(choice)
+    if enhancement ~= "" then
+        GameTooltip:AddLine("强化：" .. enhancement, 0.3, 0.8, 1, true)
+    end
+    if choice.source and choice.source ~= "" then
+        GameTooltip:AddLine("来源：" .. choice.source, 0.7, 0.7, 0.7, true)
+    end
+    GameTooltip:AddLine(
+        actionText or "点击打开该部位的替换列表",
+        1, 0.82, 0, true
+    )
+    GameTooltip:Show()
+end
+
+local function RefreshGearPreview()
+    local data = GearData()
+    local template = GearTemplate(gearSelectedSpecKey)
+    local spec = GearSpec(gearSelectedSpecKey)
+    if gearPhaseLabel then
+        gearPhaseLabel:SetText(
+            "当前阶段：|cff33ff99" .. gearPhase .. "|r · 数据构建 "
+            .. tostring(data and data.build or "未知")
+        )
+    end
+    if gearBuildLabel then
+        gearBuildLabel:SetText(
+            template and (
+                (spec and spec.name or gearSelectedSpecKey)
+                .. " · " .. template.buildName
+            ) or "请先选择左侧职业专精"
+        )
+    end
+    for _, button in pairs(gearSpecButtons) do
+        button:SetText(
+            (button.specKey == gearSelectedSpecKey and "> " or "")
+            .. button.specName
+        )
+    end
+    for slot, button in pairs(gearSlotButtons) do
+        local choice = gearDraft[slot]
+        local item = choice and data.items and data.items[choice.id]
+        local changed = template and not SameGearChoice(choice, template.gear[slot])
+        button.choice = choice
+        if choice and item then
+            button.icon:SetTexture(ResolveGearItemIcon(choice.id, item))
+            local r, g, b = GearQualityRGB(item.quality)
+            if button.iconFrame and button.iconFrame.SetBackdropBorderColor then
+                button.iconFrame:SetBackdropBorderColor(r, g, b, 1)
+            end
+            button.name:SetText(
+                (changed and "|cffffcc00* " or "")
+                .. QualityColor(item.quality)
+                .. ShortText(item.name, 24) .. "|r"
+            )
+            button.detail:SetText(
+                "|cffd0d0d0装等 " .. (item.itemLevel or 0)
+                .. " · ID " .. choice.id
+                .. " · " .. GearEnhancementSummary(choice) .. "|r"
+            )
+            for index = 1, 3 do
+                local gemTexture = button.gems and button.gems[index]
+                local gemID = choice.gems and choice.gems[index]
+                if gemTexture and gemID and gemID > 0 then
+                    gemTexture:SetTexture(ResolveGearItemIcon(gemID, data.gems and data.gems[gemID]))
+                    gemTexture:Show()
+                elseif gemTexture then
+                    gemTexture:Hide()
+                end
+            end
+            button:Enable()
+        else
+            button.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            button.name:SetText("|cff888888空缺（点击选择）|r")
+            button.detail:SetText("")
+            for index = 1, 3 do
+                if button.gems and button.gems[index] then
+                    button.gems[index]:Hide()
+                end
+            end
+            button:Enable()
+        end
+    end
+    if gearApplyButton then
+        if template then gearApplyButton:Enable() else gearApplyButton:Disable() end
+    end
+    if gearPreviewModel and gearPreviewModel.SetUnit then
+        pcall(gearPreviewModel.SetUnit, gearPreviewModel, "player")
+    end
+    if gearPreviewModel and gearPreviewModel.TryOn then
+        for _, slot in ipairs(gearSlots) do
+            local choice = gearDraft[slot]
+            if choice then
+                pcall(gearPreviewModel.TryOn, gearPreviewModel, "item:" .. choice.id)
+            end
+        end
+    end
+end
+
+local function SelectGearSpec(specKey)
+    if not GearTemplate(specKey) then
+        Print(gearPhase .. " 没有这个专精的配装数据。", true)
+        return
+    end
+    gearSelectedSpecKey = specKey
+    ResetGearDraft()
+    RefreshGearPreview()
+end
+
+local function SelectGearPhase(phase)
+    gearPhase = phase
+    ResetGearDraft()
+    RefreshGearPreview()
+end
+
+local function RefreshGearCatalog()
+    if not gearCatalogPanel or not gearCatalogSpecKey or not gearCatalogSlot then return end
+    local data = GearData()
+    local byPhase = data.candidates and data.candidates[gearPhase]
+    local bySpec = byPhase and byPhase[gearCatalogSpecKey]
+    local candidates = bySpec and bySpec[gearCatalogSlot] or {}
+    local pageSize = 8
+    local maxPage = math.max(1, math.ceil(#candidates / pageSize))
+    gearCatalogPage = math.max(1, math.min(gearCatalogPage or 1, maxPage))
+    local first = (gearCatalogPage - 1) * pageSize + 1
+    local spec = GearSpec(gearCatalogSpecKey)
+    gearCatalogTitle:SetText(
+        gearPhase .. " · " .. (spec and spec.name or gearCatalogSpecKey)
+        .. " · 替换" .. (gearSlotNames[gearCatalogSlot] or gearCatalogSlot)
+    )
+    gearCatalogPageLabel:SetText(
+        "第 " .. gearCatalogPage .. "/" .. maxPage
+        .. " 页，共 " .. #candidates .. " 件；点击只修改草稿，不会立刻穿上。"
+    )
+    for index, button in ipairs(gearCatalogButtons) do
+        local choice = candidates[first + index - 1]
+        local item = choice and data.items and data.items[choice.id]
+        button.choice = choice
+        if choice and item then
+            button.icon:SetTexture(ResolveGearItemIcon(choice.id, item))
+            local r, g, b = GearQualityRGB(item.quality)
+            if button.iconFrame and button.iconFrame.SetBackdropBorderColor then
+                button.iconFrame:SetBackdropBorderColor(r, g, b, 1)
+            end
+            button.name:SetText(
+                QualityColor(item.quality) .. ShortText(item.name, 42) .. "|r"
+                .. "  |cffffffff装等 " .. (item.itemLevel or 0) .. "|r"
+            )
+            button.detail:SetText(
+                "来源：" .. ShortText(choice.source, 65)
+                .. " · " .. GearEnhancementSummary(choice)
+            )
+            button:Show()
+        else
+            button.choice = nil
+            button:Hide()
+        end
+    end
+end
+
+ShowGearCatalog = function(specKey, slot, page)
+    local data = GearData()
+    local candidates = data and data.candidates and data.candidates[gearPhase]
+    candidates = candidates and candidates[specKey]
+    candidates = candidates and candidates[slot]
+    if not candidates or #candidates == 0 then
+        Print("这个阶段、专精与部位没有候选装备。", true)
+        return
+    end
+    gearCatalogSpecKey = specKey
+    gearCatalogSlot = slot
+    gearCatalogPage = page or 1
+    if not gearCatalogPanel then
+        gearCatalogPanel = CreateFrame("Frame", "KajigeTitanGearCatalogPanel", UIParent)
+        gearCatalogPanel:SetWidth(790)
+        gearCatalogPanel:SetHeight(590)
+        gearCatalogPanel:SetPoint("CENTER", UIParent, "CENTER", 130, -10)
+        gearCatalogPanel:SetFrameStrata("DIALOG")
+        gearCatalogPanel:SetMovable(true)
+        gearCatalogPanel:EnableMouse(true)
+        gearCatalogPanel:RegisterForDrag("LeftButton")
+        gearCatalogPanel:SetScript("OnDragStart", gearCatalogPanel.StartMoving)
+        gearCatalogPanel:SetScript("OnDragStop", gearCatalogPanel.StopMovingOrSizing)
+        ApplyGearBackdrop(gearCatalogPanel, gearUI.background, gearUI.gold, 12)
+        gearCatalogTitle = gearCatalogPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        gearCatalogTitle:SetPoint("TOPLEFT", gearCatalogPanel, "TOPLEFT", 22, -18)
+        gearCatalogPageLabel = gearCatalogPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        gearCatalogPageLabel:SetPoint("TOPLEFT", gearCatalogTitle, "BOTTOMLEFT", 0, -7)
+        local close = CreateFrame("Button", nil, gearCatalogPanel, "UIPanelCloseButton")
+        close:SetPoint("TOPRIGHT", gearCatalogPanel, "TOPRIGHT", -5, -5)
+        for index = 1, 8 do
+            local button = CreateFrame("Button", nil, gearCatalogPanel)
+            button:SetWidth(744)
+            button:SetHeight(52)
+            button:SetPoint("TOPLEFT", gearCatalogPanel, "TOPLEFT", 22, -70 - (index - 1) * 56)
+            button:SetText("")
+            ApplyGearBackdrop(button, gearUI.card, gearUI.border, 8)
+            button.iconFrame = CreateFrame("Frame", nil, button)
+            button.iconFrame:SetWidth(40)
+            button.iconFrame:SetHeight(40)
+            button.iconFrame:SetPoint("LEFT", button, "LEFT", 7, 0)
+            ApplyGearBackdrop(button.iconFrame, gearUI.background, gearUI.border, 7)
+            button.icon = button.iconFrame:CreateTexture(nil, "ARTWORK")
+            button.icon:SetWidth(38)
+            button.icon:SetHeight(38)
+            button.icon:SetPoint("CENTER", button.iconFrame, "CENTER", 0, 0)
+            button.name = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            button.name:SetPoint("TOPLEFT", button, "TOPLEFT", 53, -7)
+            button.name:SetWidth(680)
+            button.name:SetHeight(15)
+            button.name:SetJustifyH("LEFT")
+            button.detail = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            button.detail:SetPoint("TOPLEFT", button.name, "BOTTOMLEFT", 0, -2)
+            button.detail:SetWidth(680)
+            button.detail:SetHeight(15)
+            button.detail:SetJustifyH("LEFT")
+            button:SetScript("OnClick", function(self)
+                if not self.choice then return end
+                gearDraft[gearCatalogSlot] = CopyGearChoice(self.choice)
+                RefreshGearPreview()
+                gearCatalogPanel:Hide()
+            end)
+            button:SetScript("OnEnter", function(self)
+                if not self.choice then return end
+                SetGearBackdropColors(self, gearUI.cardHover, gearUI.gold)
+                ShowGearChoiceTooltip(
+                    self,
+                    self.choice,
+                    gearCatalogSlot,
+                    "点击选用这件装备"
+                )
+            end)
+            button:SetScript("OnLeave", function(self)
+                SetGearBackdropColors(self, gearUI.card, gearUI.border)
+                GameTooltip:Hide()
+            end)
+            gearCatalogButtons[index] = button
+        end
+        CreateGearActionButton(gearCatalogPanel, "上一页", 226, -532, 100, function()
+            gearCatalogPage = gearCatalogPage - 1
+            RefreshGearCatalog()
+        end)
+        CreateGearActionButton(gearCatalogPanel, "恢复本部位默认", 338, -532, 130, function()
+            local template = GearTemplate(gearCatalogSpecKey)
+            gearDraft[gearCatalogSlot] = CopyGearChoice(template and template.gear[gearCatalogSlot])
+            RefreshGearPreview()
+            gearCatalogPanel:Hide()
+        end)
+        CreateGearActionButton(gearCatalogPanel, "下一页", 480, -532, 100, function()
+            gearCatalogPage = gearCatalogPage + 1
+            RefreshGearCatalog()
+        end)
+        gearCatalogPanel:Hide()
+    end
+    RefreshGearCatalog()
+    gearCatalogPanel:Show()
+end
+
+local function UpdateGearTargetLabel()
+    if not gearTargetLabel then return end
+    if not IsLeaderOrGM() then
+        gearTargetLabel:SetText(
+            "当前配装目标：|cff33ff99自己（普通账号固定）|r"
+        )
+        return
+    end
+    gearTargetLabel:SetText(
+        gearTargetName
+        and ("当前配装目标：|cff33ff99" .. gearTargetName .. "|r")
+        or "当前配装目标：|cff33ff99自己|r"
+    )
+end
+
+local function SelectCurrentGearTarget()
+    if not IsLeaderOrGM() then
+        gearTargetName = nil
+        UpdateGearTargetLabel()
+        Print("普通账号只能给自己换装。", true)
+        return
+    end
+    if not UnitExists("target")
+        or UnitIsUnit("target", "player")
+        or not UnitIsPlayer("target") then
+        Print("请先选中一个在线人类玩家或机器人。", true)
+        return
+    end
+    gearTargetName = UnitName("target")
+    UpdateGearTargetLabel()
+end
+
+local function ApplyGearDraft()
+    local template = GearTemplate(gearSelectedSpecKey)
+    if not template then
+        Print("请先选择职业专精。", true)
+        return
+    end
+    local overrides = {}
+    local compact = {}
+    for _, slot in ipairs(gearSlots) do
+        local choice = gearDraft[slot]
+        if choice and not SameGearChoice(choice, template.gear[slot]) then
+            table.insert(overrides, slot .. ":" .. choice.id)
+            table.insert(compact, tostring(choice.id))
+        else
+            table.insert(compact, "0")
+        end
+    end
+    local targetMode = IsLeaderOrGM() and gearTargetName
+    if #overrides > 0 then
+        if targetMode then
+            Send(
+                ".kjg gear loadout player " .. gearTargetName .. " "
+                .. gearPhase .. " " .. gearSelectedSpecKey .. " "
+                .. table.concat(compact, ",")
+            )
+        else
+            Send(
+                ".kjg gear loadout self " .. gearPhase .. " "
+                .. gearSelectedSpecKey .. " " .. table.concat(compact, ",")
+            )
+        end
+    elseif targetMode then
+        Send(
+            ".kjg gear player " .. gearTargetName .. " "
+            .. gearPhase .. " " .. gearSelectedSpecKey
+        )
+    else
+        Send(".kjg gear self " .. gearPhase .. " " .. gearSelectedSpecKey)
+    end
+    Print("已提交整套配装；服务端会统一校验职业、候选池、附魔和宝石后应用。")
+end
+
+local function StripCurrentGearTarget()
+    if IsLeaderOrGM() and gearTargetName then
+        Send(".kjg gear strip player " .. gearTargetName)
+    else
+        Send(".kjg gear strip self")
+    end
+end
+
+StaticPopupDialogs["KAJIGE_GEAR_STRIP_TARGET"] = {
+    text = "确认卸下并永久删除当前配装目标身上的全部装备？训练服生成装备不会放回背包。",
+    button1 = "确认脱光",
+    button2 = "取消",
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnAccept = StripCurrentGearTarget,
+}
+
+StaticPopupDialogs["KAJIGE_GEAR_STRIP_GROUP"] = {
+    text = "确认卸下并永久删除全团所有在线真人和 BOT 身上的全部装备？",
+    button1 = "确认全团脱光",
+    button2 = "取消",
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnAccept = function() Send(".kjg gear strip group") end,
+}
+
+local function CreateGearSlotButton(parent, slot, x, y, width, side)
+    local button = CreateFrame("Button", nil, parent)
+    width = width or 190
+    side = side or "left"
+    button:SetWidth(width)
+    button:SetHeight(48)
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    button:SetText("")
+    button.gearSlotID = slot
+    ApplyGearBackdrop(button, gearUI.card, gearUI.border, 8)
+
+    button.iconFrame = CreateFrame("Frame", nil, button)
+    button.iconFrame:SetWidth(42)
+    button.iconFrame:SetHeight(42)
+    if side == "right" then
+        button.iconFrame:SetPoint("RIGHT", button, "RIGHT", -3, 0)
+    else
+        button.iconFrame:SetPoint("LEFT", button, "LEFT", 3, 0)
+    end
+    ApplyGearBackdrop(button.iconFrame, gearUI.background, gearUI.border, 7)
+    button.icon = button.iconFrame:CreateTexture(nil, "ARTWORK")
+    button.icon:SetWidth(40)
+    button.icon:SetHeight(40)
+    button.icon:SetPoint("CENTER", button.iconFrame, "CENTER", 0, 0)
+
+    button.slot = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    button.slot:SetText("|cff33ff99" .. gearSlotNames[slot] .. "|r")
+    button.name = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    button.name:SetWidth(width - 88)
+    button.name:SetHeight(15)
+    button.detail = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    button.detail:SetWidth(width - 52)
+    button.detail:SetHeight(14)
+
+    if side == "right" then
+        button.slot:SetPoint("TOPRIGHT", button, "TOPRIGHT", -50, -5)
+        button.name:SetPoint("RIGHT", button.slot, "LEFT", -5, 0)
+        button.name:SetJustifyH("RIGHT")
+        button.detail:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -50, 7)
+        button.detail:SetJustifyH("RIGHT")
+    else
+        button.slot:SetPoint("TOPLEFT", button, "TOPLEFT", 50, -5)
+        button.name:SetPoint("LEFT", button.slot, "RIGHT", 5, 0)
+        button.name:SetJustifyH("LEFT")
+        button.detail:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 50, 7)
+        button.detail:SetJustifyH("LEFT")
+    end
+
+    button.gems = {}
+    for index = 1, 3 do
+        local gem = button.iconFrame:CreateTexture(nil, "OVERLAY")
+        gem:SetWidth(11)
+        gem:SetHeight(11)
+        gem:SetPoint("BOTTOMLEFT", button.iconFrame, "BOTTOMLEFT", 3 + (index - 1) * 12, 3)
+        gem:Hide()
+        button.gems[index] = gem
+    end
+
+    button:SetScript("OnClick", function()
+        if not gearSelectedSpecKey then
+            Print("请先选择左侧职业专精。", true)
+            return
+        end
+        ShowGearCatalog(gearSelectedSpecKey, slot, 1)
+    end)
+    button:SetScript("OnEnter", function(self)
+        if not self.choice then return end
+        SetGearBackdropColors(self, gearUI.cardHover, gearUI.gold)
+        ShowGearChoiceTooltip(self, self.choice, slot)
+    end)
+    button:SetScript("OnLeave", function(self)
+        SetGearBackdropColors(self, gearUI.card, gearUI.border)
+        GameTooltip:Hide()
+    end)
+    gearSlotButtons[slot] = button
+end
+
+ToggleGearPanel = function()
+    local data = GearData()
+    if not data or not data.specs or not data.templates or not data.items then
+        Print("P4/P5/P6 配装预览数据没有加载，请检查 KJG 插件文件。", true)
+        return
+    end
+    if not IsLeaderOrGM() then
+        gearTargetName = nil
+    end
+    if not gearPanel then
+        local adminMode = IsLeaderOrGM()
+        gearPanel = CreateFrame(
+            "Frame",
+            "KajigeTitanGearPanel",
+            UIParent
+        )
+        gearPanel:SetWidth(1000)
+        gearPanel:SetHeight(700)
+        gearPanel:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        gearPanel:SetMovable(true)
+        gearPanel:EnableMouse(true)
+        gearPanel:RegisterForDrag("LeftButton")
+        gearPanel:SetScript("OnDragStart", gearPanel.StartMoving)
+        gearPanel:SetScript("OnDragStop", gearPanel.StopMovingOrSizing)
+        ApplyGearBackdrop(gearPanel, gearUI.background, gearUI.gold, 12)
+
+        local title = gearPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormalLarge"
+        )
+        title:SetPoint("TOPLEFT", gearPanel, "TOPLEFT", 22, -18)
+        title:SetText("KJG · 时光服 P4/P5 与 P6 备战配装")
+        local subtitle = gearPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+        subtitle:SetText(
+            "喵影式纸娃娃布局 · 点击装备槽替换 · 悬停查看完整属性 · 最后统一应用"
+        )
+
+        local close = CreateFrame(
+            "Button",
+            nil,
+            gearPanel,
+            "UIPanelCloseButton"
+        )
+        close:SetPoint("TOPRIGHT", gearPanel, "TOPRIGHT", -5, -5)
+        close:SetScript("OnClick", function()
+            CloseControlSubPanel(gearPanel)
+        end)
+
+        gearTargetLabel = gearPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormal"
+        )
+        gearTargetLabel:SetPoint(
+            "TOPLEFT",
+            gearPanel,
+            "TOPLEFT",
+            22,
+            -66
+        )
+        UpdateGearTargetLabel()
+
+        gearPhaseLabel = gearPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        gearPhaseLabel:SetPoint("TOPLEFT", gearPanel, "TOPLEFT", 360, -66)
+        gearBuildLabel = gearPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        gearBuildLabel:SetPoint("TOPLEFT", gearPanel, "TOPLEFT", 570, -66)
+        gearBuildLabel:SetWidth(390)
+        gearBuildLabel:SetJustifyH("LEFT")
+
+        local specSection = CreateGearSection(
+            gearPanel,
+            "职业与专精",
+            18,
+            -104,
+            212,
+            548
+        )
+        local dollSection = CreateGearSection(
+            gearPanel,
+            "装备方案",
+            238,
+            -104,
+            540,
+            548
+        )
+        local actionSection = CreateGearSection(
+            gearPanel,
+            "应用与目标",
+            786,
+            -104,
+            196,
+            548
+        )
+
+        for index, spec in ipairs(data.specs) do
+            local specInfo = spec
+            local column = math.floor((index - 1) / 15)
+            local row = (index - 1) % 15
+            local button = CreateGearActionButton(
+                specSection,
+                specInfo.name,
+                8 + column * 98,
+                -34 - row * 32,
+                94,
+                function() SelectGearSpec(specInfo.key) end
+            )
+            button.specKey = specInfo.key
+            button.specName = specInfo.name
+            gearSpecButtons[index] = button
+        end
+
+        local modelStage = CreateFrame("Frame", nil, dollSection)
+        modelStage:SetWidth(128)
+        modelStage:SetHeight(372)
+        modelStage:SetPoint("TOP", dollSection, "TOP", 0, -54)
+        ApplyGearBackdrop(modelStage, {0.035, 0.045, 0.065, 0.92}, gearUI.border, 8)
+        gearPreviewModel = CreateFrame("DressUpModel", nil, modelStage)
+        gearPreviewModel:SetPoint("TOPLEFT", modelStage, "TOPLEFT", 4, -4)
+        gearPreviewModel:SetPoint("BOTTOMRIGHT", modelStage, "BOTTOMRIGHT", -4, 4)
+        if gearPreviewModel.SetUnit then
+            pcall(gearPreviewModel.SetUnit, gearPreviewModel, "player")
+        end
+        local modelHint = dollSection:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        modelHint:SetPoint("TOP", dollSection, "TOP", 0, -32)
+        modelHint:SetText("纸娃娃预览 · 点击任意装备槽进行替换")
+
+        local leftSlots = {1, 2, 3, 15, 5, 9, 10}
+        local rightSlots = {6, 7, 8, 11, 12, 13, 14}
+        for index, slot in ipairs(leftSlots) do
+            CreateGearSlotButton(dollSection, slot, 9, -50 - (index - 1) * 55, 190, "left")
+        end
+        for index, slot in ipairs(rightSlots) do
+            CreateGearSlotButton(dollSection, slot, 341, -50 - (index - 1) * 55, 190, "right")
+        end
+        CreateGearSlotButton(dollSection, 16, 9, -445, 166, "left")
+        CreateGearSlotButton(dollSection, 17, 187, -445, 166, "left")
+        CreateGearSlotButton(dollSection, 18, 365, -445, 166, "left")
+
+        local actionY = -38
+        CreateGearActionButton(actionSection, "目标：自己", 10, actionY, 176, function()
+            gearTargetName = nil
+            UpdateGearTargetLabel()
+        end)
+        actionY = actionY - 32
+        if adminMode then
+            CreateGearActionButton(
+                actionSection,
+                "目标：当前选中玩家",
+                10,
+                actionY,
+                176,
+                SelectCurrentGearTarget
+            )
+            actionY = actionY - 32
+            CreateGearActionButton(
+                actionSection,
+                "目标：输入角色名…",
+                10,
+                actionY,
+                176,
+                PromptGearTarget
+            )
+            actionY = actionY - 42
+        end
+        CreateGearActionButton(actionSection, "P4", 10, actionY, 54, function()
+            SelectGearPhase("P4")
+        end)
+        CreateGearActionButton(actionSection, "P5", 71, actionY, 54, function()
+            SelectGearPhase("P5")
+        end)
+        CreateGearActionButton(actionSection, "P6", 132, actionY, 54, function()
+            SelectGearPhase("P6")
+        end)
+        actionY = actionY - 44
+        gearApplyButton = CreateGearActionButton(
+            actionSection,
+            "确认并应用整套",
+            10,
+            actionY,
+            176,
+            ApplyGearDraft
+        )
+        SetGearBackdropColors(gearApplyButton, gearUI.cardHover, gearUI.gold)
+        actionY = actionY - 34
+        CreateGearActionButton(actionSection, "恢复当前默认", 10, actionY, 176, function()
+            ResetGearDraft()
+            RefreshGearPreview()
+        end)
+        actionY = actionY - 44
+        if adminMode then
+            CreateGearActionButton(actionSection, "一键全团 P4 BiS", 10, actionY, 176, function()
+                Send(".kjg gear group P4")
+            end)
+            actionY = actionY - 32
+            CreateGearActionButton(actionSection, "一键全团 P5", 10, actionY, 176, function()
+                Send(".kjg gear group P5")
+            end)
+            actionY = actionY - 32
+            CreateGearActionButton(actionSection, "全团 P6 备战装", 10, actionY, 176, function()
+                Send(".kjg gear group P6")
+            end)
+            actionY = actionY - 44
+            CreateGearActionButton(actionSection, "目标脱光…", 10, actionY, 176, function()
+                StaticPopup_Show("KAJIGE_GEAR_STRIP_TARGET")
+            end)
+            actionY = actionY - 32
+            CreateGearActionButton(actionSection, "全团脱光…", 10, actionY, 176, function()
+                StaticPopup_Show("KAJIGE_GEAR_STRIP_GROUP")
+            end)
+        else
+            CreateGearActionButton(actionSection, "自己脱光…", 10, actionY, 176, function()
+                StaticPopup_Show("KAJIGE_GEAR_STRIP_TARGET")
+            end)
+        end
+
+        local footer = gearPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        footer:SetPoint(
+            "BOTTOMLEFT",
+            gearPanel,
+            "BOTTOMLEFT",
+            18,
+            18
+        )
+        footer:SetText(
+            "装备名称按品质着色；小图标为真实宝石。鼠标悬停查看属性与来源，点击装备槽打开候选列表。"
+        )
+        gearPanel:Hide()
+    end
+    if not gearSelectedSpecKey and data.specs[1] then
+        gearSelectedSpecKey = data.specs[1].key
+        ResetGearDraft()
+    end
+    UpdateGearTargetLabel()
+    RefreshGearPreview()
+    if gearPanel:IsShown() then
+        CloseControlSubPanel(gearPanel)
+    else
+        gearPanel:Show()
+    end
+end
+
+UpdateRosterStatus = function()
+    if rosterStatus then
+        local raidCount = GetNumRaidMembers() or 0
+        local groupType = raidCount > 0
+            and "25 人团队"
+            or (
+                (GetNumPartyMembers() or 0) > 0
+                and "5 人小队（补员时会自动转团队）"
+                or "尚未组队"
+            )
+        rosterStatus:SetText(
+            "编组类型：" .. groupType .. "；在线 "
+            .. CurrentOnlineGroupSize() .. "/" .. CurrentGroupSize()
+            .. "；编制上限 25 人"
+        )
+    end
+end
+
+local function ToggleRosterPanel()
+    if not rosterPanel then
+        rosterPanel = CreateFrame(
+            "Frame",
+            "KajigeSWTBotRosterPanel",
+            UIParent
+        )
+        rosterPanel:SetWidth(430)
+        rosterPanel:SetHeight(270)
+        rosterPanel:SetPoint("CENTER", UIParent, "CENTER", 300, 0)
+        rosterPanel:SetMovable(true)
+        rosterPanel:EnableMouse(true)
+        rosterPanel:RegisterForDrag("LeftButton")
+        rosterPanel:SetScript("OnDragStart", rosterPanel.StartMoving)
+        rosterPanel:SetScript("OnDragStop", rosterPanel.StopMovingOrSizing)
+        rosterPanel:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = {left = 11, right = 12, top = 12, bottom = 11},
+        })
+
+        local title = rosterPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontNormalLarge"
+        )
+        title:SetPoint("TOPLEFT", rosterPanel, "TOPLEFT", 22, -18)
+        title:SetText("逐个添加机器人")
+        rosterStatus = rosterPanel:CreateFontString(
+            nil,
+            "OVERLAY",
+            "GameFontHighlightSmall"
+        )
+        rosterStatus:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -7)
+
+        local close = CreateFrame(
+            "Button",
+            nil,
+            rosterPanel,
+            "UIPanelCloseButton"
+        )
+        close:SetPoint("TOPRIGHT", rosterPanel, "TOPRIGHT", -5, -5)
+        close:SetScript("OnClick", function()
+            CloseControlSubPanel(rosterPanel)
+        end)
+
+        local botClasses = {
+            {"warrior", "战士"}, {"paladin", "圣骑士"},
+            {"hunter", "猎人"}, {"rogue", "潜行者"},
+            {"priest", "牧师"}, {"shaman", "萨满祭司"},
+            {"mage", "法师"}, {"warlock", "术士"},
+            {"druid", "德鲁伊"}, {"dk", "死亡骑士"},
+        }
+        for index, value in ipairs(botClasses) do
+            local column = (index - 1) % 2
+            local row = math.floor((index - 1) / 2)
+            PanelButton(
+                rosterPanel,
+                "+ 1 名" .. value[2],
+                22 + column * 197,
+                -70 - row * 31,
+                190,
+                function()
+                    AddBotClass(value[1], value[2])
+                    UpdateRosterStatus()
+                end
+            )
+        end
+        PanelButton(
+            rosterPanel,
+            "移除当前选中的机器人",
+            22,
+            -230,
+            387,
+            function()
+                if not UnitExists("target") or UnitIsUnit("target", "player") then
+                    Print("请先选中要移除的机器人。", true)
+                    return
+                end
+                QueueCommand(".playerbots bot remove")
+                Print("正在移除当前选中的机器人；真人玩家不会被移除。")
+            end
+        )
+        rosterPanel:Hide()
+    end
+    UpdateRosterStatus()
+    if rosterPanel:IsShown() then
+        CloseControlSubPanel(rosterPanel)
+    else
+        rosterPanel:Show()
+    end
+end
+
+local function StopTrainingQueue()
+    queue = {}
+    fillState = nil
+    singleAddState = nil
+    Print("命令队列已停止。")
+end
+
+local function StartStandardTraining()
+    local started = FillRoster(25, function()
+        QueueCommand(".kjg gear group P6")
+        QueueCommand(".kjg bot formation spread")
+        QueueCommand(".kjg bot dps 6000")
+        QueueCommand(".kjg bot tps 12000")
+        QueueCommand(".kjg bot threat tank 130")
+        QueueCommand(".kjg bot tanks 2")
+        QueueCommand(".kjg bot variance 12")
+        QueueCommand(".swp ready")
+        Print("25 人编制已就绪，正在应用标准训练开场。")
+    end)
+    if started then
+        Print("标准训练开场已排队；补满 25 人后自动应用。")
+    end
+end
+
+local function CreateControlPage(key, titleText, subtitleText)
+    local page = CreateFrame("Frame", nil, panel)
+    page:SetWidth(505)
+    page:SetHeight(450)
+    page:SetPoint("TOPLEFT", panel, "TOPLEFT", 190, -76)
+    page:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 12,
+        insets = {left = 4, right = 4, top = 4, bottom = 4},
+    })
+    local title = page:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", page, "TOPLEFT", 20, -16)
+    title:SetText(titleText)
+    local subtitle = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+    subtitle:SetWidth(462)
+    subtitle:SetJustifyH("LEFT")
+    subtitle:SetText(subtitleText)
+    page.controlTitle = titleText
+    panelPages[key] = page
+    page:Hide()
+    return page
+end
+
+local function ShowControlPage(key)
+    if not panelPages[key] then key = "overview" end
+    for pageKey, page in pairs(panelPages) do
+        if pageKey == key then page:Show() else page:Hide() end
+    end
+    for pageKey, button in pairs(panelNavButtons) do
+        if pageKey == key then button:Disable() else button:Enable() end
+    end
+    activePanelPage = key
+    DB.controlPanelPage = key
+    if panelBreadcrumb then
+        panelBreadcrumb:SetText(
+            "KJG 控制台  /  " .. panelPages[key].controlTitle
+        )
+    end
+end
+
+local function BuildPanel()
+    panel = CreateFrame("Frame", "KajigeSWTLeaderPanel", UIParent)
+    panel:SetWidth(720)
+    panel:SetHeight(560)
+    panel:SetPoint("CENTER")
+    panel:SetMovable(true)
+    panel:EnableMouse(true)
+    panel:RegisterForDrag("LeftButton")
+    panel:SetScript("OnDragStart", panel.StartMoving)
+    panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
+    panel:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = {left = 11, right = 12, top = 12, bottom = 11},
+    })
+    panel:Hide()
+
+    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 22, -18)
+    title:SetText("咔鸡哥 P6 训练控制台")
+    panelBreadcrumb = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    panelBreadcrumb:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
+
+    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -5, -5)
+
+    Label(panel, "功能分类", -76)
+    local navigation = {
+        {"overview", "总览与恢复"},
+        {"raids", "P6 奥杜尔"},
+        {"legacy", "其他团本"},
+        {"roster", "团队与编组"},
+        {"simulation", "战斗模拟"},
+        {"formation", "阵型与指挥"},
+        {"personal", "个人与装备"},
+    }
+    for index, definition in ipairs(navigation) do
+        local key = definition[1]
+        local button = PanelButton(
+            panel,
+            definition[2],
+            20,
+            -98 - (index - 1) * 38,
+            150,
+            function() ShowControlPage(key) end
+        )
+        button:SetHeight(30)
+        panelNavButtons[key] = button
+    end
+
+    local hierarchyNote = panel:CreateFontString(
+        nil,
+        "OVERLAY",
+        "GameFontHighlightSmall"
+    )
+    hierarchyNote:SetPoint("TOPLEFT", panel, "TOPLEFT", 22, -386)
+    hierarchyNote:SetWidth(146)
+    hierarchyNote:SetJustifyH("LEFT")
+    hierarchyNote:SetText(
+        "先选择功能分类，再在右侧完成操作。带“…”的按钮会进入二级配置表单。"
+    )
+
+    local overviewPage = CreateControlPage(
+        "overview",
+        "总览与恢复",
+        "最常用的开场、恢复和故障处理集中在这里。"
+    )
+    Label(overviewPage, "快速开始", -72)
+    PanelButton(overviewPage, "P6 · 25 人训练开场", 20, -94, 222, StartStandardTraining)
+    CommandButton(overviewPage, "全团恢复", 255, -94, 222, ".swp ready")
+    Label(overviewPage, "故障恢复", -140)
+    PanelButton(overviewPage, "原地复活", 20, -162, 145, function()
+        SendCommandWhileDead(".kjg self revive")
+    end)
+    PanelButton(overviewPage, "重置首领与提示", 176, -162, 145, ResetBossAndCoach)
+    PanelButton(overviewPage, "停止命令队列", 332, -162, 145, StopTrainingQueue)
+    Label(overviewPage, "检查与常用入口", -208)
+    PanelButton(overviewPage, "审计训练状态", 20, -230, 145, function()
+        Send(".kjg audit")
+    end)
+    PanelButton(overviewPage, "团队增益…", 176, -230, 145, function()
+        OpenControlSubPanel(ToggleBuffPanel, panel)
+    end)
+    PanelButton(overviewPage, "团本传送…", 332, -230, 145, function()
+        OpenControlSubPanel(ToggleTeleportPanel, panel)
+    end)
+    local overviewNote = overviewPage:CreateFontString(
+        nil,
+        "OVERLAY",
+        "GameFontHighlightSmall"
+    )
+    PanelButton(overviewPage, "GM 单刷奥杜尔", 20, -268, 222, StartP6SoloTraining)
+    PanelButton(overviewPage, "奥杜尔机制教练", 255, -268, 222, OpenP6Coach)
+    overviewNote:SetPoint("TOPLEFT", overviewPage, "TOPLEFT", 20, -310)
+    overviewNote:SetWidth(457)
+    overviewNote:SetJustifyH("LEFT")
+    overviewNote:SetText(
+        "P6 开场补满 25 人，应用 P6 备战装（沿用 P5 候选，非完整 P6 BiS）、分散阵型、"
+        .. "6 千 DPS、1.2 万 TPS、130% 仇恨、2 坦和 12% 输出波动，最后恢复全团。"
+        .. "烈焰巨兽载具与困难模式需按机制交互，机器人不会代替场景操作。"
+    )
+
+    local p6Page = CreateControlPage(
+        "raids", "P6 奥杜尔",
+        "25 人奥杜尔 14 场遭遇；首领按钮仅传自己，困难模式按场景机制触发。"
+    )
+    for sectionIndex = 4, 6 do
+        local section = teleportRaids[sectionIndex]
+        local rowY = -72 - (sectionIndex - 4) * 100
+        Label(p6Page, section.name, rowY)
+        for index, definition in ipairs(section.buttons) do
+            local destination = definition[2]
+            PanelButton(p6Page, definition[1], 20 + ((index - 1) % 3) * 156,
+                rowY - 22 - math.floor((index - 1) / 3) * 30, 145,
+                function() Send(".kjg teleport self " .. destination) end)
+        end
+    end
+    PanelButton(p6Page, "个人训练…", 20, -382, 145, function()
+        OpenControlSubPanel(ToggleSoloPanel, panel)
+    end)
+    PanelButton(p6Page, "奥杜尔机制教练", 176, -382, 145, OpenP6Coach)
+    PanelButton(p6Page, "重置当前首领", 332, -382, 145, ResetBossAndCoach)
+    PanelButton(p6Page, "全团传送 / 其他入口…", 20, -414, 222, function()
+        OpenControlSubPanel(ToggleTeleportPanel, panel)
+    end)
+    PanelButton(p6Page, "GM 召唤奥尔加隆", 255, -414, 222, function()
+        if permissionState.verified and permissionState.security >= 1 then
+            Send(".kjg ulduar algalon")
+        else
+            Print("请先验证 GM 权限，并进入奥杜尔观星室。", true)
+        end
+    end)
+
+    local raidsPage = CreateControlPage(
+        "legacy",
+        "其他团本",
+        "这里负责选择训练首领；跨地图或精确安全点请进入团本传送表单。"
+    )
+    Label(raidsPage, "太阳之井 80 级训练", -72)
+    CommandButton(raidsPage, "卡雷苟斯", 20, -94, 145, ".swp kalecgos")
+    CommandButton(raidsPage, "布鲁塔卢斯", 176, -94, 145, ".swp brutallus")
+    CommandButton(raidsPage, "菲米丝", 332, -94, 145, ".swp felmyst")
+    CommandButton(raidsPage, "艾瑞达双子", 20, -124, 145, ".swp twins")
+    CommandButton(raidsPage, "穆鲁", 176, -124, 145, ".swp muru")
+    CommandButton(raidsPage, "基尔加丹", 332, -124, 145, ".swp kiljaeden")
+    Label(raidsPage, "祖阿曼 80 级训练", -170)
+    CommandButton(raidsPage, "埃基尔松", 20, -192, 145, ".za akilzon")
+    CommandButton(raidsPage, "纳洛拉克", 176, -192, 145, ".za nalorakk")
+    CommandButton(raidsPage, "加亚莱", 332, -192, 145, ".za janalai")
+    CommandButton(raidsPage, "哈尔拉兹", 20, -222, 145, ".za halazzi")
+    CommandButton(raidsPage, "玛拉卡斯", 176, -222, 145, ".za malacrass")
+    CommandButton(raidsPage, "祖尔金", 332, -222, 145, ".za zuljin")
+    Label(raidsPage, "首领维护", -268)
+    CommandButton(raidsPage, "全团恢复", 20, -290, 145, ".swp ready")
+    PanelButton(raidsPage, "重置当前首领", 176, -290, 145, ResetBossAndCoach)
+    PanelButton(raidsPage, "团本传送…", 332, -290, 145, function()
+        OpenControlSubPanel(ToggleTeleportPanel, panel)
+    end)
+
+    local rosterPage = CreateControlPage(
+        "roster",
+        "团队与编组",
+        "真人召集不改变团队关系；机器人数量、团队增益和全团配装按团队生命周期排列。"
+    )
+    Label(rosterPage, "真人召集", -72)
+    PanelButton(rosterPage, "指定真人召集…", 20, -94, 145, PromptSummonPlayer)
+    CommandButton(rosterPage, "召集团队内真人", 176, -94, 145, ".kjg summon group")
+    CommandButton(rosterPage, "召集全部在线真人", 332, -94, 145, ".kjg summon online")
+    Label(rosterPage, "机器人编组", -140)
+    PanelButton(rosterPage, "一键恢复离线 BOT", 20, -162, 145, RestoreOfflineBots)
+    PanelButton(rosterPage, "补满 25", 176, -162, 145, function()
+        FillRoster(25)
+    end)
+    CommandButton(rosterPage, "一键清 BOT", 332, -162, 145, ".kjg bot clear")
+    PanelButton(rosterPage, "逐个加 BOT…", 20, -194, 145, function()
+        OpenControlSubPanel(ToggleRosterPanel, panel)
+    end)
+    Label(rosterPage, "团队准备", -238)
+    PanelButton(rosterPage, "团队增益…", 20, -260, 145, function()
+        OpenControlSubPanel(ToggleBuffPanel, panel)
+    end)
+    PanelButton(rosterPage, "P4/P5/P6 配装…", 176, -260, 145, function()
+        OpenControlSubPanel(ToggleGearPanel, panel)
+    end)
+    CommandButton(rosterPage, "全团恢复", 332, -260, 145, ".swp ready")
+
+    local simulationPage = CreateControlPage(
+        "simulation",
+        "战斗模拟",
+        "所有数值只控制训练机器人；不会改动团长本人的技能伤害。"
+    )
+    Label(simulationPage, "机器人固定输出（单个 DPS）", -72)
+    CommandButton(simulationPage, "输出 4千", 20, -94, 106, ".kjg bot dps 4000")
+    CommandButton(simulationPage, "输出 6千", 137, -94, 106, ".kjg bot dps 6000")
+    CommandButton(simulationPage, "输出 8千", 254, -94, 106, ".kjg bot dps 8000")
+    CommandButton(simulationPage, "输出 1万", 371, -94, 106, ".kjg bot dps 10000")
+    Label(simulationPage, "机器人固定仇恨（坦克 TPS）", -140)
+    CommandButton(simulationPage, "仇恨 8千", 20, -162, 106, ".kjg bot tps 8000")
+    CommandButton(simulationPage, "仇恨 1.2万", 137, -162, 106, ".kjg bot tps 12000")
+    CommandButton(simulationPage, "仇恨 1.6万", 254, -162, 106, ".kjg bot tps 16000")
+    CommandButton(simulationPage, "关闭模拟", 371, -162, 106, ".kjg bot simulate off")
+    Label(simulationPage, "坦克参数", -208)
+    CommandButton(simulationPage, "坦克仇恨 110%", 20, -230, 106, ".kjg bot threat tank 110")
+    CommandButton(simulationPage, "坦克仇恨 130%", 137, -230, 106, ".kjg bot threat tank 130")
+    CommandButton(simulationPage, "2 名坦克", 254, -230, 106, ".kjg bot tanks 2")
+    CommandButton(simulationPage, "3 名坦克", 371, -230, 106, ".kjg bot tanks 3")
+    Label(simulationPage, "波动、承伤与装备", -276)
+    CommandButton(simulationPage, "输出波动 8%", 20, -298, 106, ".kjg bot variance 8")
+    CommandButton(simulationPage, "输出波动 15%", 137, -298, 106, ".kjg bot variance 15")
+    CommandButton(simulationPage, "承伤 25%", 254, -298, 106, ".swp damage 25")
+    CommandButton(simulationPage, "承伤 100%", 371, -298, 106, ".swp damage 100")
+    CommandButton(simulationPage, "全团 P6 备战装", 20, -328, 222, ".kjg gear group P6")
+    PanelButton(simulationPage, "停止命令队列", 255, -328, 222, StopTrainingQueue)
+
+    local formationPage = CreateControlPage(
+        "formation",
+        "阵型与指挥",
+        "先设置起手阵型，再用即时指挥控制当前选中目标和机器人行为。"
+    )
+    Label(formationPage, "机器人起手阵型", -72)
+    CommandButton(formationPage, "近战半圆", 20, -94, 106, ".kjg bot formation melee")
+    CommandButton(formationPage, "远程扇形", 137, -94, 106, ".kjg bot formation ranged")
+    CommandButton(formationPage, "全团分散", 254, -94, 106, ".kjg bot formation spread")
+    CommandButton(formationPage, "双组集合", 371, -94, 106, ".kjg bot formation stack2")
+    PanelButton(formationPage, "记录当前位置", 20, -126, 222, function()
+        Send(".kjg bot formation save")
+    end)
+    CommandButton(formationPage, "还原已记录站位", 255, -126, 222, ".kjg bot formation restore")
+    Label(formationPage, "即时指挥", -176)
+    PanelButton(formationPage, "全部跟随", 20, -198, 106, function() Bot("follow") end)
+    PanelButton(formationPage, "原地待命", 137, -198, 106, function() Bot("stay") end)
+    PanelButton(formationPage, "攻击目标", 254, -198, 106, function() Bot("attack my target") end)
+    PanelButton(formationPage, "拉取目标", 371, -198, 106, function() Bot("pull my target") end)
+    local formationNote = formationPage:CreateFontString(
+        nil,
+        "OVERLAY",
+        "GameFontHighlightSmall"
+    )
+    formationNote:SetPoint("TOPLEFT", formationPage, "TOPLEFT", 20, -254)
+    formationNote:SetWidth(457)
+    formationNote:SetJustifyH("LEFT")
+    formationNote:SetText(
+        "“记录当前位置”会保存每名在线训练机器人的当前站位；“还原”可在移动或传送后恢复。"
+    )
+
+    local personalPage = CreateControlPage(
+        "personal",
+        "个人与装备",
+        "角色自身能力、装备、传送和客户端视角工具集中在这里。"
+    )
+    Label(personalPage, "个人训练", -72)
+    PanelButton(personalPage, "个人训练…", 20, -94, 145, function()
+        OpenControlSubPanel(ToggleSoloPanel, panel)
+    end)
+    PanelButton(personalPage, "原地复活", 176, -94, 145, function()
+        SendCommandWhileDead(".kjg self revive")
+    end)
+    PanelButton(personalPage, "开启超远视角", 332, -94, 145, EnableUltraCamera)
+    Label(personalPage, "自用保护", -140)
+    CommandButton(personalPage, "无敌开启", 20, -162, 222, ".kjg self god on")
+    CommandButton(personalPage, "无敌关闭", 255, -162, 222, ".kjg self god off")
+    Label(personalPage, "装备与移动", -208)
+    PanelButton(personalPage, "P4/P5/P6 配装…", 20, -230, 222, function()
+        OpenControlSubPanel(ToggleGearPanel, panel)
+    end)
+    PanelButton(personalPage, "团本传送…", 255, -230, 222, function()
+        OpenControlSubPanel(ToggleTeleportPanel, panel)
+    end)
+    Label(personalPage, "快速移动与飞行坐骑", -276)
+    CommandButton(personalPage, "快速奔跑 300%", 20, -298, 222, ".kjg self speed on")
+    CommandButton(personalPage, "关闭快速奔跑", 255, -298, 222, ".kjg self speed off")
+    CommandButton(personalPage, "凤凰 310%", 20, -332, 108, ".kjg self mount phoenix")
+    CommandButton(personalPage, "米米尔隆的头部", 134, -332, 108, ".kjg self mount mimiron")
+    CommandButton(personalPage, "无敌", 255, -332, 108, ".kjg self mount invincible")
+    CommandButton(personalPage, "星骓", 369, -332, 108, ".kjg self mount celestial")
+    local movementNote = personalPage:CreateFontString(
+        nil,
+        "OVERLAY",
+        "GameFontHighlightSmall"
+    )
+    movementNote:SetPoint("TOPLEFT", personalPage, "TOPLEFT", 20, -368)
+    movementNote:SetWidth(457)
+    movementNote:SetJustifyH("LEFT")
+    movementNote:SetText(
+        "快速奔跑只在脱离战斗时生效，重新登录会自动恢复上次的开关。选择坐骑会同时学会专家级骑术和寒冷天气飞行；"
+        .. "凤凰和米米尔隆的头部只能在外域、诺森德等可飞行区域召唤，无敌和星骓在副本里会变成地面坐骑。"
+    )
+
+    local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    footer:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 22, 18)
+    footer:SetText("拖动窗口标题可移动主面板 · /kjg 打开或关闭控制台")
+
+    ShowControlPage(activePanelPage)
+end
+
+local function TogglePanel()
+    if not IsLeaderOrGM() then
+        teleportScope = "self"
+        ToggleSoloPanel()
+        Print("普通账号已打开 KJG 个人训练面板；服务器只允许自用能力和自传送。")
+        return
+    end
+    if not panel then BuildPanel() end
+    if panel:IsShown() then panel:Hide() else panel:Show() end
+end
+
+local botClassLabels = {
+    warrior = "战士",
+    paladin = "圣骑士",
+    hunter = "猎人",
+    rogue = "潜行者",
+    priest = "牧师",
+    shaman = "萨满祭司",
+    mage = "法师",
+    warlock = "术士",
+    druid = "德鲁伊",
+    dk = "死亡骑士",
+}
+
+local function HandleKJGSlash(message)
+    local value = string.lower(
+        string.gsub(string.gsub(message or "", "^%s+", ""), "%s+$", "")
+    )
+    if value == "" or value == "open" or value == "toggle" then
+        TogglePanel()
+        return
+    end
+    if value == "permission" or value == "permissions" or value == "access" then
+        if permissionPanel then
+            if permissionPanel:IsShown() then
+                permissionPanel:Hide()
+            else
+                permissionPanel:Show()
+                Send(".kjg permission")
+            end
+        end
+        return
+    end
+    if value == "teleport" or value == "tp" then
+        if not IsLeaderOrGM() then
+            teleportScope = "self"
+        end
+        ToggleTeleportPanel()
+        return
+    end
+    if value == "gear" or value == "p4" or value == "p5" or value == "bis" then
+        if not IsLeaderOrGM() then
+            gearTargetName = nil
+        end
+        if value == "p6" then gearPhase = "P6" end
+        if value == "p5" then gearPhase = "P5" end
+        if value == "p4" or value == "bis" then gearPhase = "P4" end
+        ToggleGearPanel()
+        return
+    end
+    if value == "god on" or value == "invincible on" then
+        Send(".kjg self god on")
+        return
+    end
+    if value == "god off" or value == "invincible off" then
+        Send(".kjg self god off")
+        return
+    end
+    local selfDps = string.match(value, "^dps%s+([%w]+)$")
+    if selfDps then
+        Send(".kjg self dps " .. selfDps)
+        return
+    end
+    if value == "self" or value == "solo" or value == "status" then
+        Send(".kjg self status")
+        return
+    end
+    if value == "speed" or value == "speed on" or value == "run" or value == "run on" then
+        Send(".kjg self speed on")
+        return
+    end
+    if value == "speed off" or value == "run off" then
+        Send(".kjg self speed off")
+        return
+    end
+    if value == "mount" or string.match(value, "^mount%s+") then
+        local mountAliases = {
+            [""] = "phoenix", phoenix = "phoenix", ["凤凰"] = "phoenix",
+            mimiron = "mimiron", ["米米尔隆"] = "mimiron",
+            ["米米尔隆的头部"] = "mimiron",
+            invincible = "invincible", ["无敌"] = "invincible",
+            celestial = "celestial", ["星骓"] = "celestial",
+        }
+        local requested = string.match(value, "^mount%s*(.-)$") or ""
+        local mountKey = mountAliases[requested]
+        if mountKey then
+            Send(".kjg self mount " .. mountKey)
+        else
+            Print("可选坐骑：/kjg mount 凤凰、米米尔隆的头部、无敌、星骓。", true)
+        end
+        return
+    end
+    if not IsLeaderOrGM() then
+        Print(
+            "普通账号可用：/kjg、/kjg teleport、/kjg god on/off、"
+            .. "/kjg dps 10000-1000000、/kjg dps off、/kjg gear、"
+            .. "/kjg speed on/off、/kjg mount 凤凰|米米尔隆的头部|无敌|星骓。",
+            true
+        )
+        return
+    end
+    if value == "close" then
+        if panel then panel:Hide() end
+        if rosterPanel then rosterPanel:Hide() end
+        if buffPanel then buffPanel:Hide() end
+        if teleportPanel then teleportPanel:Hide() end
+        if soloPanel then soloPanel:Hide() end
+        if gearPanel then gearPanel:Hide() end
+        if gearCatalogPanel then gearCatalogPanel:Hide() end
+        return
+    end
+    if value == "fill" or value == "fill 25" then
+        FillRoster(25)
+        return
+    end
+    if value == "restore" or value == "restore bots" then
+        RestoreOfflineBots()
+        return
+    end
+    if value == "roster" then
+        ToggleRosterPanel()
+        return
+    end
+    if value == "buff" or value == "buffs" then
+        ToggleBuffPanel()
+        return
+    end
+    if value == "gear" or value == "p4" or value == "p5" then
+        if value == "p6" then gearPhase = "P6" end
+        if value == "p5" then gearPhase = "P5" end
+        if value == "p4" then gearPhase = "P4" end
+        ToggleGearPanel()
+        return
+    end
+    if value == "buff standard" or value == "buffs standard" then
+        Send(".kjg buff standard")
+        return
+    end
+    if value == "buff clear" or value == "buffs clear" then
+        Send(".kjg buff clear")
+        return
+    end
+    if value == "buff status" or value == "buffs status" then
+        Send(".kjg buff status")
+        return
+    end
+    if value == "audit" then
+        Send(".kjg audit")
+        Print("训练状态审计命令已发送。")
+        return
+    end
+    if value == "opener" or value == "start" then
+        local started = FillRoster(25, function()
+            QueueCommand(".kjg gear group P6")
+            QueueCommand(".kjg bot formation spread")
+            QueueCommand(".kjg bot dps 6000")
+            QueueCommand(".kjg bot tps 12000")
+            QueueCommand(".kjg bot threat tank 130")
+            QueueCommand(".kjg bot tanks 2")
+            QueueCommand(".kjg bot variance 12")
+            QueueCommand(".swp ready")
+            Print("25 人编制已就绪，正在应用标准训练开场。")
+        end)
+        if started then
+            Print("标准训练开场已排队；补满 25 人后自动应用。")
+        end
+        return
+    end
+    local className = string.match(value, "^add%s+([a-z]+)$")
+    if className and botClassLabels[className] then
+        AddBotClass(className, botClassLabels[className])
+        return
+    end
+    Print(
+        "可用命令：/kjg、/kjg restore、/kjg fill、/kjg add 职业、/kjg roster、"
+        .. "/kjg gear、/kjg buff、/kjg teleport、/kjg opener、"
+        .. "/kjg audit、/kjg close。",
+        true
+    )
+end
+
+local function BuildPermissionPanel()
+    if permissionPanel then return end
+    permissionPanel = CreateFrame(
+        "Frame",
+        "KajigePermissionPanel",
+        UIParent
+    )
+    permissionPanel:SetWidth(660)
+    permissionPanel:SetHeight(520)
+    permissionPanel:SetPoint("CENTER", UIParent, "CENTER", 0, 22)
+    permissionPanel:SetFrameStrata("DIALOG")
+    permissionPanel:SetClampedToScreen(true)
+    permissionPanel:EnableMouse(true)
+    permissionPanel:SetMovable(true)
+    permissionPanel:RegisterForDrag("LeftButton")
+    permissionPanel:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    permissionPanel:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    permissionPanel:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = {left = 10, right = 10, top = 10, bottom = 10},
+    })
+
+    local title = permissionPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", permissionPanel, "TOPLEFT", 24, -20)
+    title:SetText("账号权限等级")
+
+    permissionBadgeText = permissionPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    permissionBadgeText:SetPoint("TOPRIGHT", permissionPanel, "TOPRIGHT", -54, -19)
+    permissionBadgeText:SetTextColor(1, 0.78, 0.20)
+
+    permissionSummaryText = permissionPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    permissionSummaryText:SetPoint("TOPLEFT", permissionPanel, "TOPLEFT", 25, -55)
+    permissionSummaryText:SetWidth(600)
+    permissionSummaryText:SetJustifyH("LEFT")
+
+    for index, tier in ipairs(permissionTiers) do
+        local row = CreateFrame("Frame", nil, permissionPanel)
+        row:SetPoint("TOPLEFT", permissionPanel, "TOPLEFT", 22, -91 - (index - 1) * 76)
+        row:SetWidth(616)
+        row:SetHeight(66)
+        row:SetBackdrop({
+            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true,
+            tileSize = 16,
+            edgeSize = 12,
+            insets = {left = 3, right = 3, top = 3, bottom = 3},
+        })
+        row:SetBackdropColor(0.04, 0.08, 0.12, 0.94)
+        local tagText = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        tagText:SetPoint("LEFT", row, "LEFT", 15, 10)
+        tagText:SetWidth(104)
+        tagText:SetJustifyH("LEFT")
+        tagText:SetText(tier.tag)
+        tagText:SetTextColor(1, 0.78, 0.20)
+        local tierTitle = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        tierTitle:SetPoint("LEFT", row, "LEFT", 15, -13)
+        tierTitle:SetWidth(104)
+        tierTitle:SetJustifyH("LEFT")
+        tierTitle:SetText(tier.title)
+        local detail = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        detail:SetPoint("LEFT", row, "LEFT", 127, 0)
+        detail:SetWidth(470)
+        detail:SetJustifyH("LEFT")
+        detail:SetText(tier.detail)
+    end
+
+    local note = permissionPanel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    note:SetPoint("BOTTOMLEFT", permissionPanel, "BOTTOMLEFT", 25, 17)
+    note:SetWidth(560)
+    note:SetJustifyH("LEFT")
+    note:SetText("权限按账号安全等级累计；TRAINER 为独立 RBAC。游戏内服务器实时结果优先。")
+
+    local close = CreateFrame("Button", nil, permissionPanel, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", permissionPanel, "TOPRIGHT", -5, -5)
+    tinsert(UISpecialFrames, "KajigePermissionPanel")
+    UpdatePermissionUI()
+    permissionPanel:Hide()
+end
+
+local function TogglePermissionPanel()
+    BuildPermissionPanel()
+    if permissionPanel:IsShown() then
+        permissionPanel:Hide()
+    else
+        permissionPanel:Show()
+        Send(".kjg permission")
+    end
+end
+
+local function BuildPermissionMenuButton()
+    if permissionMenuButton or not GameMenuFrame then return end
+    BuildPermissionPanel()
+    permissionMenuButton = CreateFrame(
+        "Button",
+        "KajigePermissionMenuButton",
+        GameMenuFrame,
+        "UIPanelButtonTemplate"
+    )
+    permissionMenuButton:SetWidth(176)
+    permissionMenuButton:SetHeight(30)
+    permissionMenuButton:SetPoint("LEFT", GameMenuFrame, "RIGHT", 10, 36)
+    permissionMenuButton:SetScript("OnClick", function()
+        HideUIPanel(GameMenuFrame)
+        TogglePermissionPanel()
+    end)
+    permissionMenuButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("查看当前账号权限与各等级差异", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    permissionMenuButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    UpdatePermissionUI()
+end
+
+local function SaveLauncherPosition()
+    if not launcherButton then return end
+    local point, _, relativePoint, x, y = launcherButton:GetPoint(1)
+    if not point then return end
+    DB.launcherPosition = {
+        point = point,
+        relativePoint = relativePoint or point,
+        x = math.floor((x or 0) + 0.5),
+        y = math.floor((y or 0) + 0.5),
+    }
+end
+
+local function RestoreLauncherPosition()
+    if not launcherButton then return end
+    launcherButton:ClearAllPoints()
+    local saved = DB.launcherPosition
+    if type(saved) == "table" and saved.point and saved.relativePoint then
+        launcherButton:SetPoint(
+            saved.point,
+            UIParent,
+            saved.relativePoint,
+            tonumber(saved.x) or 0,
+            tonumber(saved.y) or 0
+        )
+    else
+        launcherButton:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -210, -36)
+    end
+end
+
+local function BuildLauncherButton()
+    if launcherButton then
+        launcherButton:Show()
+        return
+    end
+    launcherButton = CreateFrame(
+        "Button",
+        "KajigeSWTLauncherButton",
+        UIParent,
+        "UIPanelButtonTemplate"
+    )
+    launcherButton:SetWidth(150)
+    launcherButton:SetHeight(28)
+    launcherButton:SetFrameStrata("DIALOG")
+    launcherButton:SetMovable(true)
+    launcherButton:SetClampedToScreen(true)
+    launcherButton:EnableMouse(true)
+    launcherButton:RegisterForDrag("LeftButton")
+    RestoreLauncherPosition()
+    launcherButton:SetText("KJG 训练控制台")
+    launcherButton:SetScript("OnDragStart", function(self)
+        self.justDragged = true
+        self:StartMoving()
+    end)
+    launcherButton:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        SaveLauncherPosition()
+        self.dragClearElapsed = 0
+        self:SetScript("OnUpdate", function(button, elapsed)
+            button.dragClearElapsed = button.dragClearElapsed + elapsed
+            if button.dragClearElapsed >= 0.2 then
+                button.justDragged = nil
+                button:SetScript("OnUpdate", nil)
+            end
+        end)
+    end)
+    launcherButton:SetScript("OnClick", function(self)
+        if self.justDragged then return end
+        TogglePanel()
+    end)
+    launcherButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(
+            "点击打开 KJG 控制台；按住左键拖动可移动，位置会自动保存。",
+            1,
+            1,
+            1
+        )
+        GameTooltip:Show()
+    end)
+    launcherButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+local function LockOriginalPanel()
+    if SunwellTrainerPanel then
+        SunwellTrainerPanel:Hide()
+        SunwellTrainerPanel:SetScript("OnShow", function(self)
+            self:Hide()
+        end)
+    end
+    if SunwellTrainerBotSpecPanel then SunwellTrainerBotSpecPanel:Hide() end
+    SlashCmdList.SUNWELLTRAINER = TogglePanel
+end
+
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("CHAT_MSG_SYSTEM")
+frame:RegisterEvent("RAID_ROSTER_UPDATE")
+frame:RegisterEvent("PARTY_MEMBERS_CHANGED")
+if type(ChatFrame_AddMessageEventFilter) == "function" then
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", PermissionChatFilter)
+end
+frame:SetScript("OnEvent", function(_, event, message)
+    if event == "CHAT_MSG_SYSTEM" then
+        if HandlePermissionMessage(message) then return end
+        if IsPermissionProtocolMessage(message) then return end
+        if message and string.find(message, "^KJG召集邀请：") then
+            StaticPopup_Show("KAJIGE_SUMMON_CONFIRM", message)
+        end
+        return
+    end
+    if event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+        if UpdateRosterStatus then UpdateRosterStatus() end
+        return
+    end
+    LockOriginalPanel()
+    pcall(SetCVar, "cameraDistanceMaxFactor", "2.6")
+    BuildPermissionMenuButton()
+    QueueCommand(".kjg permission")
+    if DB.fastRun then
+        QueueCommand(".kjg self speed on")
+    end
+    -- Every account now has personal movement tools, so the launcher is
+    -- shown to all players; non-staff accounts open the personal panel.
+    BuildLauncherButton()
+    Print("KJG 控制台已就绪，点击右上角按钮或输入 /kjg 打开。")
+end)
+
+SLASH_KAJIGEKJG1 = "/kjg"
+SLASH_KAJIGEKJG2 = "/swt"
+SlashCmdList.KAJIGEKJG = HandleKJGSlash
