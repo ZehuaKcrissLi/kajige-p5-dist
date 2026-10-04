@@ -12,12 +12,12 @@
 
 | 系统 | 线路一 | 线路二 | 线路三 |
 | --- | --- | --- | --- |
-| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17.zip) |
-| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-r2-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17.dmg) |
+| Windows 10/11 | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17-cn3-20261003.zip) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17-cn3-20261003.zip) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Windows-v1.4.17-cn3-20261003.zip) |
+| Apple Silicon Mac | [下载](https://gh-proxy.com/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17-cn3-20261003.dmg) | [下载](https://gh.llkk.cc/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17-cn3-20261003.dmg) | [下载](https://ghfast.top/https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/download/v1.4.17-p6-cn3-20261003/Kajige-P6-Raid-Trainer-Mac-v1.4.17-cn3-20261003.dmg) |
 
 三条线路给的是同一个文件，哪条能打开就用哪条。Windows 约 14 MB，Mac 约 30 MB。
 还有两条备用：`https://cdn.gh-proxy.com/` 和 `https://ghproxy.net/`，用法是把它们
-接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.17-p6-r2-20261003) 里的下载地址前面。
+接在 [完整文件列表](https://github.com/ZehuaKcrissLi/kajige-p5-dist/releases/tag/v1.4.17-p6-cn3-20261003) 里的下载地址前面。
 
 Mac 也可以在“终端”里直接敲一行，脚本会自己挑可用线路、校验并打开安装器：
 
@@ -34,22 +34,23 @@ curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/ZehuaKcrissLi/
 
 ### 第 1 步 · 下载安装器
 
-用上面表格里的线路，几秒就下完。这个小包不含游戏本体。
+上面的线路用于小安装包，不包含约 17.5 GB 中文游戏本体。公共代理的可用性和速度随网络变化。
 
 ### 第 2 步 · 运行安装器
 
-**Windows**：解压 ZIP，双击 `KajigeP5Installer.exe`，点“一键高速下载安装”。
+**Windows**：解压 ZIP，双击 `KajigeP5Installer.exe`，点“一键下载安装”。
 系统可能提示未知发布者，选“更多信息 → 仍要运行”。
 
 **Apple Silicon Mac**：打开 DMG，把里面两个 App 拖到“应用程序”。第一次打开要
 **右键点图标再选“打开”**，否则 Gatekeeper 会拦住。然后打开
-“咔鸡哥P6训练服安装器”，点“一键高速下载安装”。Mac 不需要 CrossOver 或
+“咔鸡哥P6训练服安装器”，点“一键下载安装”。Mac 不需要 CrossOver 或
 Parallels 序列号，安装器会自动配好免费的 Wine x87 运行时。
 
 ### 第 3 步 · 等它自己装完
 
-安装器会自动下载 17 GB 简中客户端、中文 UI、插件和训练功能，不需要你选择 BT、
-网盘还是备用源。这是唯一耗时的一步，按各家宽带一般几十分钟到几小时。
+安装器尝试 Haoe HTTPS 镜像及 BT 下载中文本体。目前没有自建大陆大包节点，不能保证大陆下载速度。
+如果这一步很慢，可以从网站列出的第三方中文资源获取解压好的 3.3.5a/12340，再用安装器导入。第三方网盘可用性、会员限制和内容需要自行确认，导入仍需通过固定基线校验。
+新安装下载失败后保留断点，不自动回退到英文客户端；主动导入或已有的英文客户端不会自动转换为中文。
 
 支持断点续传，**中途关掉甚至关机都没关系**，下次打开安装器接着下，不会从头开始。
 
@@ -79,7 +80,7 @@ Parallels 序列号，安装器会自动配好免费的 Wine x87 运行时。
 
 安装器会自己完成这一步。只有在它取种失败时才需要手动下载，再把目录交给安装器校验。
 
-- 磁力链接（大陆 BT 速度通常最好）：
+- 磁力链接（速度取决于种源）：
   `magnet:?xt=urn:btih:1cd47a5a9d2450faca2dbbb632e80a00f566cfcc`
 - 种子文件：[Kajige-3.3.5a-zhCN-12340.torrent](Kajige-3.3.5a-zhCN-12340.torrent)
 - 百度网盘客户端本体，提取码 `1qcs`：<https://pan.baidu.com/s/1NFdBat5W5r-6xfEKdUUofA?pwd=1qcs>
