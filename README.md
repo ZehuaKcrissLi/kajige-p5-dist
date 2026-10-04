@@ -83,7 +83,8 @@ Parallels 序列号，安装器会自动配好免费的 Wine x87 运行时。
 - 磁力链接（速度取决于种源）：
   `magnet:?xt=urn:btih:1cd47a5a9d2450faca2dbbb632e80a00f566cfcc`
 - 种子文件：[Kajige-3.3.5a-zhCN-12340.torrent](Kajige-3.3.5a-zhCN-12340.torrent)
-- 百度网盘客户端本体，提取码 `1qcs`：<https://pan.baidu.com/s/1NFdBat5W5r-6xfEKdUUofA?pwd=1qcs>
+- 咔鸡哥提供的百度网盘中文本体，提取码 `KAJI`：<https://pan.baidu.com/s/13Chik-785yCIA9XRBGOdKA?pwd=KAJI>
+- [下载、解压与 P6 导入指引](https://kaji-training.kcriss.dev/china-client.html)。该分享全包和大陆速度尚待验证；下载后由安装器严格校验基础文件。
 - 百度网盘 12340 主程序，提取码 `ryry`：<https://pan.baidu.com/s/1UOqihWs5pbFvDJC4YQeJag?pwd=ryry>
 
 ## 这个仓库里都有什么
