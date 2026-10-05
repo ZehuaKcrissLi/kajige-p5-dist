@@ -30,7 +30,7 @@ curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/ZehuaKcrissLi/
 ### 第 0 步 · 先确认两件事
 
 - 硬盘至少留出 **40 GB** 空闲空间。游戏本体约 17 GB，解压过程还要额外空间。
-- 向咔鸡哥要一个**邀请码**，到[注册页面](https://mac-mini.tail4182c5.ts.net/register.html)创建账号；邀请码决定GM权限等级。
+- 向咔鸡哥要一个**邀请码**，到[注册页面](https://kaji-training.kcriss.dev/register.html)创建账号；邀请码决定GM权限等级。
 
 ### 第 1 步 · 下载安装器
 
