@@ -1,0 +1,6 @@
+# 咔鸡 AI 来源说明
+
+- wow-ai：https://github.com/chelinho139/wow-ai，MIT，Copyright (c) 2026 chelinho139。游戏内助手交互参考此项目；咔鸡 3.3.5 界面与服务器通信为原创实现，未复制其像素采集桥接代码。
+- agent-wow：https://github.com/agent-wow/agent-wow，MIT，Copyright (c) 2026 agent-wow。独立 AI 玩家服务端集成使用此项目及其模块接口；运行组件部署在服务器侧。
+
+上述许可证随本说明提供。此说明不代表上游项目对咔鸡训练服的背书。
