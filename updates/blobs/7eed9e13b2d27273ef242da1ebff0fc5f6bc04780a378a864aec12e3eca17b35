@@ -1,0 +1,254 @@
+-- Original Kaji UI for WoW 3.3.5 / Lua 5.1. Server authorizes every action.
+-- Inspired by wow-ai's in-game assistant UX; no screen capture or code copied.
+KajigeAIConsole = {}
+local API = KajigeAIConsole
+local ui, history, activeID, reply, busy, sentAt
+local serviceStatus = "正在连接助手…"
+local sentCommands = {}
+local queue, elapsed, counter, tokenCounter = {}, 0, 0, 0
+local function Clean(s)
+    s = tostring(s or "")
+    s = s:gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", "")
+    return s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|", "")
+end
+local function Chunks(s, limit)
+    local out, start = {}, 1
+    while start <= #s do
+        local finish = math.min(start + limit - 1, #s)
+        if finish < #s then
+            while finish >= start do
+                local b = string.byte(s, finish + 1)
+                if not b or b < 128 or b >= 192 then break end
+                finish = finish - 1
+            end
+        end
+        if finish < start then return nil end
+        out[#out+1] = s:sub(start, finish); start = finish + 1
+    end
+    return out
+end
+local function LoadHistory()
+    KajigeSWTDB = KajigeSWTDB or {}
+    KajigeSWTDB.aiHistory = KajigeSWTDB.aiHistory or {}
+    local key = (GetRealmName() or "") .. ":" .. (UnitName("player") or "")
+    history = KajigeSWTDB.aiHistory[key]
+    if type(history) ~= "table" then history = {}; KajigeSWTDB.aiHistory[key] = history end
+    -- Remove diagnostic records saved by the first release.
+    for i = #history, 1, -1 do
+        local line = tostring(history[i])
+        if line:find("^服务状态：") or line:find('"attack_confirmed"', 1, true) or line:find('"workers"', 1, true) then
+            table.remove(history, i)
+        end
+    end
+    while #history > 50 do table.remove(history, 1) end
+end
+local function Render()
+    if not ui then return end
+    ui.messages:Clear()
+    for _, line in ipairs(history or {}) do ui.messages:AddMessage(line) end
+    if busy and reply and reply ~= "" then ui.messages:AddMessage("咔鸡 AI：" .. reply) end
+    ui.status:SetText(busy and "助手正在回答…" or serviceStatus)
+end
+local function Add(who, text)
+    if not history then LoadHistory() end
+    history[#history+1] = who .. "：" .. Clean(text):sub(1, 12000)
+    while #history > 50 do table.remove(history, 1) end
+    Render()
+    if ui then ui.messages:ScrollToBottom() end
+end
+local function Send(command) queue[#queue+1] = command end
+local function Context()
+    return (UnitName("player") or "") .. " · " .. (UnitRace("player") or "") .. (UnitClass("player") or "")
+        .. " · " .. tostring(UnitLevel("player") or 0) .. "级 · " .. (GetRealZoneText() or "")
+        .. "\n当前目标：" .. (UnitName("target") or "未选择")
+end
+local function Submit(text)
+    text = Clean(text):gsub("\r", ""):gsub("\n", " "):gsub("^%s+", ""):gsub("%s+$", "")
+    if text == "" then return false end
+    if busy then Add("提示", "上一条请求仍在处理，可以先取消。") return false end
+    if #text > 4096 then Add("提示", "内容过长，请缩短后发送（最多 4096 字节）。") return false end
+    tokenCounter = tokenCounter + 1
+    local token = "k" .. tostring(math.floor(GetTime()*1000)) .. "x" .. tokenCounter
+    busy, activeID, reply, sentAt = true, nil, "", GetTime()
+    Add("你", text)
+    Send(".kjai start " .. token)
+    for _, chunk in ipairs(Chunks(text, 150)) do Send(".kjai part " .. token .. " " .. chunk) end
+    Send(".kjai submit " .. token)
+    return true
+end
+local function Button(parent, text, x, y, width, fn)
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    b:SetPoint("TOPLEFT", x, y); b:SetWidth(width); b:SetHeight(24); b:SetText(text); b:SetScript("OnClick", fn)
+    return b
+end
+local function Label(parent, x, y, width, text)
+    local l = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    l:SetPoint("TOPLEFT", x, y); l:SetWidth(width); l:SetJustifyH("LEFT"); l:SetText(text)
+    return l
+end
+local function Build()
+    if not history then LoadHistory() end
+    ui = CreateFrame("Frame", "KajigeAIConsoleFrame", UIParent)
+    ui:SetWidth(650); ui:SetHeight(550); ui:SetPoint("CENTER"); ui:SetFrameStrata("DIALOG")
+    ui:SetMovable(true); ui:EnableMouse(true)
+    ui:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8", edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=11,right=12,top=12,bottom=11}})
+    ui:SetBackdropColor(0.04, 0.05, 0.07, 1)
+    table.insert(UISpecialFrames, "KajigeAIConsoleFrame")
+    Label(ui, 24, -24, 580, "咔鸡助手")
+    -- Only the title bar drags the window. The editor and its empty margins
+    -- must consume mouse clicks rather than passing them to the game/window.
+    local dragHandle = CreateFrame("Frame", nil, ui)
+    dragHandle:SetPoint("TOPLEFT", 20, -14); dragHandle:SetWidth(570); dragHandle:SetHeight(32)
+    dragHandle:EnableMouse(true); dragHandle:RegisterForDrag("LeftButton")
+    dragHandle:SetScript("OnDragStart", function() ui:StartMoving() end)
+    dragHandle:SetScript("OnDragStop", function() ui:StopMovingOrSizing() end)
+    local close = CreateFrame("Button", nil, ui, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -5, -5)
+    close:SetScript("OnClick", function() ui:Hide() end)
+    ui.context = Label(ui, 24, -52, 590, Context())
+    ui.messages = CreateFrame("ScrollingMessageFrame", nil, ui)
+    ui.messages:SetPoint("TOPLEFT", 25, -104); ui.messages:SetWidth(598); ui.messages:SetHeight(260)
+    ui.messages:SetFontObject(GameFontHighlightSmall); ui.messages:SetJustifyH("LEFT")
+    ui.messages:SetFading(false); ui.messages:SetMaxLines(100); ui.messages:EnableMouseWheel(true)
+    ui.messages:SetScript("OnMouseWheel", function(self, delta) if delta > 0 then self:ScrollUp() else self:ScrollDown() end end)
+    local inputScroll = CreateFrame("ScrollFrame", "KajigeAIInputScroll", ui, "UIPanelScrollFrameTemplate")
+    Label(ui, 28, -407, 470, "输入你的要求，例如：传送到达拉然")
+    inputScroll:SetPoint("TOPLEFT", 28, -430); inputScroll:SetWidth(568); inputScroll:SetHeight(44)
+    local inputBackground = CreateFrame("Frame", nil, ui)
+    inputBackground:SetPoint("TOPLEFT", 23, -425); inputBackground:SetWidth(594); inputBackground:SetHeight(54)
+    inputBackground:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8"})
+    inputBackground:SetBackdropColor(0, 0, 0, 0.7)
+    inputScroll:SetFrameLevel(inputBackground:GetFrameLevel()+1)
+    ui.input = CreateFrame("EditBox", nil, inputScroll)
+    ui.input:SetWidth(555); ui.input:SetHeight(44); ui.input:SetMultiLine(true); ui.input:SetFontObject(GameFontHighlight)
+    ui.input:SetAutoFocus(false); ui.input:SetMaxLetters(2000); inputScroll:SetScrollChild(ui.input)
+    ui.input:SetPoint("TOPLEFT", inputScroll, "TOPLEFT", 0, 0)
+    local function FocusInput(_, button)
+        if button == "LeftButton" then ui.input:SetFocus() end
+    end
+    ui.input:EnableMouse(true); ui.input:SetScript("OnMouseDown", FocusInput)
+    inputScroll:EnableMouse(true); inputScroll:SetScript("OnMouseDown", FocusInput)
+    inputBackground:EnableMouse(true); inputBackground:SetScript("OnMouseDown", FocusInput)
+    local languageButton
+    local function RefreshInputLanguage()
+        local language = type(ui.input.GetInputLanguage) == "function" and ui.input:GetInputLanguage()
+        languageButton:SetText(language == "CHINESE" and "切英文" or language == "ENGLISH" and "切中文" or "中 / 英")
+    end
+    languageButton = Button(ui, "中 / 英", 526, -401, 96, function()
+        ui.input:SetFocus()
+        if type(ui.input.ToggleInputLanguage) == "function" then
+            ui.input:ToggleInputLanguage()
+            RefreshInputLanguage()
+        else Add("提示", "请用系统输入法菜单切换中文。") end
+    end)
+    ui.input:SetScript("OnInputLanguageChanged", RefreshInputLanguage)
+    RefreshInputLanguage()
+    ui.input:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    ui.input:SetScript("OnEnterPressed", function(self)
+        -- Selecting an IME candidate must not submit an unfinished request.
+        if type(self.IsInIMECompositionMode) == "function" and self:IsInIMECompositionMode() then return end
+        if IsShiftKeyDown() then self:Insert("\n") elseif Submit(self:GetText()) then self:SetText(""); self:ClearFocus() end
+    end)
+    ui:SetScript("OnHide", function() ui.input:ClearFocus() end)
+    Button(ui, "介绍目标", 24, -374, 185, function() ui.input:SetText("介绍当前目标，给我训练建议。"); ui.input:SetFocus() end)
+    Button(ui, "寻找坐骑", 219, -374, 185, function() ui.input:SetText("帮我查找凤凰坐骑。"); ui.input:SetFocus() end)
+    Button(ui, "召集伙伴", 414, -374, 208, function() ui.input:SetText("让 AI 伙伴集合到我身边。"); ui.input:SetFocus() end)
+    Button(ui, "发送", 24, -491, 100, function() if Submit(ui.input:GetText()) then ui.input:SetText(""); ui.input:ClearFocus() end end)
+    Button(ui, "停止回答", 134, -491, 100, function() queue={}; Send(".kjai cancel"); busy=false; activeID=nil; reply=""; Render() end)
+    Button(ui, "清空对话", 244, -491, 100, function() queue={}; Send(".kjai clear"); for i=#history,1,-1 do history[i]=nil end; busy=false; activeID=nil; reply=""; Render() end)
+    ui.status = Label(ui, 358, -497, 260, "")
+    ui:Hide(); Render()
+end
+function API.Toggle()
+    if not ui then Build() end
+    if ui:IsShown() then
+        ui:Hide()
+    else
+        ui.context:SetText(Context())
+        ui:Show()
+        Send(".kjai status")
+    end
+end
+API.Submit, API.Chunks, API.Clean = Submit, Chunks, Clean
+local function Protocol(_, _, text) return type(text)=="string" and text:find("^KJG_AI_") ~= nil end
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", Protocol)
+local events = CreateFrame("Frame")
+events:RegisterEvent("CHAT_MSG_SYSTEM"); events:RegisterEvent("CHAT_MSG_ADDON"); events:RegisterEvent("PLAYER_LOGIN"); events:RegisterEvent("PLAYER_ENTERING_WORLD"); events:RegisterEvent("PLAYER_TARGET_CHANGED")
+events:SetScript("OnEvent", function(_, event, text, message, channel, sender)
+    if event == "PLAYER_LOGIN" then
+        LoadHistory(); activeID=nil; reply=""; busy=false; queue={}; Render()
+        if ui and ui:IsShown() then Send(".kjai status") end
+        return
+    end
+    if event == "PLAYER_ENTERING_WORLD" then
+        LoadHistory(); Render()
+        if ui then ui.context:SetText(Context()) end
+        if ui and ui:IsShown() then Send(".kjai status") end
+        return
+    end
+    if event == "PLAYER_TARGET_CHANGED" then if ui then ui.context:SetText(Context()) end return end
+    if event == "CHAT_MSG_ADDON" then
+        if text ~= "AzerothCore" or channel ~= "WHISPER" or type(message) ~= "string" then return end
+        if type(sender) ~= "string" or sender:match("^[^-]+") ~= UnitName("player") then return end
+        local opcode, sequence, body = message:match("^([amof])(%d%d%d%d)(.*)$")
+        local sent = sequence and sentCommands[sequence]
+        if not sent or GetTime()-sent.at > 240 then return end
+        if opcode == "f" and busy then
+            busy=false; activeID=nil; reply=""; queue={}
+            Add("提示", "请求未提交成功，请重新发送。")
+        end
+        if opcode ~= "m" then return end
+        text = body
+    end
+    if type(text) ~= "string" then return end
+    local id = text:match("^KJG_AI_BEGIN:([^:]+)$")
+    if id then
+        if activeID ~= id then activeID=id; reply=""; sentAt=GetTime() end
+        busy=true; Render(); return
+    end
+    local kind, responseID, value = text:match("^KJG_AI_(%u+):([^:]+):(.*)$")
+    if (kind == "TEXT" or kind == "ACTION") and responseID == activeID then
+        if kind == "TEXT" then reply = (reply or "") .. Clean(value); if #reply > 24000 then reply=reply:sub(1,24000) end
+        else Add("执行反馈", value) end
+        Render(); return
+    end
+    id = text:match("^KJG_AI_END:([^:]+)$")
+    if id and id == activeID then
+        local final = reply; busy=false; activeID=nil; reply=""
+        if final and final ~= "" then Add("咔鸡 AI", final) else Render() end
+        return
+    end
+    value = text:match("^KJG_AI_STATUS:(.*)$")
+    if value then
+        if value:find("对话记忆已清空",1,true) or value:find("请求已取消",1,true) then
+            busy=false; activeID=nil; reply=""
+        end
+        if value:find("{",1,true) then
+            serviceStatus = value:find("离线",1,true) and "助手暂不可用，请稍后重试" or "助手已连接"
+        elseif value:find("伙伴",1,true) then serviceStatus = Clean(value)
+        elseif value:find("codex",1,true) or value:find("助手",1,true) then serviceStatus = Clean(value)
+        end
+        Render(); return
+    end
+    value = text:match("^KJG_AI_ERROR:(.*)$")
+    if value then busy=false; activeID=nil; reply=""; queue={}; Add("请求失败", value) end
+end)
+events:SetScript("OnUpdate", function(_, delta)
+    elapsed=elapsed+delta
+    if elapsed >= 0.08 and #queue > 0 then
+        elapsed=0; counter=(counter+1)%10000
+        local command=table.remove(queue,1)
+        sentCommands[string.format("%04d",counter)] = {at=GetTime(),command=command}
+        for sequence, sent in pairs(sentCommands) do if GetTime()-sent.at > 240 then sentCommands[sequence]=nil end end
+        if type(SendAddonMessage)=="function" then SendAddonMessage("AzerothCore", "h" .. string.format("%04d",counter) .. command:gsub("^[.!]", ""), "WHISPER", UnitName("player"))
+        else SendChatMessage(command,"SAY") end
+    end
+    if busy and sentAt and GetTime()-sentAt > 200 then
+        busy=false; activeID=nil; reply=""; queue={}; Send(".kjai cancel"); Add("提示", "等待超时，已请求取消；请查看服务状态后重试。"); Send(".kjai status")
+    end
+end)
+SLASH_KAJIGEAI1 = "/kjai"
+SlashCmdList.KAJIGEAI = function(text)
+    local cmd=(text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if cmd=="status" then Send(".kjai status") elseif cmd=="cancel" then queue={}; Send(".kjai cancel"); busy=false; activeID=nil; reply=""; Render()
+    else API.Toggle() end
+end
