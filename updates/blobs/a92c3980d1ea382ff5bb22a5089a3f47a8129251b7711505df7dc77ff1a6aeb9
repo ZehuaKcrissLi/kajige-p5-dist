@@ -1,0 +1,168 @@
+-- Original Kaji browser for installed WoW 3.3.5 display records. Server owns catalogue and GM3 permission.
+KajigeNativeModels={}
+local API=KajigeNativeModels
+local frame,busy,sentAt,buffer,responseToken,query,page,pages=false,false,0,"",nil,"",1,1
+local previewCounter,previewPending=0,nil
+local function Text(parent,value,x,y,width)
+ local t=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall");t:SetPoint("TOPLEFT",x,y);t:SetWidth(width);t:SetJustifyH("LEFT");t:SetText(value);return t
+end
+local function Button(parent,value,x,y,width,callback)
+ local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate");b:SetPoint("TOPLEFT",x,y);b:SetWidth(width);b:SetHeight(26);b:SetText(value);b:SetScript("OnClick",callback);return b
+end
+local function Edit(parent,x,y,width,max)
+ local e=CreateFrame("EditBox",nil,parent,"InputBoxTemplate");e:SetPoint("TOPLEFT",x,y);e:SetWidth(width);e:SetHeight(26);e:SetAutoFocus(false);e:SetMaxLetters(max);e:EnableMouse(true)
+ e:SetScript("OnMouseDown",function(self)self:SetFocus()end);e:SetScript("OnEscapePressed",function(self)self:ClearFocus()end);e:SetText("");return e
+end
+local function Integer(value)
+ local n=tonumber(value);if not n or n<1 or n>4294967295 or n~=math.floor(n)then return nil end;return n
+end
+local function Clean(value)
+ return KajigeAIConsole.Clean(value)
+end
+local function RowName(row)
+ for _,key in ipairs({"matched_name","name","english"})do
+  if type(row[key])=="string"and row[key]~=""then return Clean(row[key])end
+ end
+ return "未命名模型"
+end
+local function Status(value)if frame then frame.status:SetText(value)end end
+local function Send(value)KajigeAIConsole.SendNative(value)end
+local function Controls()
+ if not frame then return end
+ if busy then frame.searchButton:Disable();frame.prev:Disable();frame.next:Disable()
+ else frame.searchButton:Enable();if page>1 then frame.prev:Enable()else frame.prev:Disable()end;if page<pages then frame.next:Enable()else frame.next:Disable()end end
+end
+function API.Select(row)
+ if not frame or type(row)~="table" then return false end
+ local id=Integer(row.display_id);if not id then Status("请输入有效的模型编号。");return false end
+ frame.selected=id;frame.facing=.5;frame.zoom=1;frame.id:SetText(tostring(id))
+ local name=RowName(row)
+ frame.selectedName:SetText(name.." · "..tostring(id))
+ frame.apply:SetText("变成这个模型 · GM3")
+ frame.model:ClearModel();frame.apply:Disable()
+ previewCounter=previewCounter+1
+ previewPending={id=id,token="p"..previewCounter,at=GetTime(),last=0}
+ Send(".kjg model preview "..id.." "..previewPending.token)
+ Status("正在获取这个模型的精确外观…")
+ return true
+end
+local function LoadPreview(entry)
+ local ok=pcall(function()
+  -- 3.3.5 SetCreature takes cached NPC entry, not display ID. Server supplies a synthetic cache entry for this exact display.
+  frame.model:SetModelScale(1);frame.model:SetCreature(entry);frame.model:SetFacing(.5);frame.model:SetSequence(0)
+  frame.model:SetLight(1,0,0,-.707,-.707,.85,1,1,1,.65,1,1,1)
+ end)
+ return ok
+end
+local function TickPreview()
+ if not previewPending then return end
+ local pending=previewPending
+ if GetTime()-pending.at>10 then previewPending=nil;Status("模型未能载入。可换一个模型，或使用已验证的编号变身。")return end
+ if not pending.entry then return end
+ local ok,value=pcall(frame.model.GetModel,frame.model)
+ if ok and ((type(value)=="string"and value~="")or(type(value)=="number"and value>0))then
+  previewPending=nil;Status("预览已载入。点击应用后由服务器验证 GM3 权限。")return
+ end
+ if GetTime()-pending.last>.3 then pending.last=GetTime();if not LoadPreview(pending.entry)then previewPending=nil;Status("这个模型暂时无法预览，请换一个。")end end
+end
+function API.Search(newPage)
+ if not frame or busy then return false end
+ local value=(frame.search:GetText() or ""):gsub("^%s+",""):gsub("%s+$","")
+ if #value>120 or value:find("[%c|]")then Status("搜索词过长或含控制符，请使用简短的中英文名称或编号。");return false end
+ newPage=Integer(newPage or 1);if not newPage then return false end
+ busy=true;sentAt=GetTime();buffer="";responseToken=nil;query=value;page=newPage
+ Status("正在查询服务器模型目录…");Controls()
+ Send(".kjg model search "..newPage.." "..value)
+ return true
+end
+local function Build()
+ frame=CreateFrame("Frame","KajigeNativeModelBrowser",UIParent);frame:SetWidth(900);frame:SetHeight(610);frame:SetPoint("CENTER");frame:SetFrameStrata("FULLSCREEN_DIALOG");frame:SetClampedToScreen(true);frame:EnableMouse(true)
+ frame:SetScale(math.min(1,((GetScreenWidth and GetScreenWidth()or 1024)-30)/900,((GetScreenHeight and GetScreenHeight()or 768)-30)/610))
+ frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=16});frame:SetBackdropColor(.025,.035,.05,1);frame:SetBackdropBorderColor(.25,.39,.46,1)
+ table.insert(UISpecialFrames,"KajigeNativeModelBrowser")
+ local title=Text(frame,"艾泽拉斯 · 模型收藏馆",20,-18,800);title:SetFontObject(GameFontNormalLarge)
+ Text(frame,"浏览客户端已有模型 · 中英文名称与编号都能搜 · 自由变身需要 GM3",20,-49,800)
+ frame.search=Edit(frame,25,-80,277,100)
+ frame.search:SetScript("OnEnterPressed",function(self)if self.IsInIMECompositionMode and self:IsInIMECompositionMode()then return end;self:ClearFocus();API.Search(1)end)
+ frame.searchButton=Button(frame,"搜索",312,-80,75,function()frame.search:ClearFocus();API.Search(1)end)
+ Button(frame,"中 / 英",397,-80,85,function()if frame.search.ToggleInputLanguage then frame.search:ToggleInputLanguage()end;frame.search:SetFocus()end)
+ Text(frame,"直接输入模型编号",512,-82,140)
+ frame.id=Edit(frame,658,-80,115,10);frame.id:SetNumeric(true)
+ local function Direct()frame.id:ClearFocus();API.Select({display_id=frame.id:GetText(),name="编号预览"})end
+ frame.id:SetScript("OnEnterPressed",Direct);Button(frame,"预览",785,-80,90,Direct)
+ local bg=frame:CreateTexture(nil,"BACKGROUND");bg:SetPoint("TOPLEFT",18,-120);bg:SetWidth(371);bg:SetHeight(418);bg:SetTexture("Interface\\Buttons\\WHITE8X8");bg:SetVertexColor(.055,.075,.095,1)
+ frame.rows={}
+ for i=1,12 do
+  local b=Button(frame,"",26,-130-(i-1)*33,355,function(self)API.Select(self.row)end)
+  b:Hide();frame.rows[i]=b
+ end
+ frame.prev=Button(frame,"上一页",25,-547,100,function()API.Search(page-1)end)
+ frame.page=Text(frame,"",139,-553,140)
+ frame.next=Button(frame,"下一页",280,-547,100,function()API.Search(page+1)end)
+ frame.selectedName=Text(frame,"在左侧选择一个模型",410,-125,460);frame.selectedName:SetFontObject(GameFontNormal)
+ frame.model=CreateFrame("DressUpModel",nil,frame);frame.model:SetPoint("TOPLEFT",410,-155);frame.model:SetWidth(465);frame.model:SetHeight(350)
+ Button(frame,"旋转",412,-513,85,function()frame.facing=(frame.facing or .5)+.5;frame.model:SetFacing(frame.facing)end)
+ local function Zoom(delta)frame.zoom=math.max(.25,math.min(2,(frame.zoom or 1)+delta));frame.model:SetModelScale(frame.zoom)end
+ Button(frame,"缩小",508,-513,85,function()Zoom(-.1)end);Button(frame,"放大",604,-513,85,function()Zoom(.1)end)
+ frame.apply=Button(frame,"变成这个模型 · GM3",410,-548,260,function()
+  local id=Integer(frame.selected);if not id then return end
+  Send(".kjg model apply "..id);Status("变身请求已提交，实际结果请看聊天栏。")
+ end);frame.apply:Disable()
+ Button(frame,"恢复外观",686,-548,185,function()Send(".kjg model restore");Status("恢复请求已提交，实际结果请看聊天栏。")end)
+ frame.status=Text(frame,"",25,-586,850)
+ local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton");close:SetPoint("TOPRIGHT",-3,-3);close:SetScript("OnClick",function()frame:Hide()end)
+ frame:SetScript("OnHide",function()frame.search:ClearFocus();frame.id:ClearFocus()end)
+ frame:SetScript("OnUpdate",function()TickPreview();if busy and GetTime()-sentAt>20 then busy=false;buffer="";responseToken=nil;Controls();Status("模型目录查询超时，请重试；此功能需要 GM3 权限。")end end)
+ Controls()
+end
+function API.Show()
+ if not frame then Build()end
+ frame:Show();if not busy then API.Search(1)end
+end
+function API.Reject(command)
+ if command and command:match("^%.kjg model preview ")then
+  if previewPending and command==".kjg model preview "..previewPending.id.." "..previewPending.token then previewPending=nil;Status("服务器拒绝了预览，请检查模型编号与 GM3 权限。")end
+  return
+ end
+ busy=false;buffer="";responseToken=nil;Controls();Status("服务器拒绝了查询，请确认账号拥有 GM3 权限。")
+end
+function API.Handle(text,command)
+ if type(text)~="string"then return false end
+ local previewToken,display,entry=text:match("^KJG_MODEL_PREVIEW:([^:]+):(%d+):(%d+)$")
+ if previewToken then
+  if not frame or not previewPending then return true end
+  local pending=previewPending
+  if pending.token~=previewToken or pending.id~=Integer(display)or not Integer(entry)then return true end
+  if command and command~=".kjg model preview "..pending.id.." "..pending.token then return true end
+  pending.entry=Integer(entry);pending.last=GetTime()
+  if not LoadPreview(pending.entry)then previewPending=nil;Status("这个模型暂时无法预览，请换一个。")else frame.apply:Enable();Status("正在载入模型与贴图…")end
+  return true
+ end
+ if command and (text:find("^KJG_MODEL_DATA:")or text:find("^KJG_MODEL_END:"))and command~=".kjg model search "..page.." "..query then return true end
+ local token,chunk=text:match("^KJG_MODEL_DATA:([^:]+):(.*)$")
+ if token then
+  if not busy then return true end
+  if not responseToken then responseToken=token end
+  if token~=responseToken then return true end
+  buffer=buffer..chunk
+  if #buffer>65536 then busy=false;buffer="";Controls();Status("模型目录响应过大，请缩小搜索范围。")end
+  return true
+ end
+ token=text:match("^KJG_MODEL_END:([^:]+)$")
+ if not token then return false end
+ if not busy or token~=responseToken then return true end
+ busy=false;local ok,data=pcall(KajigeCreative.Decode,buffer);buffer="";responseToken=nil
+ if not ok or type(data)~="table"or type(data.rows)~="table"or data.query~=query then Controls();Status("模型目录返回无效，请重新搜索。");return true end
+ page=Integer(data.page)or page;pages=Integer(data.pages)or 1
+ frame.page:SetText(page.." / "..pages.." 页")
+ for i,b in ipairs(frame.rows)do
+  local row=data.rows[i]
+  if type(row)=="table"and Integer(row.display_id)then
+   b.row=row;b:SetText(RowName(row).." · "..row.display_id);b:Show()
+  else b.row=nil;b:Hide()end
+ end
+ Controls();Status("找到 "..tostring(tonumber(data.total)or #data.rows).." 个模型。点击左侧名称预览。")
+ return true
+end
+SLASH_KAJIGENATIVEMODELS1="/kjmodels"
+SlashCmdList.KAJIGENATIVEMODELS=API.Show
