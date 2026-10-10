@@ -1,0 +1,378 @@
+-- Original Kaji UI for WoW 3.3.5 / Lua 5.1. Server authorizes every action.
+-- Inspired by wow-ai's in-game assistant UX; no screen capture or code copied.
+KajigeAIConsole = {}
+local API = KajigeAIConsole
+local ui, history, activeID, reply, busy, sentAt, store, session, clientReply
+local actions, attachments = {}, {}
+local actionPage=1
+local RefreshActions, RefreshSessions
+local serviceStatus = "正在连接助手…"
+local sentCommands = {}
+local queue, elapsed, counter, tokenCounter = {}, 0, 0, 0
+local navElapsed=0
+local function Clean(s)
+    s = tostring(s or "")
+    s = s:gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", "")
+    return s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|", "")
+end
+local function Chunks(s, limit)
+    local out, start = {}, 1
+    while start <= #s do
+        local finish = math.min(start + limit - 1, #s)
+        if finish < #s then
+            while finish >= start do
+                local b = string.byte(s, finish + 1)
+                if not b or b < 128 or b >= 192 then break end
+                finish = finish - 1
+            end
+        end
+        if finish < start then return nil end
+        out[#out+1] = s:sub(start, finish); start = finish + 1
+    end
+    return out
+end
+local function LoadHistory()
+    KajigeSWTDB = KajigeSWTDB or {}
+    KajigeSWTDB.aiHistory = KajigeSWTDB.aiHistory or {}
+    local key = (GetRealmName() or "") .. ":" .. (UnitName("player") or "")
+    KajigeSWTDB.aiWorkbench = KajigeSWTDB.aiWorkbench or {}
+    store=KajigeSWTDB.aiWorkbench[key]
+    if type(store)~="table" then store={active="main",sessions={main={id="main",name="我的创作",history=KajigeSWTDB.aiHistory[key] or {},model="gpt-6.1-sol",project="content",agent="codex"}}};KajigeSWTDB.aiWorkbench[key]=store end
+    session=store.sessions[store.active] or store.sessions.main
+    history=session.history
+    actions=session.actions or {}
+    KajigeSWTDB.aiHistory[key]=history
+    -- Remove diagnostic records saved by the first release.
+    for i = #history, 1, -1 do
+        local line = tostring(history[i])
+        if line:find("^服务状态：") or line:find('"attack_confirmed"', 1, true) or line:find('"workers"', 1, true) then
+            table.remove(history, i)
+        end
+    end
+    while #history > 50 do table.remove(history, 1) end
+end
+local function Render()
+    if not ui then return end
+    ui.messages:Clear()
+    for _, line in ipairs(history or {}) do ui.messages:AddMessage(line) end
+    if busy and reply and reply ~= "" then ui.messages:AddMessage("咔鸡 AI：" .. reply) end
+    ui.status:SetText(busy and "正在创作 · 可继续操作游戏" or serviceStatus)
+    if RefreshSessions then RefreshSessions() end
+    if RefreshActions then RefreshActions() end
+end
+local function Add(who, text)
+    if not history then LoadHistory() end
+    history[#history+1] = who .. "：" .. Clean(text):sub(1, 12000)
+    while #history > 50 do table.remove(history, 1) end
+    Render()
+    if ui then ui.messages:ScrollToBottom() end
+end
+local function Send(command) queue[#queue+1] = command end
+local function Context()
+    return (UnitName("player") or "") .. " · " .. (UnitRace("player") or "") .. (UnitClass("player") or "")
+        .. " · " .. tostring(UnitLevel("player") or 0) .. "级 · " .. (GetRealZoneText() or "")
+        .. "\n当前目标：" .. (UnitName("target") or "未选择")
+end
+local function Submit(text)
+    text = Clean(text):gsub("\r", ""):gsub("\n", " "):gsub("^%s+", ""):gsub("%s+$", "")
+    if text == "" then return false end
+    if busy then Add("提示", "上一条请求仍在处理，可以先取消。") return false end
+    if #text > 8192 then Add("提示", "内容过长，请缩短后发送（最多 8192 字节）。") return false end
+    tokenCounter = tokenCounter + 1
+    local token = "k" .. tostring(math.floor(GetTime()*1000)) .. "x" .. tokenCounter
+    busy, activeID, reply, sentAt = true, nil, "", GetTime()
+    Add("你", text)
+    if KajigeCreative then
+        local context=KajigeCreative.Context();context.attachments=attachments
+        local payload=KajigeCreative.Encode({message=text,session=session.id,model=session.model,project=session.project,agent=session.agent,context=context})
+        if #payload>24576 then context.bags={};payload=KajigeCreative.Encode({message=text,session=session.id,model=session.model,project=session.project,agent=session.agent,context=context}) end
+        if #payload>24576 then busy=false;Add("提示","上下文过大，请缩短内容或清除附加资料。");return false end
+        text=payload;attachments={}
+    end
+    clientReply=""
+    Send(".kjai start " .. token)
+    for _, chunk in ipairs(Chunks(text, 150)) do Send(".kjai part " .. token .. " " .. chunk) end
+    Send(".kjai submit " .. token)
+    return true
+end
+local function Button(parent, text, x, y, width, fn)
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    b:SetPoint("TOPLEFT", x, y); b:SetWidth(width); b:SetHeight(24); b:SetText(text); b:SetScript("OnClick", fn)
+    return b
+end
+local function Label(parent, x, y, width, text)
+    local l = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    l:SetPoint("TOPLEFT", x, y); l:SetWidth(width); l:SetJustifyH("LEFT"); l:SetText(text)
+    return l
+end
+local function Build()
+    if not history then LoadHistory() end
+    ui = CreateFrame("Frame", "KajigeAIConsoleFrame", UIParent)
+    ui:SetWidth(900); ui:SetHeight(610); ui:SetPoint("CENTER"); ui:SetFrameStrata("DIALOG")
+    local sw=GetScreenWidth and GetScreenWidth() or 1024;local sh=GetScreenHeight and GetScreenHeight() or 768
+    ui:SetScale(math.min(1,(sw-30)/900,(sh-30)/610));ui:SetMovable(true);ui:EnableMouse(true);ui:SetClampedToScreen(true)
+    ui:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=16,edgeSize=16,insets={left=4,right=4,top=4,bottom=4}})
+    ui:SetBackdropColor(.025,.035,.05,.98);ui:SetBackdropBorderColor(.25,.39,.46,1)
+    table.insert(UISpecialFrames,"KajigeAIConsoleFrame")
+    local title=Label(ui,20,-17,600,"咔鸡 · 创作工作台");title:SetFontObject(GameFontNormalLarge)
+    local dragHandle=CreateFrame("Frame",nil,ui);dragHandle:SetPoint("TOPLEFT",16,-8);dragHandle:SetWidth(830);dragHandle:SetHeight(35);dragHandle:EnableMouse(true);dragHandle:RegisterForDrag("LeftButton")
+    dragHandle:SetScript("OnDragStart",function()ui:StartMoving()end);dragHandle:SetScript("OnDragStop",function()ui:StopMovingOrSizing()end)
+    local close=CreateFrame("Button",nil,ui,"UIPanelCloseButton");close:SetPoint("TOPRIGHT",-3,-3);close:SetScript("OnClick",function()ui:Hide()end)
+    local function Panel(x,y,w,h,interactive)
+        -- A child Frame renders above its parent's font strings in 3.3.5.
+        -- Decorative columns must remain textures on the same parent layer.
+        if not interactive then
+            local texture=ui:CreateTexture(nil,"BACKGROUND")
+            texture:SetPoint("TOPLEFT",x,y);texture:SetWidth(w);texture:SetHeight(h)
+            texture:SetTexture("Interface\\Buttons\\WHITE8X8");texture:SetVertexColor(.055,.075,.095,.92)
+            return texture
+        end
+        local p=CreateFrame("Frame",nil,ui);p:SetPoint("TOPLEFT",x,y);p:SetWidth(w);p:SetHeight(h);p:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8"});p:SetBackdropColor(.055,.075,.095,.92);return p
+    end
+    Panel(14,-48,154,545);Panel(178,-48,502,545);Panel(690,-48,195,545)
+    Label(ui,26,-62,130,"创作会话")
+    ui.sessionButtons={}
+    for i=1,10 do ui.sessionButtons[i]=Button(ui,"",23,-115-(i-1)*30,136,function(self)
+        if busy then Add("提示","请先停止当前请求再切换会话。");return end
+        store.active=self.sessionID;LoadHistory();attachments={};Render()
+    end) end
+    Button(ui,"＋ 新会话",23,-84,136,function()
+        if busy then Add("提示","请先停止当前请求。");return end
+        local count=0;for _ in pairs(store.sessions) do count=count+1 end;if count>=10 then Add("提示","最多保留10个会话，请复用已有会话。");return end
+        local id="s"..tostring(math.floor(GetTime()*1000));while store.sessions[id] do id=id.."x" end
+        store.sessions[id]={id=id,name="创作 "..tostring(math.floor(GetTime())),history={},model=session.model,project=session.project,agent=session.agent};store.active=id;LoadHistory();actions={};Render()
+    end)
+    Label(ui,25,-435,130,"对话与作品分别保存")
+    ui.modelLabel=Label(ui,25,-453,133,"");ui.modelLabel:SetHeight(36)
+    ui.projectLabel=Label(ui,25,-491,133,"");ui.projectLabel:SetHeight(16)
+    Button(ui,"切换模型",23,-510,136,function()
+        local choices=store.models or {};if #choices==0 then Add("提示","服务尚未提供可用模型列表。");return end
+        local index=1;for i,v in ipairs(choices) do if v==session.model then index=i%#choices+1 end end;session.model=choices[index];Render()
+    end)
+    Button(ui,"切换项目",23,-542,136,function()
+        local choices=store.projects or {};if #choices==0 then Add("提示","服务尚未提供可用项目列表。");return end
+        local index=1;for i,v in ipairs(choices) do if (type(v)=="table" and v.id or v)==session.project then index=i%#choices+1 end end;local v=choices[index];session.project=type(v)=="table" and v.id or v;Render()
+    end)
+    RefreshSessions=function()
+        local ids={};for id in pairs(store.sessions) do ids[#ids+1]=id end;table.sort(ids)
+        for i,button in ipairs(ui.sessionButtons) do local id=ids[i];if id then button.sessionID=id;button:SetText((store.active==id and "|cff5ce2d3● |r" or "")..store.sessions[id].name);button:Show() else button:Hide() end end
+        local modelNames={["gpt-6.1-sol"]="Sol 6.1",["gpt-6-sol"]="Sol 6",["gpt-6-astra"]="Astra 6",["gpt-6-luna"]="Luna 6"}
+        local projectNames={content="内容创作",server="服务器源码"}
+        ui.modelLabel:SetText("引擎：Codex\n模型："..(modelNames[session.model] or session.model or "默认"))
+        ui.projectLabel:SetText("项目："..(projectNames[session.project] or session.project or "内容创作"))
+    end
+    ui.context=Label(ui,191,-61,475,Context())
+    ui.messages=CreateFrame("ScrollingMessageFrame",nil,ui);ui.messages:SetPoint("TOPLEFT",191,-106);ui.messages:SetWidth(476);ui.messages:SetHeight(298)
+    ui.messages:SetFontObject(GameFontHighlightSmall);ui.messages:SetJustifyH("LEFT");ui.messages:SetFading(false);ui.messages:SetMaxLines(200);ui.messages:EnableMouseWheel(true)
+    ui.messages:SetScript("OnMouseWheel",function(self,delta)if delta>0 then self:ScrollUp() else self:ScrollDown() end end)
+    Label(ui,192,-420,335,"说出你的想法 · Shift 点击物品附加说明")
+    local inputBackground=Panel(189,-450,475,77,true)
+    local inputScroll=CreateFrame("ScrollFrame","KajigeAIInputScroll",ui,"UIPanelScrollFrameTemplate");inputScroll:SetPoint("TOPLEFT",195,-456);inputScroll:SetWidth(442);inputScroll:SetHeight(64);inputScroll:SetFrameLevel(inputBackground:GetFrameLevel()+1)
+    ui.input=CreateFrame("EditBox",nil,inputScroll);ui.input:SetWidth(433);ui.input:SetHeight(64);ui.input:SetMultiLine(true);ui.input:SetFontObject(GameFontHighlight);ui.input:SetAutoFocus(false);ui.input:SetMaxLetters(2600);inputScroll:SetScrollChild(ui.input);ui.input:SetPoint("TOPLEFT",inputScroll,"TOPLEFT",0,0)
+    local function FocusInput(_,button)if button=="LeftButton" then ui.input:SetFocus() end end
+    for _,f in ipairs({ui.input,inputScroll,inputBackground}) do f:EnableMouse(true);f:SetScript("OnMouseDown",FocusInput) end
+    local languageButton
+    local function RefreshInputLanguage()
+        local language=type(ui.input.GetInputLanguage)=="function" and ui.input:GetInputLanguage();languageButton:SetText(language=="CHINESE" and "切英文" or language=="ENGLISH" and "切中文" or "中 / 英")
+    end
+    languageButton=Button(ui,"中 / 英",591,-413,75,function()ui.input:SetFocus();if type(ui.input.ToggleInputLanguage)=="function" then ui.input:ToggleInputLanguage();RefreshInputLanguage() else Add("提示","请用系统输入法菜单切换中文。") end end)
+    ui.input:SetScript("OnInputLanguageChanged",RefreshInputLanguage);RefreshInputLanguage()
+    ui.input:SetScript("OnEscapePressed",function(self)self:ClearFocus()end)
+    ui.input:SetScript("OnEnterPressed",function(self)if type(self.IsInIMECompositionMode)=="function" and self:IsInIMECompositionMode() then return end;if IsShiftKeyDown() then self:Insert("\n") elseif Submit(self:GetText()) then self:SetText("");self:ClearFocus() end end)
+    ui:SetScript("OnHide",function()ui.input:ClearFocus()end)
+    Button(ui,"发送",191,-540,85,function()if Submit(ui.input:GetText()) then ui.input:SetText("");ui.input:ClearFocus()end end)
+    Button(ui,"停止",284,-540,85,function()queue={};Send(".kjai cancel");busy=false;activeID=nil;reply="";Render()end)
+    Button(ui,"清空会话",377,-540,94,function()queue={};Send(".kjai clear "..session.id);for i=#history,1,-1 do history[i]=nil end;busy=false;activeID=nil;reply="";Render()end)
+    ui.status=Label(ui,192,-578,470,"")
+    Label(ui,703,-63,104,"作品与操作")
+    Button(ui,"<",812,-57,30,function()actionPage=math.max(1,actionPage-1);RefreshActions()end)
+    Button(ui,">",846,-57,30,function()actionPage=math.min(math.max(1,math.ceil(#actions/8)),actionPage+1);RefreshActions()end)
+    ui.actionButtons={}
+    for i=1,8 do local b=Button(ui,"",702,-98-(i-1)*44,170,function(self)
+        local a=self.action;if not a or not KajigeCreative then return end
+        local ok,result=pcall(function()
+            local payload=type(a.payload_json)=="string" and KajigeCreative.Decode(a.payload_json) or a.payload
+            if a.type=="macro" then
+                if type(payload.body)~="string" then error("宏正文缺失") end
+                if self.confirmUntil==nil or GetTime()>self.confirmUntil then
+                    self.confirmUntil=GetTime()+15
+                    local warning=(payload.body:find("/run",1,true) or payload.body:find("/script",1,true) or payload.body:find("/click",1,true)) and "包含脚本或点击命令，请仔细检查。" or "宏不会自动执行。"
+                    Add("宏预览",(payload.name or "未命名").."\n"..payload.body.."\n"..warning.." 15秒内再点击同一按钮保存。")
+                    return
+                end
+                self.confirmUntil=nil
+                local success,message=KajigeCreative.InstallMacro(payload);Add(success and "作品已安装" or "安装失败",message)
+            elseif a.type=="script" then
+                API.PreviewScript(payload)
+            elseif a.type=="map" then local success,message=KajigeCreative.SetMap(payload);Add(success and "路线已应用" or "地图失败",message) end
+        end)
+        if not ok then Add("作品无法应用",result) end
+    end);ui.actionButtons[i]=b end
+    RefreshActions=function()
+        for i,b in ipairs(ui.actionButtons) do local a=actions[(actionPage-1)*8+i];if a then b.action=a;b:SetText(a.type=="macro" and "保存宏 · 点击审阅" or a.type=="script" and "创作工具 · 审阅源码" or "应用地图路线");b:Show() else b:Hide() end end
+    end
+    Button(ui,"停止所有创作",702,-430,170,function()local ok,message=KajigeCreative.StopScripts();Add("创作已停止",message)end)
+    Button(ui,"撤销上次宏",702,-464,170,function()local ok,message=KajigeCreative.UndoMacro();Add(ok and "已撤销" or "提示",message)end)
+    Button(ui,"清除地图标记",702,-497,170,function()KajigeCreative.route=nil;KajigeCreative.RefreshPins();Add("地图","标记已清除。")end)
+    ui.navigation=Label(ui,703,-535,169,"宏由你手动使用\n世界操作由服务器核验权限")
+    local arrow=ui:CreateTexture(nil,"OVERLAY");arrow:SetWidth(24);arrow:SetHeight(24);arrow:SetPoint("BOTTOMRIGHT",-24,30);arrow:SetTexture("Interface\\Minimap\\MinimapArrow");KajigeCreative.arrow=arrow
+    ui:Hide(); Render()
+end
+function API.Toggle()
+    if not ui then Build() end
+    if ui:IsShown() then
+        ui:Hide()
+    else
+        ui.context:SetText(Context())
+        ui:Show()
+        Send(".kjai status")
+    end
+end
+API.Submit, API.Chunks, API.Clean = Submit, Chunks, Clean
+API.SendNative=Send
+local preview
+function API.PreviewScript(payload)
+    if not preview then
+        preview=CreateFrame("Frame","KajigeCreationPreview",UIParent)
+        preview:SetWidth(660);preview:SetHeight(470);preview:SetPoint("CENTER");preview:SetFrameStrata("FULLSCREEN_DIALOG");preview:EnableMouse(true);preview:SetClampedToScreen(true);preview:SetScale(math.min(1,((GetScreenWidth and GetScreenWidth() or 1024)-30)/660,((GetScreenHeight and GetScreenHeight() or 768)-30)/470))
+        preview:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=16});preview:SetBackdropColor(.025,.035,.05,1)
+        table.insert(UISpecialFrames,"KajigeCreationPreview")
+        preview.title=Label(preview,20,-18,590,"创作源码")
+        Label(preview,20,-49,610,"这是模型生成的客户端界面代码。检查后点击载入；不会自动运行。")
+        local scroll=CreateFrame("ScrollFrame","KajigeCreationSourceScroll",preview,"UIPanelScrollFrameTemplate");scroll:SetPoint("TOPLEFT",20,-78);scroll:SetWidth(594);scroll:SetHeight(318)
+        preview.code=CreateFrame("EditBox",nil,scroll);preview.code:SetWidth(581);preview.code:SetMultiLine(true);preview.code:SetAutoFocus(false);preview.code:SetFontObject(GameFontHighlightSmall);scroll:SetScrollChild(preview.code)
+        preview.code:SetScript("OnEscapePressed",function(self)self:ClearFocus()end)
+        -- Editing preview text does not change the server-validated source being loaded.
+        Button(preview,"载入已验证版本",20,-416,180,function()
+            local ok,message=KajigeCreative.LoadScript(preview.payload,Add);Add(ok and "创作已载入" or "创作失败",message)
+            if ok then preview:Hide()end
+        end)
+        Button(preview,"返回",214,-416,90,function()preview:Hide()end)
+        local close=CreateFrame("Button",nil,preview,"UIPanelCloseButton");close:SetPoint("TOPRIGHT",-3,-3)
+        close:SetScript("OnClick",function()preview:Hide()end)
+        preview:SetScript("OnHide",function()preview.code:ClearFocus()end)
+    end
+    preview.payload=payload;preview.title:SetText("创作源码 · "..Clean(payload.name));preview.code:SetText(payload.body or "");preview.code:ClearFocus();preview:Show()
+end
+function API.Attach(link)
+    if not ui or not ui:IsShown() then return end
+    local ok,text=pcall(KajigeCreative.LinkDetails,link)
+    if ok then attachments[#attachments+1]=text;ui.input:Insert(" "..Clean(link));Add("已附加说明",Clean(link)) end
+end
+if hooksecurefunc and type(ChatEdit_InsertLink)=="function" then hooksecurefunc("ChatEdit_InsertLink",function(link) if IsShiftKeyDown() then API.Attach(link) end end) end
+local function Protocol(_, _, text) return type(text)=="string" and text:find("^KJG_AI_") ~= nil end
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", Protocol)
+local events = CreateFrame("Frame")
+events:RegisterEvent("CHAT_MSG_SYSTEM"); events:RegisterEvent("CHAT_MSG_ADDON"); events:RegisterEvent("PLAYER_LOGIN"); events:RegisterEvent("PLAYER_ENTERING_WORLD"); events:RegisterEvent("PLAYER_TARGET_CHANGED")
+events:SetScript("OnEvent", function(_, event, text, message, channel, sender)
+    if event == "PLAYER_LOGIN" then
+        LoadHistory(); activeID=nil; reply=""; busy=false; queue={}; Render()
+        if ui and ui:IsShown() then Send(".kjai status") end
+        return
+    end
+    if event == "PLAYER_ENTERING_WORLD" then
+        LoadHistory(); Render()
+        if ui then ui.context:SetText(Context()) end
+        if ui and ui:IsShown() then Send(".kjai status") end
+        return
+    end
+    if event == "PLAYER_TARGET_CHANGED" then if ui then ui.context:SetText(Context()) end return end
+    if event == "CHAT_MSG_ADDON" then
+        if text ~= "AzerothCore" or channel ~= "WHISPER" or type(message) ~= "string" then return end
+        if type(sender) ~= "string" or sender:match("^[^-]+") ~= UnitName("player") then return end
+        local opcode, sequence, body = message:match("^([amof])(%d%d%d%d)(.*)$")
+        local sent = sequence and sentCommands[sequence]
+        if not sent or GetTime()-sent.at > 240 then return end
+        if sent.native then
+            if opcode=="m" or opcode=="f" then
+                local feedback=opcode=="f" and "服务器拒绝了该命令，请检查权限和参数。" or Clean(body)
+                Add("创作执行反馈",feedback)
+                if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff5ce2d3[创作]|r "..feedback) end
+            end
+            return
+        end
+        if opcode == "f" and busy then
+            busy=false; activeID=nil; reply=""; queue={}
+            Add("提示", "请求未提交成功，请重新发送。")
+        end
+        if opcode ~= "m" then return end
+        text = body
+    end
+    if type(text) ~= "string" then return end
+    local id = text:match("^KJG_AI_BEGIN:([^:]+)$")
+    if id then
+        if activeID ~= id then activeID=id; reply=""; sentAt=GetTime() end
+        busy=true; Render(); return
+    end
+    local kind, responseID, value = text:match("^KJG_AI_(%u+):([^:]+):(.*)$")
+    if kind == "CLIENT" and responseID == activeID then clientReply=(clientReply or "")..value;return end
+    if (kind == "TEXT" or kind == "ACTION") and responseID == activeID then
+        if kind == "TEXT" then reply = (reply or "") .. Clean(value); if #reply > 24000 then reply=reply:sub(1,24000) end
+        else Add("执行反馈", value) end
+        Render(); return
+    end
+    id = text:match("^KJG_AI_END:([^:]+)$")
+    if id and id == activeID then
+        if KajigeCreative and clientReply and clientReply~="" then
+            local ok,list=pcall(KajigeCreative.Decode,clientReply)
+            if ok and type(list)=="table" then
+                for _,a in ipairs(list) do
+                    if a.type=="settings" then
+                        local yes,p=pcall(KajigeCreative.Decode,a.payload_json or "{}")
+                        if yes and type(p)=="table" then
+                            if type(p.models)=="table" then store.models=p.models end
+                            if type(p.projects)=="table" then store.projects=p.projects end
+                            if type(p.selected_project)=="string" then
+                                for _,project in ipairs(store.projects or {}) do
+                                    local id=type(project)=="table" and project.id or project
+                                    if id==p.selected_project then session.project=id;break end
+                                end
+                            end
+                        end
+                    elseif a.type=="macro" or a.type=="map" or a.type=="script" then actions[#actions+1]=a;session.actions=actions end
+                end
+            else Add("提示","作品数据未完整收到，请让助手重新生成。") end
+        end
+        local final = reply; busy=false; activeID=nil; reply=""
+        if final and final ~= "" then Add("咔鸡 AI", final) else Render() end
+        return
+    end
+    value = text:match("^KJG_AI_STATUS:(.*)$")
+    if value then
+        if value:find("对话记忆已清空",1,true) or value:find("请求已取消",1,true) then
+            busy=false; activeID=nil; reply=""
+        end
+        if value:find("{",1,true) then
+            serviceStatus = value:find("离线",1,true) and "助手暂不可用，请稍后重试" or "助手已连接"
+        elseif value:find("伙伴",1,true) then serviceStatus = Clean(value)
+        elseif value:find("codex",1,true) or value:find("助手",1,true) then serviceStatus = Clean(value)
+        end
+        Render(); return
+    end
+    value = text:match("^KJG_AI_ERROR:(.*)$")
+    if value then busy=false; activeID=nil; reply=""; queue={}; Add("请求失败", value) end
+end)
+events:SetScript("OnUpdate", function(_, delta)
+    if ui and ui:IsShown() and KajigeCreative then
+        navElapsed=navElapsed+delta
+        if navElapsed>.5 then navElapsed=0;ui.navigation:SetText(KajigeCreative.Navigation() or "");KajigeCreative.RefreshPins() end
+    end
+    elapsed=elapsed+delta
+    if elapsed >= 0.08 and #queue > 0 then
+        elapsed=0; counter=(counter+1)%10000
+        local command=table.remove(queue,1)
+        sentCommands[string.format("%04d",counter)] = {at=GetTime(),command=command,native=not command:match("^%.kjai[%s]")}
+        for sequence, sent in pairs(sentCommands) do if GetTime()-sent.at > 240 then sentCommands[sequence]=nil end end
+        if type(SendAddonMessage)=="function" then SendAddonMessage("AzerothCore", "h" .. string.format("%04d",counter) .. command:gsub("^[.!]", ""), "WHISPER", UnitName("player"))
+        else SendChatMessage(command,"SAY") end
+    end
+    if busy and sentAt and GetTime()-sentAt > 200 then
+        busy=false; activeID=nil; reply=""; queue={}; Send(".kjai cancel"); Add("提示", "等待超时，已请求取消；请查看服务状态后重试。"); Send(".kjai status")
+    end
+end)
+SLASH_KAJIGEAI1 = "/kjai"
+SlashCmdList.KAJIGEAI = function(text)
+    local cmd=(text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if cmd=="status" then Send(".kjai status") elseif cmd=="cancel" then queue={}; Send(".kjai cancel"); busy=false; activeID=nil; reply=""; Render()
+    else API.Toggle() end
+end

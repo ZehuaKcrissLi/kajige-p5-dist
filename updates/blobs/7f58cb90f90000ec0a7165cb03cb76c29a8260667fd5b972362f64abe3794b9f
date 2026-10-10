@@ -1,0 +1,178 @@
+-- Original 3.3.5 workbench helpers; actions always require an explicit player click.
+KajigeCreative = {}
+local C = KajigeCreative
+function C.Encode(v)
+ local t=type(v)
+ if t=='nil' then return 'null' elseif t=='boolean' or t=='number' then return tostring(v)
+ elseif t=='string' then return '"'..v:gsub('[%z\1-\31\\"]',function(c) local a={['"']='\\"',['\\']='\\\\',['\n']='\\n',['\r']='\\r',['\t']='\\t'} return a[c] or string.format('\\u%04x',c:byte()) end)..'"'
+ elseif t=='table' then local r={} local array=#v>0; if array then for i,x in ipairs(v) do r[#r+1]=C.Encode(x) end else for k,x in pairs(v) do r[#r+1]=C.Encode(tostring(k))..':'..C.Encode(x) end end; return (array and '[' or '{')..table.concat(r,',')..(array and ']' or '}') end
+ error('unsupported JSON value')
+end
+function C.Decode(s)
+ local pos=1; local parse
+ local function ws() local _,e=s:find('^%s*',pos); pos=(e or pos-1)+1 end
+ local function str()
+  pos=pos+1; local out={}
+  while pos<=#s do local c=s:sub(pos,pos); pos=pos+1
+   if c=='"' then return table.concat(out) elseif c=='\\' then
+    c=s:sub(pos,pos);pos=pos+1;local esc={n='\n',r='\r',t='\t',b='\b',f='\f',['"']='"',['\\']='\\',['/']='/'}
+    if c=='u' then local n=tonumber(s:sub(pos,pos+3),16);assert(n,'invalid unicode');pos=pos+4
+     if n<128 then c=string.char(n) elseif n<2048 then c=string.char(192+math.floor(n/64),128+n%64) else c=string.char(224+math.floor(n/4096),128+math.floor(n/64)%64,128+n%64) end
+    else c=assert(esc[c],'invalid escape') end
+   end;out[#out+1]=c
+  end;error('unterminated JSON string')
+ end
+ parse=function() ws();local c=s:sub(pos,pos)
+  if c=='"' then return str() elseif c=='{' or c=='[' then
+   local obj,close={},c=='{' and '}' or ']';pos=pos+1;ws();if s:sub(pos,pos)==close then pos=pos+1;return obj end
+   while true do local k;if c=='{' then ws();assert(s:sub(pos,pos)=='"');k=str();ws();assert(s:sub(pos,pos)==':');pos=pos+1 else k=#obj+1 end
+    obj[k]=parse();ws();local sep=s:sub(pos,pos);pos=pos+1;if sep==close then break end;assert(sep==',','invalid separator') end;return obj
+  elseif s:sub(pos,pos+3)=='true' then pos=pos+4;return true elseif s:sub(pos,pos+4)=='false' then pos=pos+5;return false elseif s:sub(pos,pos+3)=='null' then pos=pos+4;return nil
+  else local n=s:match('^-?%d+%.?%d*[eE]?[+-]?%d*',pos);assert(n and tonumber(n),'invalid number');pos=pos+#n;return tonumber(n) end
+ end
+ local result=parse();ws();assert(pos>#s,'trailing JSON');return result
+end
+function C.Context()
+ local ctx={money=GetMoney and GetMoney() or 0,talents={},skills={},quests={},bags={},equipment={},zone=GetRealZoneText and GetRealZoneText() or '',subzone=GetSubZoneText and GetSubZoneText() or ''}
+ if not WorldMapFrame or not WorldMapFrame:IsShown() then if SetMapToCurrentZone then SetMapToCurrentZone() end;ctx.map_area_id=GetCurrentMapAreaID and GetCurrentMapAreaID() or nil;if GetPlayerMapPosition then local x,y=GetPlayerMapPosition('player');ctx.position={x=x,y=y} end end
+ if GetNumTalentTabs then for tab=1,GetNumTalentTabs() do for i=1,GetNumTalents(tab) do local name,_,_,_,rank,maxRank=GetTalentInfo(tab,i);if rank and rank>0 then ctx.talents[#ctx.talents+1]={name=name,rank=rank,max_rank=maxRank} end end end end
+ if GetNumSkillLines then for i=1,GetNumSkillLines() do local name,header,_,rank,_,_,maxRank=GetSkillLineInfo(i);if not header then ctx.skills[#ctx.skills+1]={name=name,rank=rank,max_rank=maxRank} end end end
+ if GetNumQuestLogEntries then for i=1,GetNumQuestLogEntries() do local title,level,_,_,header,_,complete,_,id=GetQuestLogTitle(i);if not header then ctx.quests[#ctx.quests+1]={title=title,level=level,id=id,complete=complete} end end end
+ if GetContainerNumSlots then for bag=0,4 do for slot=1,GetContainerNumSlots(bag) do local link=GetContainerItemLink(bag,slot);if link then local _,count=GetContainerItemInfo(bag,slot);ctx.bags[#ctx.bags+1]={id=tonumber(link:match('item:(%d+)')),count=count,link=link} end end end end
+ for slot=1,19 do local link=GetInventoryItemLink and GetInventoryItemLink('player',slot);if link then ctx.equipment[#ctx.equipment+1]={slot=slot,id=tonumber(link:match('item:(%d+)'))} end end
+ return ctx
+end
+C.undo={}
+function C.InstallMacro(a)
+ if InCombatLockdown and InCombatLockdown() then return false,'战斗中无法修改宏，请脱战后点击。' end
+ if type(a.name)~='string' or #a.name==0 or #a.name>16 or type(a.body)~='string' or #a.body>255 then return false,'宏名称最多16字节，正文最多255字节。' end
+ local index=GetMacroIndexByName(a.name);local old
+ if index and index>0 then local name,icon,body=GetMacroInfo(index);old={name=name,icon=icon,body=body};EditMacro(index,a.name,a.icon or icon,a.body) else index=CreateMacro(a.name,a.icon or 1,a.body,a.character and 1 or nil) end
+ if not index or index==0 then return false,'宏栏已满或创建失败。' end
+ C.undo[#C.undo+1]={index=index,old=old,name=a.name,new_body=a.body};return true,'宏已保存；请从宏面板拖到动作栏后手动使用。'
+end
+function C.UndoMacro()
+ if InCombatLockdown and InCombatLockdown() then return false,'请脱战后撤销。' end
+ local a=C.undo[#C.undo];if not a then return false,'没有可撤销的宏。' end
+ local _,_,body=GetMacroInfo(a.index);if body~=a.new_body then return false,'宏已被其他操作修改，未覆盖你的修改。' end
+ if a.old then EditMacro(a.index,a.old.name,a.old.icon,a.old.body) else DeleteMacro(a.index) end
+ table.remove(C.undo);return true,'已撤销上一次宏修改。'
+end
+function C.SetMap(a)
+ if a.coordinate_units=='percent' then for _,p in ipairs(a.points or {}) do p.x=p.x/100;p.y=p.y/100 end;a.coordinate_units='normalized' end
+ assert(type(a.points)=='table' and #a.points<=400,'地图最多400个点')
+ for _,p in ipairs(a.points) do assert(type(p.x)=='number' and p.x>=0 and p.x<=1 and type(p.y)=='number' and p.y>=0 and p.y<=1,'坐标需为0到1') end
+ C.route=a;C.routeIndex=1;C.RefreshPins();return true,'地图标记已添加；导航只提供方向，由你移动角色。'
+end
+function C.RefreshPins()
+ C.pins=C.pins or {};for _,pin in ipairs(C.pins) do pin:Hide() end
+ if not C.route or not WorldMapButton then return end
+ if C.route.map_id and GetCurrentMapAreaID and GetCurrentMapAreaID()~=C.route.map_id then return end
+ for i,p in ipairs(C.route.points) do
+  local pin=C.pins[i];if not pin then pin=CreateFrame('Button',nil,WorldMapButton);pin:SetWidth(14);pin:SetHeight(14);pin:SetNormalTexture('Interface\\Minimap\\Tracking\\POI');C.pins[i]=pin end
+  pin:ClearAllPoints();pin:SetPoint('CENTER',WorldMapButton,'TOPLEFT',p.x*WorldMapButton:GetWidth(),-p.y*WorldMapButton:GetHeight());pin:SetScript('OnEnter',function(self) GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(p.label or tostring(i));GameTooltip:Show() end);pin:SetScript('OnLeave',function()GameTooltip:Hide()end);pin:Show()
+ end
+end
+function C.Navigation()
+ if not C.route or not C.route.navigate or not GetPlayerMapPosition then return '' end
+ if WorldMapFrame and WorldMapFrame:IsShown() then return '地图打开时暂停导航' end
+ SetMapToCurrentZone();if C.route.map_id and GetCurrentMapAreaID()~=C.route.map_id then return '请前往路线所在地图' end
+ local p=C.route.points[C.routeIndex];if not p then return '路线已完成' end
+ local x,y=GetPlayerMapPosition('player');if x==0 and y==0 then return '当前位置无法定位' end
+ local dx,dy=p.x-x,p.y-y;local dist=math.sqrt(dx*dx+dy*dy)
+ if dist<0.008 then C.routeIndex=C.routeIndex+1;return C.Navigation() end
+ local facing=GetPlayerFacing and GetPlayerFacing() or 0
+ local angle=math.atan2 and math.atan2(dx,-dy) or math.atan(dx/(-dy==0 and .00001 or -dy));angle=angle-facing
+ if C.arrow then
+  local co,si=math.cos(-angle),math.sin(-angle)
+  local function uv(x,y)return .5+x*co-y*si,.5+x*si+y*co end
+  local ulx,uly=uv(-.5,-.5);local llx,lly=uv(-.5,.5);local urx,ury=uv(.5,-.5);local lrx,lry=uv(.5,.5)
+  C.arrow:SetTexCoord(ulx,uly,llx,lly,urx,ury,lrx,lry)
+ end
+ return '导航 '..C.routeIndex..'/'..#C.route.points..' · '..(p.label or C.route.title or '目的地')..' · 地图距离 '..math.floor(dist*100)..'%'
+end
+function C.LinkDetails(link)
+ if not C.tooltip then C.tooltip=CreateFrame('GameTooltip','KajigeCreativeTooltip',UIParent,'GameTooltipTemplate') end
+ local t=C.tooltip;t:SetOwner(UIParent,'ANCHOR_NONE');t:ClearLines();t:SetHyperlink(link)
+ local lines={link};for i=1,t:NumLines() do for _,side in ipairs({'Left','Right'}) do local f=_G['KajigeCreativeTooltipText'..side..i];local text=f and f:GetText();if text and text~='' then lines[#lines+1]=text end end end;t:Hide();return table.concat(lines,'\n')
+end
+-- Published creations are manually reviewed and loaded, never auto-run at login.
+-- Restricted objects expose only UI methods; no global frames, chat or command APIs.
+C.scripts={}
+local widgetMethods={SetPoint=true,ClearAllPoints=true,SetWidth=true,SetHeight=true,SetSize=true,SetScale=true,SetAlpha=true,SetText=true,GetText=true,SetFont=true,SetFontObject=true,SetJustifyH=true,SetJustifyV=true,SetTextColor=true,SetTexture=true,SetTexCoord=true,SetVertexColor=true,SetColorTexture=true,Show=true,Hide=true,IsShown=true,SetBackdrop=true,SetBackdropColor=true,SetBackdropBorderColor=true,EnableMouse=true,EnableMouseWheel=true,SetMovable=true,SetClampedToScreen=true,RegisterForDrag=true,StartMoving=true,StopMovingOrSizing=true,SetNormalTexture=true,SetHighlightTexture=true,SetPushedTexture=true,SetDisabledTexture=true,Enable=true,Disable=true,SetAutoFocus=true,SetMultiLine=true,SetMaxLetters=true,SetFocus=true,ClearFocus=true,Insert=true,SetScrollChild=true,SetVerticalScroll=true,SetHorizontalScroll=true,SetMinMaxValues=true,SetValue=true,GetValue=true,SetValueStep=true,SetOrientation=true,SetStatusBarTexture=true,SetStatusBarColor=true,GetWidth=true,GetHeight=true,SetFrameStrata=true,SetFrameLevel=true}
+local allowedEvents={OnUpdate=true,OnEvent=true,OnClick=true,OnMouseDown=true,OnMouseUp=true,OnMouseWheel=true,OnEnter=true,OnLeave=true,OnDragStart=true,OnDragStop=true,OnShow=true,OnHide=true,OnTextChanged=true,OnEnterPressed=true,OnEscapePressed=true,OnValueChanged=true}
+local function CopyLibrary(lib)local out={};for k,v in pairs(lib or {}) do if type(v)=='function' or type(v)=='number' or type(v)=='string' then out[k]=v end end;return out end
+function C.LoadScript(a,feedback)
+ if type(a)~='table' or type(a.name)~='string' or type(a.body)~='string' or #a.body>60000 then return false,'创作源码无效或超过60000字节。' end
+ local compile=loadstring or load;local fn,err=compile(a.body,'咔鸡创作:'..a.name);if not fn then return false,'编译失败：'..tostring(err) end
+ local frames,raw,proxies={},{},{}
+ local manualEvent=false
+ local lastCommand=-math.huge
+ local function Wrap(obj)
+  if proxies[obj] then return proxies[obj] end
+  local proxy={};proxies[obj]=proxy;raw[proxy]=obj
+  setmetatable(proxy,{__index=function(_,key)
+   if key=='CreateFontString' or key=='CreateTexture' then return function(_,_,layer,template)return Wrap(obj[key](obj,nil,layer,template))end end
+   if key=='RegisterEvent' or key=='UnregisterEvent' then return function(_,event)
+    local events={PLAYER_TARGET_CHANGED=true,UNIT_HEALTH=true,UNIT_MAXHEALTH=true,UNIT_MANA=true,UNIT_MAXMANA=true,PLAYER_REGEN_ENABLED=true,PLAYER_REGEN_DISABLED=true,BAG_UPDATE=true,QUEST_LOG_UPDATE=true,PLAYER_LEVEL_UP=true,ZONE_CHANGED_NEW_AREA=true,ZONE_CHANGED=true}
+    assert(events[event],'此事件不允许：'..tostring(event));obj[key](obj,event)
+   end end
+   if key=='SetScript' then return function(_,event,callback)
+    assert(allowedEvents[event],'此回调不允许：'..tostring(event));assert(type(callback)=='function' or callback==nil,'回调必须是函数')
+    local accumulated=0
+    obj:SetScript(event,callback and function(_, ...)
+     local args={...}
+     if event=='OnUpdate' then accumulated=accumulated+(args[1] or 0);if accumulated<.25 then return end;args[1]=accumulated;accumulated=0 end
+     local started=debugprofilestop and debugprofilestop()
+     local previousManual=manualEvent
+     manualEvent=event=='OnClick' or event=='OnMouseUp' or event=='OnEnterPressed'
+     local ok,msg=pcall(callback,proxy,unpack(args))
+     manualEvent=previousManual
+     local slow=started and debugprofilestop()-started>30
+     if not ok or slow then obj:SetScript(event,nil);if feedback then feedback('创作回调已停止',not ok and tostring(msg) or '单次回调超过30毫秒，请优化后重新载入。') end end
+    end or nil)
+   end end
+   if not widgetMethods[key] or type(obj[key])~='function' then error('创作无法使用此界面方法：'..tostring(key)) end
+   return function(_,...)local args={...};for i,v in ipairs(args) do if raw[v] then args[i]=raw[v] end end;return obj[key](obj,unpack(args))end
+  end,__newindex=function()error('创作对象只允许调用界面方法')end,__metatable=false})
+  return proxy
+ end
+ local env={math=CopyLibrary(math),string=CopyLibrary(string),table=CopyLibrary(table),pairs=pairs,ipairs=ipairs,next=next,select=select,tonumber=tonumber,tostring=tostring,type=type,assert=assert,error=error,pcall=pcall,unpack=unpack}
+ env.table.setn=nil;env.string.dump=nil
+ local function ReadAPI(name)if type(_G[name])=='function' then env[name]=_G[name] end end
+ for _,name in ipairs({'UnitName','UnitLevel','UnitClass','UnitRace','UnitHealth','UnitHealthMax','UnitMana','UnitManaMax','UnitExists','UnitIsDead','UnitIsFriend','UnitIsEnemy','GetTime','GetMoney','GetRealZoneText','GetSubZoneText','GetItemInfo','GetSpellInfo','GetInventoryItemLink','GetContainerItemLink','GetContainerItemInfo','GetContainerNumSlots','GetNumQuestLogEntries','GetQuestLogTitle','GetNumTalentTabs','GetNumTalents','GetTalentInfo','GetNumSkillLines','GetSkillLineInfo','GetScreenWidth','GetScreenHeight','IsShiftKeyDown','IsControlKeyDown','IsAltKeyDown'}) do ReadAPI(name) end
+ env.CreateFrame=function(kind,_,parent,template)
+  local kinds={Frame=true,Button=true,EditBox=true,ScrollFrame=true,Slider=true,StatusBar=true};assert(kinds[kind],'不支持的界面类型')
+  local templates={UIPanelButtonTemplate=true,UIPanelScrollFrameTemplate=true,OptionsSliderTemplate=true}
+  assert(template==nil or templates[template],'只允许普通界面模板')
+  assert(parent==nil or raw[parent],'父窗口必须属于当前创作')
+  assert(#frames<100,'单个创作最多100个窗口')
+  local f=CreateFrame(kind,nil,parent and raw[parent] or UIParent,template);frames[#frames+1]=f;return Wrap(f)
+ end
+ env.GameCommand=function(command)
+  if not manualEvent then return false,'游戏操作只允许在玩家点击或回车时提交。' end
+  if type(command)~='string' or #command==0 or #command>240 or command:find('[%z\r\n]') then return false,'命令必须为单行且不超过240字节。' end
+  command=command:gsub('^%s+',''):gsub('%s+$',''):gsub('^[.!]','')
+  local root=command:match('^(%S+)');if not root or not root:match('^[A-Za-z]+$') then return false,'命令名称无效。' end
+  root=root:lower()
+  for _,blocked in ipairs({'account','server','reload','debug','pdump','ban','unban','mute','unmute','kick','kjai','rbac','send','shutdown','restart'}) do
+   if blocked:sub(1,#root)==root then return false,'该管理操作不能由创作按钮执行。' end
+  end
+  if GetTime()-lastCommand<1 then return false,'每个创作每秒最多提交一个命令。' end
+  if not KajigeAIConsole or not KajigeAIConsole.SendNative then return false,'游戏通信接口尚未就绪。' end
+  lastCommand=GetTime();KajigeAIConsole.SendNative('.'..command)
+  return true,'请求已提交；真实执行结果将在聊天栏显示。'
+ end
+ env.Print=function(message)if feedback then feedback(a.name,tostring(message)) end end
+ -- Only the anonymous environment receives assignments from the source.
+ if setfenv then setfenv(fn,env) else return false,'当前客户端缺少 Lua 5.1 隔离环境。' end
+ local ok,msg=pcall(fn)
+ if not ok then for _,f in ipairs(frames)do for event in pairs(allowedEvents)do f:SetScript(event,nil)end;if f.UnregisterAllEvents then f:UnregisterAllEvents()end;f:Hide()end;return false,'运行失败：'..tostring(msg) end
+ C.scripts[#C.scripts+1]={name=a.name,frames=frames,source=a.body,sha256=a.sha256}
+ return true,'创作已加载：'..a.name..'；游戏操作仍由服务器检查权限，可点击停止创作关闭。'
+end
+function C.StopScripts()
+ local count=#C.scripts
+ for _,s in ipairs(C.scripts)do for _,f in ipairs(s.frames)do for event in pairs(allowedEvents)do f:SetScript(event,nil)end;if f.UnregisterAllEvents then f:UnregisterAllEvents()end;f:Hide()end end
+ C.scripts={};return true,'已停止 '..count..' 个创作。'
+end

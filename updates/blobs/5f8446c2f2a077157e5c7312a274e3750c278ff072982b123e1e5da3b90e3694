@@ -1,0 +1,15 @@
+## Interface: 30300
+## Title: |cff00ff96咔鸡哥 P6 训练控制台|r
+## Notes: P6 奥杜尔 14 场、GM 单刷、机制教练、账号权限等级与 KJG 控制、P4/P5/P6 备战配装、真实团队 Buff 与机器人模拟
+## Author: 咔鸡哥 P6 团本训练服
+## Version: 2026.10.08.1
+## RequiredDeps: SunwellTrainer
+## SavedVariables: KajigeSWTDB
+
+TitanEquipmentData.lua
+P6NeutralDefaults.lua
+P6PreparationData.lua
+KajigeSWTControl.lua
+ItemWorkshop.lua
+CreativeWorkbench.lua
+AIConsole.lua
