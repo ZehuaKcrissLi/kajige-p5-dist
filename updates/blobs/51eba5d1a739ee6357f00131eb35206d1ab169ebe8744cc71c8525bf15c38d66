@@ -1,0 +1,212 @@
+-- 3.3.5a; primary mechanics: pinned AzerothCore boss_algalon_the_observer.cpp.
+-- Only observed target/focus/raid targets have health data; never invent unseen stars.
+KajigeAlgalonCoachDB = KajigeAlgalonCoachDB or {}
+local DB = KajigeAlgalonCoachDB
+if DB.enabled == nil then DB.enabled = true end
+if DB.sound == nil then DB.sound = true end
+DB.park = tonumber(DB.park) or 20
+DB.danger = tonumber(DB.danger) or 8
+DB.spacing = tonumber(DB.spacing) or 4
+local active, phaseTwo, nextBang, bangCasting, lastDeath, warnedBang, activeAt
+local stars, dead, seenAlerts = {}, {}, {}
+local deaths, overlaps = 0, 0
+local action, actionUntil = "", 0
+local waInstalled = false
+local function ID(guid)
+    if type(guid) == "string" and string.sub(guid, 1, 4) == "0xF1" then
+        return tonumber(string.sub(guid, 7, 12), 16)
+    end
+end
+local frame = CreateFrame("Frame", "KajigeAlgalonStarCoach", UIParent)
+frame:SetWidth(650)
+frame:SetHeight(115)
+frame:SetPoint("TOP", UIParent, "TOP", 0, -360)
+frame:SetFrameStrata("HIGH")
+frame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", tile = true, tileSize = 16})
+frame:SetBackdropColor(0.02, 0.03, 0.09, 0.9)
+local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+text:SetPoint("CENTER", frame, "CENTER", 0, 0)
+text:SetWidth(630)
+frame:Hide()
+local function Notify(message, key)
+    local now = GetTime()
+    if seenAlerts[key] and now - seenAlerts[key] < 3 then return end
+    seenAlerts[key] = now
+    action, actionUntil = message, now + 6
+    if DB.enabled and DB.sound then PlaySoundFile("Sound\\Interface\\RaidWarning.wav") end
+end
+function KajigeAlgalonCoach_State()
+    if not DB.enabled or not active then return false, "" end
+    local rows = {"|cff88bbff奥尔加隆 · 修星教练|r"}
+    if phaseTwo then
+        rows[#rows + 1] = "P2：停止修星；使用场边固定黑洞，躲重击。"
+    elseif bangCasting then
+        rows[#rows + 1] = "|cffff3030大爆炸读条：停手进洞；指定承伤者留外！|r"
+    elseif nextBang and nextBang <= GetTime() then
+        rows[#rows + 1] = "大爆炸预计窗口已到 · 等待实际施法，保持黑洞可用"
+    elseif nextBang then
+        rows[#rows + 1] = string.format("大爆炸预计 %.1f 秒 · 保留可用黑洞，指定承伤者留外", math.max(0, nextBang - GetTime()))
+    else
+        rows[#rows + 1] = "大爆炸尚未校准 · 单颗击杀，等治疗抬团再杀下一颗"
+    end
+    if not phaseTwo then
+        local health = {}
+        for _, unit in ipairs({"target", "focus"}) do
+            if UnitExists(unit) and ID(UnitGUID(unit)) == 32955 then
+                local maximum = UnitHealthMax(unit)
+                if maximum and maximum > 0 then
+                    health[#health + 1] = string.format("%s星 %.0f%%", unit == "target" and "目标" or "焦点", UnitHealth(unit) * 100 / maximum)
+                end
+            end
+        end
+        rows[#rows + 1] = #health > 0 and table.concat(health, " / ") or "选中或焦点坍缩星，显示血量与停手提示"
+    end
+    rows[#rows + 1] = string.format("本轮星死亡 %d · 连续爆星 %d（≤%.0f 秒，教学阈值）", deaths, overlaps, DB.spacing)
+    if GetTime() < actionUntil then rows[#rows + 1] = "|cffffd100" .. action .. "|r" end
+    return true, table.concat(rows, "\n")
+end
+local function Render()
+    local visible, content = KajigeAlgalonCoach_State()
+    text:SetText(content)
+    if visible and not waInstalled then frame:Show() else frame:Hide() end
+    if WeakAuras and WeakAuras.ScanEvents then WeakAuras.ScanEvents("KAJIGE_ALGALON_STAR") end
+end
+local function Reset()
+    active, phaseTwo, nextBang, bangCasting, lastDeath = false, false, nil, false, nil
+    stars, dead, seenAlerts = {}, {}, {}
+    deaths, overlaps, action, actionUntil = 0, 0, "", 0
+    warnedBang, activeAt = nil, nil
+    Render()
+end
+KajigeAlgalonCoach_Reset = Reset
+local function Activate()
+    if active then return end
+    active = true
+    activeAt = GetTime()
+    Notify("先标记星位：一颗一颗修，低血停手；星会自然掉血，别同时压低。", "start")
+end
+local function Observe(unit)
+    if not UnitExists(unit) then return end
+    local guid = UnitGUID(unit)
+    local id = ID(guid)
+    if id == 32871 and UnitAffectingCombat and UnitAffectingCombat(unit) then
+        Activate()
+        local maximum = UnitHealthMax(unit)
+        if maximum and maximum > 0 and UnitHealth(unit) * 100 / maximum <= 20 then phaseTwo = true end
+    end
+    if not active or phaseTwo or id ~= 32955 then return end
+    local maximum = UnitHealthMax(unit)
+    if not maximum or maximum <= 0 or UnitHealth(unit) <= 0 then return end
+    local percent = UnitHealth(unit) * 100 / maximum
+    local state = stars[guid] or {}
+    stars[guid] = state
+    if percent <= DB.danger and not state.danger then
+        state.danger = true
+        state.park = true
+        Notify("星低血即将死亡：停手，确认团血和爆星间隔！", guid .. ":danger")
+    elseif percent <= DB.park and not state.park then
+        state.park = true
+        Notify("星到停手线：切下一颗；需要造洞时按团长口令单杀。", guid .. ":park")
+    end
+end
+local function Combat(...)
+    local _, event, source, _, _, dest, _, _, spell = ...
+    local sourceID, destID = ID(source), ID(dest)
+    -- Seeing an idle star or targeting Algalon is insufficient to start a pull.
+    if (sourceID == 32871 or destID == 32871)
+        and (event == "SWING_DAMAGE" or event == "SWING_MISSED" or event == "SPELL_CAST_START" or event == "SPELL_CAST_SUCCESS" or event == "SPELL_DAMAGE") then Activate() end
+    if not active then return end
+    if sourceID == 32871 and (event == "SPELL_CAST_START" or event == "SPELL_CAST_SUCCESS") then
+        if spell == 62301 and not nextBang and not bangCasting and GetTime() - activeAt <= 35 then
+            nextBang = GetTime() + 65 -- first Cosmic Smash scheduled at 25s, first Big Bang at 90s
+        elseif spell == 64443 or spell == 64584 then
+            if event == "SPELL_CAST_START" then
+                nextBang, bangCasting = GetTime() + 90.5, true
+                Notify("大爆炸：停止修星，进入黑洞；指定承伤者留在外面开减伤！", "bang")
+            else bangCasting = false end
+        end
+    end
+    if event == "UNIT_DIED" and destID == 32955 and not dead[dest] and not phaseTwo then
+        dead[dest] = true
+        deaths = deaths + 1
+        if lastDeath and GetTime() - lastDeath <= DB.spacing then
+            overlaps = overlaps + 1
+            Notify("连续爆星：先停手抬满团血，再安排下一颗；死亡间隔过短。", "overlap:" .. dest)
+        else Notify("星死亡：黑洞位置目视确认，等团血恢复再杀下一颗。", "death:" .. dest) end
+        lastDeath = GetTime()
+    elseif event == "UNIT_DIED" and destID == 32871 then Reset() end
+end
+local function InstallWA()
+    if waInstalled then return true end
+    if not WeakAuras or type(WeakAuras.Add) ~= "function" or (IsAddOnLoaded and not IsAddOnLoaded("WeakAuras")) then return false end
+    local name = "咔鸡 · 奥尔加隆修星"
+    -- Preserve player edits to an already installed aura; only add our own ID.
+    if WeakAurasSaved and WeakAurasSaved.displays and WeakAurasSaved.displays[name] then
+        waInstalled = true
+        return true
+    end
+    local data = {
+        id = name, uid = "KajigeAlgalonStars1", regionType = "text", internalVersion = 52,
+        authorOptions = {}, config = {}, conditions = {}, load = {},
+        anchorPoint = "CENTER", anchorFrameType = "SCREEN", selfPoint = "CENTER",
+        xOffset = 0, yOffset = 120, width = 650, height = 115,
+        font = "Friz Quadrata TT", fontSize = 19, color = {1, 1, 1, 1},
+        justify = "CENTER", displayText = "%c", customTextUpdate = "event",
+        customText = "function() if KajigeAlgalonCoach_State then local _, text = KajigeAlgalonCoach_State(); return text end return '' end",
+        triggers = {{trigger = {type = "custom", custom_type = "status", check = "event", events = "KAJIGE_ALGALON_STAR PLAYER_ENTERING_WORLD",
+            custom = "function() return KajigeAlgalonCoach_State and KajigeAlgalonCoach_State() or false end"},
+            untrigger = {custom = "function() return not (KajigeAlgalonCoach_State and KajigeAlgalonCoach_State()) end"}}},
+        actions = {start = {}, finish = {}, init = {}},
+        animation = {start = {type = "none"}, main = {type = "none"}, finish = {type = "none"}},
+    }
+    local ok = pcall(WeakAuras.Add, data)
+    -- This WA port catches PreAdd errors internally, so verify persistence too.
+    waInstalled = ok and WeakAurasSaved and WeakAurasSaved.displays and WeakAurasSaved.displays[name] ~= nil or false
+    return waInstalled
+end
+function KajigeAlgalonCoach_Enable()
+    DB.enabled = true
+    InstallWA()
+    Render()
+end
+function KajigeAlgalonCoach_Show()
+    KajigeAlgalonCoach_Enable()
+    if KajigeRaidCoach_ShowGuide then KajigeRaidCoach_ShowGuide(32871) end
+    DEFAULT_CHAT_FRAME:AddMessage("|cff88bbff修星提示已启用：" .. (waInstalled and "已安装 WA「咔鸡 · 奥尔加隆修星」。" or "WA 尚未加载，使用内置实时提示。") .. "|r")
+    DEFAULT_CHAT_FRAME:AddMessage("/algcoach park 20 停手线；/algcoach danger 8 危险线；/algcoach spacing 4 连爆教学间隔；/algcoach sound 切换声音；/algcoach off 关闭。")
+end
+SLASH_KAJIGEALGALONCOACH1 = "/algcoach"
+SlashCmdList.KAJIGEALGALONCOACH = function(message)
+    local command, number = string.match(string.lower(message or ""), "^(%S+)%s*(%d*)")
+    number = tonumber(number)
+    if command == "off" then DB.enabled = false; Render()
+    elseif command == "sound" then DB.sound = not DB.sound
+    elseif number and ((command == "park" and number > DB.danger and number <= 90) or (command == "danger" and number > 0 and number < DB.park) or (command == "spacing" and number >= 1 and number <= 15)) then
+        DB[command] = number
+        DEFAULT_CHAT_FRAME:AddMessage("修星参数 " .. command .. " = " .. number)
+    else KajigeAlgalonCoach_Show() end
+end
+local events = CreateFrame("Frame")
+for _, event in ipairs({"COMBAT_LOG_EVENT_UNFILTERED", "PLAYER_REGEN_ENABLED", "PLAYER_ENTERING_WORLD", "ADDON_LOADED", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED"}) do events:RegisterEvent(event) end
+events:SetScript("OnEvent", function(_, event, ...)
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then Combat(...)
+    elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_ENTERING_WORLD" then Reset(); InstallWA()
+    elseif event == "ADDON_LOADED" then InstallWA()
+    else Observe("target"); Observe("focus") end
+    Render()
+end)
+local elapsedTotal = 0
+events:SetScript("OnUpdate", function(_, elapsed)
+    elapsedTotal = elapsedTotal + elapsed
+    if elapsedTotal < 0.2 then return end
+    elapsedTotal = 0
+    Observe("target"); Observe("focus")
+    if active and nextBang and not bangCasting and not phaseTwo and nextBang - GetTime() <= 15 and nextBang > GetTime() and warnedBang ~= nextBang then
+        warnedBang = nextBang
+        Notify("大爆炸临近：先确认可用黑洞；别在进洞时连续爆星。", "bangsoon:" .. nextBang)
+    end
+    Render()
+end)
+KajigeAlgalonCoachTestHooks = {event = function(event, ...) events:GetScript("OnEvent")(events, event, ...) end,
+    update = function(elapsed) events:GetScript("OnUpdate")(events, elapsed) end, combat = Combat, observe = Observe, reset = Reset, installWA = InstallWA,
+    snapshot = function() return {active = active, phaseTwo = phaseTwo, nextBang = nextBang, bangCasting = bangCasting, deaths = deaths, overlaps = overlaps, action = action, waInstalled = waInstalled} end}
