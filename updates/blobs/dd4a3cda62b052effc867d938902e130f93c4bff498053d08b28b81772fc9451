@@ -1,0 +1,5 @@
+-- Generated release asset catalogue. New MPQ geometry requires a full client restart.
+KajigeAssetCatalog={version='1.7.0',assets={
+ ['sports-car']={asset_id='sports-car',name='赤焰跑车',kind='mount',display_id=910250,model_path='Creature\\Kaji\\SportsCar\\SportsCar.m2',version='1.7.0'},
+ ['anime-hero']={asset_id='anime-hero',name='疾风忍者',kind='morph',display_id=910251,model_path='Creature\\Kaji\\AnimeHero\\AnimeHero.m2',version='1.7.0'}
+}}
