@@ -1,0 +1,10 @@
+-- Original asset catalogue. New MPQ geometry requires a full client restart.
+KajigeAssetCatalog={version='1.8.0',order={'sports-car','anime-hero','hover-bike','mecha-guardian','crystal-golem','clockwork-dragon','ufo-saucer'},assets={
+ ['sports-car']={asset_id='sports-car',name='赤焰跑车',kind='mount',display_id=910250,model_path='Creature\\Kaji\\SportsCar\\SportsCar.m2',version='1.8.0'},
+ ['anime-hero']={asset_id='anime-hero',name='疾风忍者',kind='morph',display_id=910251,model_path='Creature\\Kaji\\AnimeHero\\AnimeHero.m2',version='1.8.0'},
+ ['hover-bike']={asset_id='hover-bike',name='霓虹悬浮摩托',kind='mount',display_id=910252,model_path='Creature\\Kaji\\HoverBike\\HoverBike.m2',version='1.8.0'},
+ ['mecha-guardian']={asset_id='mecha-guardian',name='钢铁机甲',kind='morph',display_id=910253,model_path='Creature\\Kaji\\MechaGuardian\\MechaGuardian.m2',version='1.8.0'},
+ ['crystal-golem']={asset_id='crystal-golem',name='水晶巨像',kind='morph',display_id=910254,model_path='Creature\\Kaji\\CrystalGolem\\CrystalGolem.m2',version='1.8.0'},
+ ['clockwork-dragon']={asset_id='clockwork-dragon',name='机械翼龙',kind='mount',display_id=910255,model_path='Creature\\Kaji\\ClockworkDragon\\ClockworkDragon.m2',version='1.8.0'},
+ ['ufo-saucer']={asset_id='ufo-saucer',name='星环飞碟',kind='mount',display_id=910256,model_path='Creature\\Kaji\\UfoSaucer\\UfoSaucer.m2',version='1.8.0'},
+}}
