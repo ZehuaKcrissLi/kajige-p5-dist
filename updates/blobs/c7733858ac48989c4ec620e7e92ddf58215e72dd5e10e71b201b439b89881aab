@@ -1,0 +1,409 @@
+-- WoW 3.3.5a / Lua 5.1. The server owns permissions, catalogue and stock.
+KajigeItemWorkshop = {}
+local UI, rows, shops = nil, {}, {}
+local allowed, request, page, pages, total = false, 0, 0, 1, 0
+local busy, sentAt, shopIndex, stockMode = false, 0, 1, false
+local category = "all"
+local portableMode, toyThemeIndex = true, 1
+local toyThemes = {{"fun", "百宝趣味"}, {"mounts", "坐骑"}, {"pets", "宠物"}, {"rare", "稀有掉落"}, {"holiday", "节日"}, {"custom", "自选空货单"}}
+local categories = {
+    {"all", "全部"}, {"mounts", "坐骑"}, {"pets", "宠物"},
+    {"rare", "史诗以上"}, {"legendary", "橙装"}, {"holiday", "节日"},
+    {"weapons", "武器"}, {"armor", "护甲"},
+}
+local themes = {
+    {"custom", "自选空商店"}, {"mounts", "坐骑收藏"}, {"pets", "宠物收藏"},
+    {"rare", "稀有掉落"}, {"holiday", "节日收藏"},
+    {"weapons", "史诗武器"}, {"armor", "史诗护甲"},
+}
+local themeIndex = 1
+local colors = {"ff9d9d9d", "ffffffff", "ff1eff00", "ff0070dd", "ffa335ee", "ffff8000", "ffe6cc80", "ffe6cc80"}
+
+local function Print(message)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff96咔鸡物品工坊|r " .. message)
+end
+
+local function Send(command)
+    if not allowed then
+        Print("需要服务器验证的 GM3 权限。")
+        return false
+    end
+    SendChatMessage(command, "SAY")
+    return true
+end
+
+local function Text(parent, text, x, y, width, font)
+    local label = parent:CreateFontString(nil, "OVERLAY", font or "GameFontHighlightSmall")
+    label:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    label:SetWidth(width)
+    label:SetJustifyH("LEFT")
+    label:SetText(text)
+    return label
+end
+
+local function Button(parent, text, x, y, width, action)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    button:SetSize(width, 25)
+    button:SetText(text)
+    button:SetScript("OnClick", action)
+    return button
+end
+
+local function Edit(parent, x, y, width, text, numeric)
+    local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    edit:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    edit:SetSize(width, 25)
+    edit:SetAutoFocus(false)
+    edit:EnableMouse(true)
+    edit:SetScript("OnMouseDown", function(self) self:SetFocus() end)
+    edit:SetMaxLetters(numeric and 10 or 60)
+    if numeric then edit:SetNumeric(true) end
+    edit:SetText(text or "")
+    edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    return edit
+end
+
+local function SelectedShop()
+    return shops[shopIndex]
+end
+
+local function UpdateShop()
+    if not UI then return end
+    local shop = SelectedShop()
+    if shop then
+        UI.shop:SetText(shop.name)
+        UI.shopInfo:SetText("商店 ID " .. shop.id .. " · " .. shop.count .. " 件货物\n" .. shopIndex .. " / " .. #shops .. " 个商人（点名称切换）")
+    else
+        UI.shop:SetText("尚未选择商人")
+        UI.shopInfo:SetText("在副本外创建商人，或刷新已有商人。")
+    end
+end
+
+local function Query(newPage)
+    if not UI or not allowed or busy then return end
+    if GetTime() - sentAt < 0.35 then return end
+    request = request + 1
+    page = math.max(0, newPage or 0)
+    for _, row in ipairs(rows) do row:Hide() end
+    UI.status:SetText("正在查询…")
+    local command
+    if stockMode then
+        if portableMode then
+            command = ".kjworkshop toy browse " .. request .. " " .. page
+        else
+            local shop = SelectedShop()
+            if not shop then UI.status:SetText("请先选择一个商人。"); return end
+            command = ".kjworkshop shop browse " .. request .. " " .. page .. " " .. shop.id
+        end
+    else
+        local query = UI.search:GetText() or ""
+        query = string.gsub(query, "[\r\n|]", " ")
+        query = string.gsub(query, "^%s*(.-)%s*$", "%1")
+        if #query > 128 then
+            UI.status:SetText("搜索文字太长，请缩短后重试。")
+            return
+        end
+        if query == "" then query = "-" end
+        command = ".kjworkshop search " .. request .. " " .. page .. " " .. category .. " " .. query
+    end
+    busy, sentAt = true, GetTime()
+    Send(command)
+end
+
+local function Count()
+    local value = tonumber(UI.quantity:GetText()) or 1
+    value = math.floor(math.max(1, math.min(1000, value)))
+    UI.quantity:SetText(tostring(value))
+    return value
+end
+
+local function Grant(id)
+    Send(".kjworkshop give " .. id .. " " .. Count())
+end
+
+local function StockItem(id, remove)
+    if portableMode then
+        Send(".kjworkshop toy " .. (remove and "remove " or "add ") .. id)
+        Send(".kjworkshop toy list")
+        return
+    end
+    local shop = SelectedShop()
+    if not shop then
+        Print("先创建或选择一个收藏商人。")
+        return
+    end
+    Send(".kjworkshop shop " .. (remove and "remove " or "add ") .. shop.id .. " " .. id)
+end
+
+local function Build()
+    UI = CreateFrame("Frame", "KajigeItemWorkshopFrame", UIParent)
+    UI:SetSize(970, 670)
+    UI:SetPoint("CENTER")
+    UI:SetFrameStrata("DIALOG")
+    UI:SetClampedToScreen(true)
+    UI:SetMovable(true)
+    UI:EnableMouse(true)
+    local titlebar = CreateFrame("Frame", nil, UI)
+    titlebar:SetPoint("TOPLEFT", UI, "TOPLEFT", 12, -12)
+    titlebar:SetSize(910, 32)
+    titlebar:EnableMouse(true)
+    titlebar:RegisterForDrag("LeftButton")
+    titlebar:SetScript("OnDragStart", function() UI:StartMoving() end)
+    titlebar:SetScript("OnDragStop", function() UI:StopMovingOrSizing() end)
+    UI:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=10,right=10,top=10,bottom=10}})
+    table.insert(UISpecialFrames, "KajigeItemWorkshopFrame")
+    Text(UI, "咔鸡 P6 · GM3 物品工坊", 22, -24, 750, "GameFontNormalLarge")
+    local close = CreateFrame("Button", nil, UI, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", UI, "TOPRIGHT", -8, -8)
+    Text(UI, "浏览客户端版本内的全部物品 · 领取免费 · 悬停看详情", 22, -56, 610)
+    UI.search = Edit(UI, 27, -81, 390, "")
+    UI.search:SetScript("OnEnterPressed", function(self)
+        if self.IsInIMECompositionMode and self:IsInIMECompositionMode() then return end
+        self:ClearFocus(); stockMode = false; Query(0)
+    end)
+    Button(UI, "搜索名称 / ID", 435, -81, 177, function()
+        UI.search:ClearFocus(); stockMode = false; Query(0)
+    end)
+    for i, item in ipairs(categories) do
+        local key, label = item[1], item[2]
+        Button(UI, label, 22 + (i - 1) * 75, -118, 72, function()
+            category, stockMode = key, false
+            Query(0)
+        end)
+    end
+    UI.status = Text(UI, "等待服务器验证 GM3 权限…", 22, -156, 595)
+    for i = 1, 12 do
+        local row = CreateFrame("Frame", nil, UI)
+        row:SetPoint("TOPLEFT", UI, "TOPLEFT", 22, -184 - (i - 1) * 32)
+        row:SetSize(592, 30)
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+        row.icon:SetSize(27, 27)
+        row.label = Text(row, "", 34, -2, 305)
+        row.detail = Text(row, "", 34, -16, 305)
+        row:EnableMouse(true)
+        row:SetScript("OnEnter", function(self)
+            if not self.itemID then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink("item:" .. self.itemID)
+            GameTooltip:Show()
+            local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(self.itemID)
+            if icon then self.icon:SetTexture(icon) end
+        end)
+        row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        Button(row, "领取", 350, 0, 68, function() if row.itemID then Grant(row.itemID) end end)
+        Button(row, "上架", 422, 0, 68, function() if row.itemID then StockItem(row.itemID, false) end end)
+        Button(row, "下架", 494, 0, 68, function() if row.itemID then StockItem(row.itemID, true) end end)
+        row:Hide()
+        rows[i] = row
+    end
+    Button(UI, "上一页", 22, -577, 95, function() if page > 0 then Query(page - 1) end end)
+    UI.page = Text(UI, "", 132, -584, 250)
+    Button(UI, "下一页", 430, -577, 95, function() if page + 1 < pages then Query(page + 1) end end)
+    Text(UI, "数量", 22, -623, 40)
+    UI.quantity = Edit(UI, 67, -616, 60, "1", true)
+    Text(UI, "也可直接输入 ID", 155, -623, 135)
+    UI.direct = Edit(UI, 302, -616, 100, "", true)
+    Button(UI, "直接领取", 420, -616, 115, function()
+        local id = tonumber(UI.direct:GetText())
+        if id and id > 0 then Grant(math.floor(id)) else Print("输入有效物品 ID。") end
+    end)
+
+    local permanent = CreateFrame("Frame", nil, UI)
+    permanent:SetAllPoints(UI)
+    local portable = CreateFrame("Frame", nil, UI)
+    portable:SetAllPoints(UI)
+    local function Mode(value)
+        portableMode, stockMode = value, false
+        if value then portable:Show(); permanent:Hide(); Send(".kjworkshop toy list")
+        else portable:Hide(); permanent:Show(); Send(".kjworkshop shop list") end
+    end
+    Button(UI, "随身商人", 647, -50, 131, function() Mode(true) end)
+    Button(UI, "永久商人", 787, -50, 135, function() Mode(false) end)
+    Text(permanent, "在你当前站立的位置创建，重启仍在。\n每位商人独立货单，右键分页领取。", 647, -87, 285)
+    UI.theme = Button(permanent, themes[themeIndex][2], 647, -129, 275, function()
+        themeIndex = themeIndex % #themes + 1
+        UI.theme:SetText(themes[themeIndex][2])
+    end)
+    Button(permanent, "在这里创建这个主题商人", 647, -166, 275, function()
+        Send(".kjworkshop shop create " .. themes[themeIndex][1])
+    end)
+    UI.shop = Button(permanent, "尚未选择商人", 647, -215, 275, function()
+        if #shops > 0 then shopIndex = shopIndex % #shops + 1; UpdateShop() end
+    end)
+    UI.shopInfo = Text(permanent, "", 647, -251, 285)
+    Button(permanent, "刷新商人", 647, -297, 131, function() Send(".kjworkshop shop list") end)
+    Button(permanent, "浏览货单", 787, -297, 135, function() stockMode = true; Query(0) end)
+    Text(permanent, "左侧搜索任意物品，点“上架”加入当前\n商人；点“下架”从当前商人移除。\n每个主题最多 32 位，每位最多 2000 件。", 647, -337, 285)
+    Text(permanent, "惊喜盲盒 · 当前分类随机一件", 647, -405, 285, "GameFontNormal")
+    Button(permanent, "给我来个惊喜", 647, -431, 275, function() Send(".kjworkshop random " .. category) end)
+    Text(permanent, "商人换外形 · 先在游戏里选中商人\n输入想借用外形的 NPC ID", 647, -481, 285)
+    UI.model = Edit(permanent, 652, -525, 120, "", true)
+    Button(permanent, "保存外形", 790, -525, 132, function()
+        local id = tonumber(UI.model:GetText())
+        if id and id > 0 then Send(".kjworkshop shop model " .. math.floor(id)) end
+    end)
+    Text(permanent, "外形只改变样子；可让 Boss 当店员。", 647, -565, 285)
+    Button(permanent, "删除游戏中选中的工坊商人…", 647, -601, 275, function()
+        StaticPopup_Show("KAJIGE_WORKSHOP_DELETE")
+    end)
+
+    Text(portable, "背包道具 · 学会后可拖到动作条\n无冷却召唤，右键商人免费领取。", 647, -90, 285)
+    Button(portable, "领取并学会百宝商人", 647, -137, 275, function()
+        Send(".kjworkshop toy create"); Send(".kjworkshop toy list")
+    end)
+    Button(portable, "召唤到身边", 647, -177, 131, function()
+        Send(".kjworkshop toy summon"); Send(".kjworkshop toy list")
+    end)
+    Button(portable, "收回商人", 787, -177, 135, function()
+        Send(".kjworkshop toy dismiss"); Send(".kjworkshop toy list")
+    end)
+    UI.toyInfo = Text(portable, "点击上方领取，建立你的个人货单。", 647, -224, 285)
+    Button(portable, "浏览我的货单", 647, -270, 275, function()
+        stockMode = true; Query(0)
+    end)
+    Text(portable, "左侧搜索物品，点“上架 / 下架”\n修改随身商人的个人货单。", 647, -315, 285)
+    Text(portable, "整套主题 · 替换当前货单", 647, -371, 285, "GameFontNormal")
+    UI.toyTheme = Button(portable, toyThemes[toyThemeIndex][2], 647, -397, 275, function()
+        toyThemeIndex = toyThemeIndex % #toyThemes + 1
+        UI.toyTheme:SetText(toyThemes[toyThemeIndex][2])
+    end)
+    Button(portable, "换成这套主题…", 647, -433, 275, function()
+        StaticPopup_Show("KAJIGE_WORKSHOP_TOY_PRESET")
+    end)
+    Button(portable, "补发背包道具", 647, -489, 275, function()
+        Send(".kjworkshop toy grant"); Send(".kjworkshop toy list")
+    end)
+    Text(portable, "道具不会消耗，货单在重登后保留。\n此商人仅你可用；召唤新商人会收回旧的。", 647, -535, 285)
+    Button(portable, "给我来个惊喜", 647, -595, 275, function()
+        Send(".kjworkshop random " .. category)
+    end)
+    permanent:Hide()
+    UI:SetScript("OnUpdate", function()
+        if busy and GetTime() - sentAt > 8 then
+            busy = false
+            UI.status:SetText("查询超时；请检查连接后再搜索。")
+        end
+    end)
+    UI:Hide()
+    UpdateShop()
+end
+
+StaticPopupDialogs["KAJIGE_WORKSHOP_TOY_PRESET"] = {
+    text = "用所选主题替换随身商人的全部货单？已领取的物品不会受影响。",
+    button1 = "替换货单", button2 = "取消", timeout = 0, whileDead = 0, hideOnEscape = 1,
+    OnAccept = function()
+        Send(".kjworkshop toy preset " .. toyThemes[toyThemeIndex][1])
+        Send(".kjworkshop toy list")
+    end,
+}
+
+StaticPopupDialogs["KAJIGE_WORKSHOP_DELETE"] = {
+    text = "删除游戏中选中的收藏商人及其货单？此操作不可撤销。",
+    button1 = "删除", button2 = "取消", timeout = 0, whileDead = 0, hideOnEscape = 1,
+    OnAccept = function() Send(".kjworkshop shop delete") end,
+}
+
+function KajigeItemWorkshop.Toggle()
+    if not UI then Build() end
+    if UI:IsShown() then UI:Hide(); return end
+    UI:Show()
+    allowed = false
+    busy = false
+    UI.status:SetText("等待服务器验证 GM3 权限…")
+    SendChatMessage(".kjg permission", "SAY")
+end
+
+local staging = nil
+local event = CreateFrame("Frame")
+event:RegisterEvent("CHAT_MSG_SYSTEM")
+event:RegisterEvent("PLAYER_ENTERING_WORLD")
+event:SetScript("OnEvent", function(_, name, message)
+    if name == "PLAYER_ENTERING_WORLD" then
+        allowed, busy = false, false
+        if UI then UI:Hide() end
+        return
+    end
+    local security = string.match(message or "", "^KJG_PERMISSION:[A-Z0-9%-]+:(%d+):%d+$")
+    if security then
+        allowed = tonumber(security) >= 3
+        if UI and UI:IsShown() then
+            if allowed then
+                sentAt = -1
+                Query(0)
+                Send(".kjworkshop shop list")
+                Send(".kjworkshop toy list")
+            else
+                UI.status:SetText("仅 GM3 可以使用物品工坊。")
+            end
+        end
+        return
+    end
+    if not UI or not allowed then return end
+    local toyCount, learned, summoned = string.match(message or "", "^KJG_WT:(%d+):(%d+):(%d+)$")
+    if toyCount then
+        UI.toyInfo:SetText("个人货单 · " .. toyCount .. " 件物品\n" ..
+            (learned == "1" and "召唤技能已学会" or "召唤技能尚未学习") .. " · " ..
+            (summoned == "1" and "商人已召唤" or "商人已收回"))
+        return
+    end
+    local req, current, count, matches = string.match(message or "", "^KJG_WB:(%d+):(%d+):(%d+):(%d+)$")
+    if req and tonumber(req) == request then
+        staging = {}
+        page, pages, total = tonumber(current), tonumber(count), tonumber(matches)
+        return
+    end
+    local rowRequest, id, quality, level, itemName = string.match(message or "", "^KJG_WI:(%d+):(%d+):(%d+):(%d+):(.*)$")
+    if rowRequest and tonumber(rowRequest) == request and staging then
+        table.insert(staging, {id=tonumber(id), quality=tonumber(quality), level=tonumber(level), name=itemName})
+        return
+    end
+    local ended = string.match(message or "", "^KJG_WE:(%d+)$")
+    if ended and tonumber(ended) == request and staging then
+        busy = false
+        for i, item in ipairs(staging) do
+            local row = rows[i]
+            if row then
+                row.itemID = item.id
+                row.label:SetText("|c" .. (colors[item.quality + 1] or "ffffffff") .. item.name .. "|r")
+                row.detail:SetText("ID " .. item.id .. " · 物品等级 " .. item.level)
+                local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(item.id)
+                row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+                row:Show()
+            end
+        end
+        staging = nil
+        UI.status:SetText((stockMode and "当前商人货单" or "物品目录") .. " · " .. total .. " 件结果")
+        UI.page:SetText("第 " .. (page + 1) .. " / " .. pages .. " 页")
+        return
+    end
+    local entry, spawn, shopName = string.match(message or "", "^KJG_WC:(%d+):(%d+):(.*)$")
+    if entry then
+        table.insert(shops, {id=tonumber(entry), count=0, name=shopName})
+        shopIndex = #shops
+        UpdateShop()
+        Send(".kjworkshop shop list")
+        return
+    end
+    if message == "KJG_WL:begin" then
+        UI.previousShop = SelectedShop() and SelectedShop().id
+        shops = {}; shopIndex = 1
+        return
+    end
+    local shopID, stockCount, label = string.match(message or "", "^KJG_WS:(%d+):(%d+):(.*)$")
+    if shopID then
+        table.insert(shops, {id=tonumber(shopID), count=tonumber(stockCount), name=label})
+        if tonumber(shopID) == UI.previousShop then shopIndex = #shops end
+        return
+    end
+    if message == "KJG_WL:end" then UpdateShop() end
+end)
+
+ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", function(_, _, message)
+    return string.find(message or "", "^KJG_W[A-Z]:") ~= nil
+end)
+
+SLASH_KAJIGEITEMWORKSHOP1 = "/kjitems"
+SLASH_KAJIGEITEMWORKSHOP2 = "/kjshop"
+SlashCmdList["KAJIGEITEMWORKSHOP"] = KajigeItemWorkshop.Toggle
